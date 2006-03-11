@@ -155,6 +155,12 @@ module SK
       @options.has_key? 'verbose'
     end
 
+    def find_in_path(command)
+      ENV.to_hash['PATH'].split(File::PATH_SEPARATOR).map { |_location|
+        Dir[ File.join(_location, command) ].first
+      }.compact
+    end
+
     private
     #######
 

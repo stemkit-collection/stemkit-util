@@ -1,0 +1,114 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
+# 
+# Distributed under the MIT Licence.
+# This is free software. See 'LICENSE' for details.
+# You must read and accept the license prior to use.
+
+[ 'sk/application.rb' ].each do |a|
+  $: << ENV.to_hash['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
+  require a
+end
+
+require 'sk/errors.rb'
+require 'yaml'
+
+# This is a Subversion front-end that transforms its arguments as follows:
+#   %r is replaced by a repository root found either in environment variable
+#     SVN_ROOT or in the first file .svnrc found in the current directory or
+#     any directory up to '/'  (YAML property 'Root').
+#   %u is replaced by the current URL, handy in 'svn log %u' command.
+#   %t is replaced by the top working directory.
+#
+class Application < SK::Application
+  def start
+    handle_errors {
+      self.verbose = ENV['TRACE'].to_s.split.include?(script_name)
+
+      commands = find_in_path(script_name)
+      commands.shift while commands.first == $0
+
+      raise "No #{script_name.inspect} in PATH" if commands.empty?
+      invoke commands.first
+    }
+  end
+
+  private
+  #######
+
+  def invoke(command)
+    exec command, *ARGV.map { |_item|
+      _item.gsub(%r{%[rtu]}i) { |_match|
+        case _match.downcase
+          when '%r' then root
+          when '%u' then url(command)
+          when '%t' then top
+        end
+      }
+    }
+  end
+
+  def process_resource(directory, resource)
+    resource_path = File.join directory, resource
+    if File.exists? resource_path
+      begin
+        File.open(resource_path) { |_io|
+          YAML.parse(_io).transform
+        }
+      rescue Exception => exception
+        raise SK::Error.new("Error parsing #{resource_path.inspect}", exception)
+      end
+    else
+      process_resource(File.dirname(directory), resource) unless directory == '/'
+    end
+  end
+
+  def config
+    @config ||= begin 
+      process_resource(Dir.pwd, '.svnrc') or Hash.new
+    end
+  end
+
+  def url(command)
+    @url ||= begin
+      IO.popen("#{command} info") do |_io|
+        _io.readlines.map { |_line|
+          _line.scan(%r{^URL:\s*(.*)$}).first
+        }.flatten.compact.first
+      end
+    end
+  end
+
+  def root
+    @root ||= begin
+      ENV['SVN_ROOT'] or config['Root'] or raise SK::Error.new('No repository root found') 
+    end
+  end
+
+  def top
+    raise SK::NotImplementedError, 'top'
+  end
+end
+
+unless defined? Test::Unit::TestCase
+  catch :TEST do
+    Application.new.start
+    exit 0
+  end
+end
+
+require 'test/unit'
+
+class ApplicationTest < Test::Unit::TestCase
+  def test_something
+    flunk 'Not implemented'
+  end
+
+  def setup
+    @app = Application.new
+  end
+
+  def teardown
+    @app = nil
+  end
+end

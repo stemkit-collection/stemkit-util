@@ -128,13 +128,13 @@ module SK
 
   class NotImplementedError < Error
     def initialize(*args)
-      super
+      super 'Not implemented yet', *args
     end
   end
 
   class UsageError < Error
     def initialize(*args)
-      super
+      super 'Wrong usage', *args
     end
   end
 end
