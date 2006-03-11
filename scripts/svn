@@ -12,6 +12,7 @@ end
 
 require 'sk/errors.rb'
 require 'yaml'
+require 'open3'
 
 # This is a Subversion front-end that transforms its arguments as follows:
 #   %r is replaced by a repository root found either in environment variable
@@ -37,11 +38,12 @@ class Application < SK::Application
   #######
 
   def invoke(command)
+    @command = command
     exec command, *ARGV.map { |_item|
       _item.gsub(%r{%[rtu]}i) { |_match|
         case _match.downcase
           when '%r' then root
-          when '%u' then url(command)
+          when '%u' then url
           when '%t' then top
         end
       }
@@ -69,24 +71,38 @@ class Application < SK::Application
     end
   end
 
-  def url(command)
-    @url ||= begin
-      IO.popen("#{command} info") do |_io|
-        _io.readlines.map { |_line|
-          _line.scan(%r{^URL:\s*(.*)$}).first
-        }.flatten.compact.first
-      end
+  def info(location)
+    Open3.popen3("#{@command} info #{location}") do |_in, _out, _err|
+      YAML.parse(_out).transform rescue Hash.new
     end
+  end
+
+  def dot_info
+    @dot_info ||= info('.')
+  end
+
+  def url
+    @url ||= dot_info['URL']
   end
 
   def root
     @root ||= begin
-      ENV['SVN_ROOT'] or config['Root'] or raise SK::Error.new('No repository root found') 
+      dot_info['Repository Root'] or ENV['SVN_ROOT'] or config['Root'] or begin
+        raise SK::Error.new('No repository root found') 
+      end
     end
   end
 
+  def locate_top(*components)
+    upper = [ '..', *components ]
+    return components unless info(File.join(upper))['Repository Root'] == root
+    locate_top upper
+  end
+
   def top
-    raise SK::NotImplementedError, 'top'
+    @top ||= begin
+      File.join locate_top('.')
+    end
   end
 end
 
