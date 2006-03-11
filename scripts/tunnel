@@ -1,0 +1,263 @@
+#!/usr/bin/env ruby
+
+=begin
+TODO:
+  [DONE] Figure out why "Killed with signal 15" is output when stopping the tunnel
+  - Obtain the default interface automatically (en0 for now)
+  - Platform independent mechanism for process management shell be found.
+    Daniel Berger's Sys::ProcTable may be used if ported to Mac OS X.
+=end
+
+exec "sudo",  "ruby", $0, *ARGV unless Process.uid == 0
+$:.concat ENV['PATH'].split(':')
+
+require 'tsc/application'
+require 'tsc/undo'
+require 'yaml'
+require 'etc'
+
+class Application < TSC::Application
+  include TSC::Undo
+
+  def initialize
+    super( 
+      '{start|stop|check}', 
+      [ '--interface', 'Network interface', 'interface', '-i' ]
+    )
+  end
+  def start
+    handle_errors {
+      process_command_line
+      do_and_exit { print_usage } if ARGV.empty?
+
+      @config = Config.new ARGV.shift, options
+      @tunnel = Tunnel.new @config
+      @inet = Inet.new @config
+
+      do_and_exit { process_check } if ARGV.empty?
+
+      if %w{ start stop check }.include? ARGV.first
+	self.send "process_#{ARGV.shift}"
+      else
+	raise "Unsupported action #{ARGV.first.inspect}"
+      end
+    }
+  end
+
+  def process_start
+    raise "Tunnel already active" if @tunnel.established?
+
+    undo_on_error(Exception) do |_undo|
+      _undo.add { @inet.remove_host_resolution }
+      @inet.add_host_resolution
+
+      _undo.add { @inet.remove_aliases }
+      @inet.setup_aliases
+
+      _undo.add { @tunnel.destroy }
+      exit! 3 unless @tunnel.establish
+    end
+    puts "Tunnel established."
+  end
+  def process_stop
+    raise "Tunnel not active" unless @tunnel.established?
+    @tunnel.destroy
+    puts "Tunnel destroyed. Details in #{@config.logfile.inspect}."
+  end
+  def process_check
+    puts ["Tunnel is", ("not" unless @tunnel.established?), "active."].compact.join(' ')
+  end
+end
+
+class Config
+  attr_reader :gateway, :user, :domain, :identity, :redirects, :interface, :ipblock
+  def initialize(gateway, options)
+    @gateway = gateway
+    @options = options
+
+    config_file = File.expand_path(".ssh/tunnel.yaml",login_user_entry.dir)
+    begin
+      config = File.open(config_file) { |_io|
+	YAML.parse(_io).transform["tunnel"]
+      }
+      entry = config.select { |_entry|
+	_entry["address"] == @gateway
+      }.first
+      @interface = options['interface'] || entry['interface'] || default_interface
+      @user = entry["user"] || login_user_entry.name
+      @domain = entry["domain"]
+      @identity = File.expand_path((entry["identity"] || ".ssh/id_rsa"), login_user_entry.dir)
+
+      @ipblock = [ *(entry["ipblock"] || []) ]
+      @redirects = Hash.new { |_h,_k| _h[_k] = [] }
+      entry["host"].each do |_entry|
+	@redirects[_entry["address"]] |= [ *_entry["port"] ]
+      end
+    rescue Exception => exception
+      raise TSC::CompoundError.new("Error parsing #{config_file.inspect}",exception)
+    end
+  end
+  def hosts
+    @redirects.keys
+  end
+  def logfile
+     @logfile ||= begin
+       File.join login_user_entry.dir, ".ssh", "tunnel.log"
+     end
+  end
+  
+  private
+  #######
+  def login_user_entry
+    @login_user_entry ||= begin
+      user = Etc::getlogin
+      catch(:found) {
+	Etc::passwd { |_entry|
+	  throw :found, _entry if _entry.name == user
+	}
+	raise "User #{user.inspect} not found"
+      }
+    end
+  end
+  def default_interface
+    "en0"
+  end
+end
+class Inet
+  HOST_DATABASE = "/etc/hosts"
+  def initialize(config)
+    @config = config
+  end
+
+  def setup_aliases
+    ip_with_host_list.each do |_ip,_host|
+      launch "ifconfig #{@config.interface} alias #{_ip} netmask 255.255.255.255"
+    end
+  end
+  def remove_aliases
+    errors = []
+    ip_with_host_list.each do |_ip,_host|
+      begin 
+	launch "ifconfig #{@config.interface} -alias #{_ip} netmask 255.255.255.255"
+      rescue => exception
+	errors << exception
+      end
+    end
+    raise errors.first if errors.size == 1
+    raise TSC::CompoundError.new(*errors) unless errors.empty?
+  end
+  def add_host_resolution
+    block = begin
+      if @config.domain
+	proc { |_ip, _host|
+	  [ _ip, _host, [ _host, @config.domain ].join('.') ].join("\t") 
+	}
+      else
+	proc { |_ip, _host|
+	  [ _ip, _host ].join("\t") 
+	}
+      end
+    end
+    update_host_database cleared_host_database, ip_with_host_list.map(&block)
+  end
+  def remove_host_resolution
+    update_host_database cleared_host_database
+  end
+ 
+  private
+  #######
+  def cleared_host_database
+    IO.readlines(HOST_DATABASE).reject { |_line|
+      fields = _line.split
+      ip_with_host_list.detect { |_ip, _host|
+	fields.first == _ip
+      }
+    }
+  end
+  def update_host_database(*content)
+    File.open(HOST_DATABASE,"w") { |_io|
+      _io.puts content
+    }
+  end
+  def ip_with_host_list
+    @ip_with_host ||= begin 
+      if @config.ipblock.size < @config.hosts.size
+	raise "Not enough ip addresses for redirects: #{@config.ipblock.size} available, #{@config.hosts.size} needed"
+      end
+      network = interface_ip.split('.').slice(0...-1)
+      @config.ipblock.map{ |_ip|  [ network, _ip ].join('.') }.slice(0,@config.hosts.size).zip(@config.hosts)
+    end
+  end
+  def interface_ip
+    @ifip ||= begin
+      ip = nil
+      launch "ifconfig #{@config.interface}" do |_out, _err|
+	result = _out.to_s.scan %r{inet\s+(\d+\.\d+\.\d+\.\d+)}
+	ip = result.first.first unless result.empty?
+      end
+      raise "Cannot obtain ip for interface #{@config.interface.inspect}" unless ip
+      ip
+    end
+  end
+end
+class Tunnel
+  def initialize(config)
+    @config = config
+    ENV['PATH'] = "/usr/local/bin:#{ENV['PATH']}"
+    @pid = nil
+  end
+
+  def established?
+    process = find_process prelude
+    @pid = process ? process[1].to_i : nil
+  end
+  def establish
+    pipe = IO.pipe
+    unless fork
+      pipe.first.close
+      Process.setsid
+      command = "#{prelude} -Nnv -i#{@config.identity} #{portmap.join(' ')}"
+      launch proc{ pipe.last.close }, command do |_stdout, _stderr|
+	if _stderr =~ %r{Entering interactive session}
+	  File.open(@config.logfile,"w") do |_io|
+	    $stdout.reopen _io
+	    $stderr.reopen _io
+	  end
+	  pipe.last.puts "OK"
+	  pipe.last.close
+	end
+	!_stdout and _stderr =~ %r{listening\s+on} or _stderr =~ %r{forwarded\s+to} or _stderr !~ %r{^debug\d+:}
+      end
+      exit! 0
+    end
+    pipe.last.close
+    true if pipe.first.readlines.first.to_s =~ %r{OK}
+  end
+  def destroy
+    if established?
+      Process.kill "TERM", @pid if @pid
+      @pid = nil
+    end
+  end
+
+  private
+  #######
+  def prelude
+    "ssh #{@config.gateway} -l#{@config.user}"
+  end
+  def portmap
+    @config.redirects.map { |_host, _ports|
+      _ports.map { |_port|
+	"-L#{_host}:#{_port}:#{_host}:#{_port}"
+      }
+    }.flatten
+  end
+  def find_process(command)
+    launch "ps -axjw" do |_stdout,|
+      return _stdout.split if _stdout =~ /#{Regexp.quote(command)}/
+    end
+    nil
+  end
+end
+
+Application.new.start
