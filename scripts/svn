@@ -37,6 +37,9 @@ class Application < SK::Application
   private
   #######
 
+  ROOT_INFO = 'Repository Root'
+  URL_INFO = 'URL'
+
   def invoke(command)
     @command = command
     exec command, *ARGV.map { |_item|
@@ -82,12 +85,12 @@ class Application < SK::Application
   end
 
   def url
-    @url ||= dot_info['URL']
+    @url ||= dot_info[URL_INFO]
   end
 
   def root
     @root ||= begin
-      dot_info['Repository Root'] or ENV['SVN_ROOT'] or config['Root'] or begin
+      dot_info[ROOT_INFO] or ENV['SVN_ROOT'] or config['Root'] or begin
         raise SK::Error.new('No repository root found') 
       end
     end
@@ -95,8 +98,7 @@ class Application < SK::Application
 
   def locate_top(*components)
     upper = [ '..', *components ]
-    return components unless info(File.join(upper))['Repository Root'] == root
-    locate_top upper
+    info(File.join(upper))[ROOT_INFO] == root ? locate_top(upper) : components
   end
 
   def top
