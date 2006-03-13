@@ -77,10 +77,13 @@ module SK
 
     @supported = Hash[
       [ 'sol-x86', :solaris, :x86 ]  => %w{ i386-solaris2.8 },
-      [ 'sol-sparc', :solaris ] => %w{ sparc-solaris2.6 sparc-solaris2.8 },
+      [ 'sol-sparc', :solaris ] => %w{ sparc-solaris2.6 sparc-solaris2.9 },
+      [ 'sol8-sparc', :solaris ] => %w{ sparc-solaris2.8 },
       [ 'lin-x86', :linux, :x86 ] => %w{ i686-linux i386-linux-gnu },
       [ 'aix5-ppc', :aix5, :ppc ] => %w{ powerpc-aix5.1.0.0 },
-      [ 'tiger-ppc', :darwin, :ppc ] => %w{ powerpc-darwin8.1.0 }
+      [ 'tiger-ppc', :darwin, :ppc ] => %w{ powerpc-darwin8.1.0 },
+      [ 'tru64', :osf5, :alpha ] => %w{ alphaev67-osf5.1b },
+      [ 'hpux', :hpux, :risc ] => %w{ hppa2.0w-hpux11.00 }
     ]
   end
 end

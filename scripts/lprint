@@ -1,0 +1,41 @@
+#!/bin/ksh
+#
+# Script to perform local print. Usage:
+# lprint [<file> ...]
+#    where <file> - The name of a file to print. Multiple file 
+#	            may be printed on a single invocation. If
+#                   <file> is "-" or absent than standard input
+#		    is read.
+
+Printer_ON () {
+  [ "${CodeSet:+set}" = set ] && csmmap off 0<&1 2>/dev/null
+  echo "$OnCmd\c"
+}
+
+Printer_OFF () {
+  [ "${CodeSet:+set}" = set ] && csmmap on 0<&1 2>/dev/null
+  echo "$OffCmd\c"
+}
+
+ScriptName=`basename $0`
+OnCmd=`tput mc5 2>/dev/null`; OffCmd=`tput mc4 2>/dev/null`
+[ "${OnCmd:+set}" = set -a "${OffCmd:+set}" = set ] || {
+  echo "$ScriptName: terminal does not support local print" 1>&2
+  exit 1
+}
+trap 'Printer_OFF' 0 1 2 3 8 15 16 17 23 24 25
+exec 3<&0; Printer_ON
+for file in ${*:--}
+do
+  case "$file" in
+    -) exec 0<&3 ;;
+    *) [ -f "$file" -a -r "$file" ] || {
+         Printer_OFF
+	 echo "$ScriptName: cannot access file \"$file\"" 1>&2
+	 exit 2
+       }
+       exec 0<"$file" ;;
+  esac
+  cat || exit 3
+done
+exit 0

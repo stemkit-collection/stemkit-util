@@ -1,0 +1,16 @@
+#!/bin/sh
+
+[ ${#} -ge 2 ] || {
+  echo "USAGE: `basename ${0}` <old extension> <new extension>" 1>&2
+  exit 2
+}
+old=${1}
+new=${2}
+shift 2
+for file in "${@}"; do
+  base=`echo "${file}"|sed -n "s/${old}\$//p"`
+  [ "${base:+set}" = set ] && {
+    mv "${base}${old}" "${base}${new}"
+  }
+done
+exit 0

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+[ $# -gt 1 ] || {
+  echo "USAGE: $0 <loop_count>" 1>&2
+  exit 2
+}
+loop_count=`expr $1 + 0`
+[ $? -eq 0 ] || {
+  echo "$0: <loop_count> must be numeric." 1>&2
+}
+shift
+while [ $loop_count -ne 0 ]; do
+  "$@" || exit $?
+  loop_count=`expr $loop_count - 1`
+done
+exit 0

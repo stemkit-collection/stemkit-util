@@ -205,11 +205,14 @@ module SK
       print_diagnostics [
         message.join(': '),
         if verbose?
-          if exception.backtrace
-            exception.backtrace.map { |_line|
-              '  ' + _line.sub(%r{^#{script_location}/}, '')
-            }
-          end
+          [
+            '<' + exception.class.name + '>',
+            if exception.backtrace
+              exception.backtrace.map { |_line|
+                '  ' + _line.sub(%r{^#{script_location}/}, '')
+              }
+            end
+          ]
         end
       ]
     end
