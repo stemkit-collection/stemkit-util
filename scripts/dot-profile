@@ -9,13 +9,20 @@ eval <<'RUBY'
   class Profile
     PATH = %w{
       /sbin 
+      #{userinfo.dir}/projects/sf/stemkit-util/trunk/src/scripts
+      #{userinfo.dir}/projects/sf/tsc-tpm/trunk/src/scripts
+      #{userinfo.dir}/projects/sf/tsc-build/trunk/src/scripts
+      #{userinfo.dir}/projects/tools/src/scripts
       #{userinfo.dir}/bin/#{sysid} 
       #{userinfo.dir}/bin
       #{userinfo.dir}/local/#{sysid}/bin
-      /usr/local/bin 
-      /bin /usr/bin /usr/sbin 
+      /opt/ansic/bin
+      /usr/vac/bin
       /opt/SUNWspro/bin 
-      /usr/ucb /usr/bsd /usr/ccs/bin 
+      /usr/local/bin 
+      /usr/ccs/bin 
+      /bin /usr/bin /usr/sbin 
+      /usr/ucb /usr/bsd 
       /etc /usr/etc /usr/java1.2/bin /c/jdk1.2.2/bin
       #{userinfo.dir}/bin 
       /usr/bin/X11 /usr/X11/bin /usr/openwin/bin
@@ -65,7 +72,7 @@ eval <<'RUBY'
       export :SYSID, sysid
       export :USER, userinfo.name
       export :HISTFILE, histfile
-      export :home, userinfo.dir
+      # export :home, userinfo.dir
       export :PATH, path
       export :MANPATH, manpath
     end
@@ -173,7 +180,7 @@ eval <<'RUBY'
     end
     def sysid
       @sysid ||= begin
-	require 'sk/platform'
+	require 'sk/platform.rb'
 	SK::Platform.current.name
       rescue LoadError
 	PLATFORM
@@ -205,7 +212,7 @@ locate_ruby()
 {
   for directory in "${@}"; do
     program="${directory}/ruby"
-    [ `"${program}" -e "puts 'HELLO'"` = 'HELLO' ] && {
+    [ "`${program} -e 'puts %q{HELLO}'`" = 'HELLO' ] && {
       echo ${program}
       break
     }
@@ -217,16 +224,17 @@ act_as_rc()
   while true; do
     case "${SHELL}" in
       */bash | */ksh)
+        [ -o monitor -o -o interactive ] || {
+	  break
+	}
         [ "${USERENV:+set}" = set ] && {
           : ${env:="${ENV}"} ${userenv:="${USERENV}"}
           . "${USERENV}"
           export ENV="${env}" USERENV="${userenv}"
           unset env userenv
         }
-        [ -o monitor -o -o interactive ] || break
         unalias cd CD up jj del h rm p dir ll showdir vi
         [ "${SHELLDEPTH:+set}" != set ] && {
-          set -o ignoreeof
           alias bye=exit
           alias logout=exit
         }
@@ -262,6 +270,7 @@ act_as_rc()
 
     P4PORT=localhost:1 export P4PORT
     EDITOR=vim export EDITOR
+    VISUAL=vim export VISUAL
     PAGER=less export PAGER
     LESS=-XMFe export LESS
     HISTSIZE=50 export HISTSIZE
@@ -269,9 +278,6 @@ act_as_rc()
 
     case "${SHELL}" in
       */bash | */ksh)
-        set +o noclobber 
-        set -o vi
-
         alias vi="${EDITOR:-vim}"
         alias h=history
         alias rm='rm -i'
@@ -333,7 +339,7 @@ act_as_profile()
       [ "${HISTFILE:+set}" = set ] && {
         [ -f "${HISTFILE}" ] || touch "${HISTFILE}"
       }
-      exec "${SHELL}"
+      exec "${SHELL}" -o ignoreeof -o noclobber -o vi
     ;;
   esac
 }

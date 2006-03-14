@@ -5,8 +5,10 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
+$VERBOSE = nil
+
 [ 'sk/application.rb' ].each do |a|
-  $: << ENV.to_hash['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
+  $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
   require a
 end
 
@@ -555,6 +557,8 @@ unless defined? Test::Unit::TestCase
     exit 0
   end
 end
+
+$VERBOSE = true
 
 require 'test/unit'
 
