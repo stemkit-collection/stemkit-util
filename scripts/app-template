@@ -9,7 +9,8 @@
   # Workaround 'to_hash' is needed to silence the warning in case of world 
   # writable directory is present in PATH. The warning is printed out in 
   # Ruby 1.8.2 even if that particular directory is not added to the ruby
-  # loadpath.
+  # loadpath. Alternatively, $VERBOSE=nil may be used to suppress all ruby
+  # warnings.
   #
   $: << ENV.to_hash['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
   require a
