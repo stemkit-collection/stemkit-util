@@ -1,6 +1,8 @@
 # vim: ft=sh
 
 eval <<'RUBY'
+  $VERBOSE = nil
+
   require 'etc'
   require 'ftools'
 
