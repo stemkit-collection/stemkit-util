@@ -1,0 +1,169 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
+# 
+# Distributed under the MIT Licence.
+# This is free software. See 'LICENSE' for details.
+# You must read and accept the license prior to use.
+
+# $VERBOSE = nil
+
+[ 'sk/application.rb' ].each do |a|
+  $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
+  require a
+end
+
+require 'sk/errors.rb'
+require 'yaml'
+require 'open3'
+require 'tempfile'
+
+# This is a StarTeam front-end.
+# TODO:
+#  - Process all .stmrc files found way up. It will make it possible to 
+#    have common settings for several project's client views.
+#  - Supplement command line options differently for subcommands, as not 
+#    all of them understand substituted options. 
+#  - Modify default ways how subcommands work, possibly tweaking the output.
+#    Like for "list" subcommand "-is" options shell be used by default and 
+#    "-filter MONIGU" in none specified.
+#
+class Application < SK::Application
+  def initialize
+    super "<stcmd-specific arguments>"
+  end
+
+  def start
+    handle_errors {
+      process_command_line(true)
+
+      commands = find_in_path(script_name)
+      commands.shift while commands.first == $0
+
+      raise "No #{script_name.inspect} in PATH" if commands.empty?
+      invoke commands.first
+    }
+  end
+
+  private
+  #######
+
+  def invoke(command)
+    exec command, *ARGV if config.empty? or ARGV.empty?
+    
+    Tempfile.open('stm') { |_tempfile|
+      _tempfile.puts password
+      _tempfile.close
+
+      subcommand = ARGV.shift
+      
+      cmdoptions = (config['Options'] || '').split
+      case subcommand
+        when 'status'
+          subcommand = 'list'
+          cmdoptions += [ '-is', '-filter', 'MONIGU' ]
+      end
+      cmdline = [
+        command, subcommand, cmdoptions, 
+        '-pwdfile', _tempfile.path, '-p', url, '-rp', File.join(location, root), ARGV
+      ].flatten
+
+      puts "<#{cmdline.join(' ')}>" if verbose?
+      exec *cmdline
+    }
+  end
+
+  def process_resource(directory, resource)
+    resource_path = File.join directory, resource
+    if File.exists? resource_path
+      begin
+        File.open(resource_path) { |_io|
+          YAML.parse(_io).transform.update('Location' => directory)
+        }
+      rescue Exception => exception
+        raise SK::Error.new("Error parsing #{resource_path.inspect}", exception)
+      end
+    else
+      return Hash.new if directory.size > 10
+      process_resource([ '..', *directory ], resource) 
+    end
+  end
+
+  def config
+    @config ||= begin 
+      process_resource([ '.' ], '.stmrc') or Hash.new
+    end
+  end
+
+  def common_options
+    (config['Options'] || '').split
+  end
+
+  def server
+    config['Server']
+  end
+
+  def user
+    config['User']
+  end
+
+  def password
+    config['Password']
+  end
+
+  def view
+    config['View']
+  end
+
+  def project
+    config['Project']
+  end
+
+  def location
+    config['Location']
+  end
+
+  def root
+    @root ||= config['Root'].split(File::SEPARATOR)
+  end
+
+  def url
+    @url ||= File.join "#{user}@#{server}", project, view, offset
+  end
+
+  def offset
+    size = location.size - 1
+    components = Dir.pwd.split(File::SEPARATOR)[-size, size]
+
+    r = root.dup
+    unless r.empty? or r.first != components.first
+      r.shift
+      components.shift
+    end
+    raise "Not in project view" unless r.empty?
+
+    components
+  end
+end
+
+unless defined? Test::Unit::TestCase
+  catch :TEST do
+    Application.new.start
+    exit 0
+  end
+end
+
+require 'test/unit'
+
+class ApplicationTest < Test::Unit::TestCase
+  def test_something
+    flunk 'Not implemented'
+  end
+
+  def setup
+    @app = Application.new
+  end
+
+  def teardown
+    @app = nil
+  end
+end
