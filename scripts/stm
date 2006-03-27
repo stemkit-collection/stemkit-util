@@ -29,7 +29,9 @@ require 'tempfile'
 #
 class Application < SK::Application
   def initialize
-    super "<stcmd-specific arguments>"
+    super "<stcmd-specific arguments>", [
+      '--view', 'A StarTeam view to use', 'view', '-c'
+    ]
   end
 
   def start
@@ -60,11 +62,15 @@ class Application < SK::Application
       case subcommand
         when 'status'
           subcommand = 'list'
-          cmdoptions += [ '-is', '-filter', 'MONIGU' ]
+          cmdoptions += [ '-short', '-is', '-filter', 'MONIGU' ]
       end
+
+      if subcommand != 'label'
+        cmdoptions += [ '-rp', File.join(location, root) ]
+      end
+
       cmdline = [
-        command, subcommand, cmdoptions, 
-        '-pwdfile', _tempfile.path, '-p', url, '-rp', File.join(location, root), ARGV
+        command, subcommand, '-p', url, '-pwdfile', _tempfile.path, cmdoptions, ARGV
       ].flatten
 
       puts "<#{cmdline.join(' ')}>" if verbose?
@@ -111,7 +117,7 @@ class Application < SK::Application
   end
 
   def view
-    config['View']
+    options['view'] || ENV['STM_VIEW'] || config['View']
   end
 
   def project
