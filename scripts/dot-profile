@@ -275,7 +275,7 @@ act_as_rc()
     VISUAL=vim export VISUAL
     PAGER=less export PAGER
     LESS=-XMFe export LESS
-    HISTSIZE=50 export HISTSIZE
+    HISTSIZE=1000 export HISTSIZE
     RI=-fbs export RI
 
     case "${SHELL}" in
