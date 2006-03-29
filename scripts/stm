@@ -5,7 +5,7 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
-# $VERBOSE = nil
+$VERBOSE = nil
 
 [ 'sk/application.rb' ].each do |a|
   $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
@@ -38,10 +38,13 @@ class Application < SK::Application
     handle_errors {
       process_command_line(true)
 
-      commands = find_in_path(script_name)
+      ENV['JAVA_HOME'] = JAVA_HOME if defined? JAVA_HOME
+      ENV['STARTEAM_HOME'] = STARTEAM_HOME if defined? STARTEAM_HOME
+
+      commands = find_in_path('stcmd')
       commands.shift while commands.first == $0
 
-      raise "No #{script_name.inspect} in PATH" if commands.empty?
+      raise "No stcmd in PATH" if commands.empty?
       invoke commands.first
     }
   end
@@ -151,25 +154,22 @@ class Application < SK::Application
   end
 end
 
-unless defined? Test::Unit::TestCase
-  catch :TEST do
-    Application.new.start
-    exit 0
+unless defined? Installation::Generator
+  Application.new.start
+  exit 0
+end
+
+class Generator < Installation::Generator
+  def create(io)
+    bindir = File.join(self.class.installation_tools, 'bin')
+    java_home = File.join(self.class.installation_top, 'java', 'jre-1.5')
+    starteam_home = File.join(self.class.installation_top, 'starteam')
+    [
+      '#!' + File.join(bindir, 'ruby'),
+      "ENV['PATH'] = [ #{bindir.inspect}, #{File.dirname(target).inspect}, *ENV['PATH'].split(':') ].join(':')",
+      "JAVA_HOME = #{java_home.inspect}",
+      "STARTEAM_HOME = #{starteam_home.inspect}"
+    ] + IO::readlines(__FILE__).slice(1..-1)
   end
 end
 
-require 'test/unit'
-
-class ApplicationTest < Test::Unit::TestCase
-  def test_something
-    flunk 'Not implemented'
-  end
-
-  def setup
-    @app = Application.new
-  end
-
-  def teardown
-    @app = nil
-  end
-end
