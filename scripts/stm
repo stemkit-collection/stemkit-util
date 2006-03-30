@@ -12,11 +12,6 @@ $VERBOSE = nil
   require a
 end
 
-require 'sk/errors.rb'
-require 'yaml'
-require 'open3'
-require 'tempfile'
-
 # This is a StarTeam front-end.
 # TODO:
 #  - Process all .stmrc files found way up. It will make it possible to 
@@ -36,6 +31,13 @@ class Application < SK::Application
 
   def start
     handle_errors {
+      defined?(TPM_TOOLS_TOP) && adjust_ruby_loadpath(TPM_TOOLS_TOP)
+
+      require 'sk/errors.rb'
+      require 'yaml'
+      require 'open3'
+      require 'tempfile'
+
       process_command_line(true)
 
       ENV['JAVA_HOME'] = JAVA_HOME if defined? JAVA_HOME
@@ -164,11 +166,13 @@ class Generator < Installation::Generator
     bindir = File.join(self.class.installation_tools, 'bin')
     java_home = File.join(self.class.installation_top, 'java', 'jre-1.5')
     starteam_home = File.join(self.class.installation_top, 'starteam')
+    tpm_ruby_top = File.join(self.class.installation_tools, 'lib', 'ruby')
     [
       '#!' + File.join(bindir, 'ruby'),
       "ENV['PATH'] = [ #{bindir.inspect}, #{File.dirname(target).inspect}, *ENV['PATH'].split(':') ].join(':')",
       "JAVA_HOME = #{java_home.inspect}",
-      "STARTEAM_HOME = #{starteam_home.inspect}"
+      "STARTEAM_HOME = #{starteam_home.inspect}",
+      "TPM_TOOLS_TOP = #{self.class.installation_tools.inspect}"
     ] + IO::readlines(__FILE__).slice(1..-1)
   end
 end

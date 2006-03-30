@@ -161,6 +161,20 @@ module SK
       }.compact
     end
 
+    def adjust_ruby_loadpath(top)
+      ruby_component = File.join 'lib', 'ruby'
+      local_ruby_directory = File.join top, ruby_component
+      return unless check_directory_exists local_ruby_directory
+
+      pattern = File.join '.*', ruby_component, '(.*)'
+      $:.each do |_loadpath|
+        components = _loadpath.scan %r{^#{pattern}$}
+        unless components.empty?
+          _loadpath.replace File.join(local_ruby_directory, components.first.first)
+        end
+      end
+    end
+
     private
     #######
 
@@ -219,6 +233,10 @@ module SK
 
     def print_diagnostics(*args)
       $stderr.puts args.flatten.compact
+    end
+
+    def check_directory_exists(path)
+      File.stat(path).directory? if Dir[path].size == 1
     end
 
   end
