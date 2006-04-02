@@ -245,7 +245,7 @@ act_as_rc()
 
     PS1="[${SYSID}.${SERVER}:!]${PROMPT:-${USER}}${SHELLDEPTH:+_${SHELLDEPTH}}> "                          
     [ "${TERM}" = xterm ] && {
-      PS1=`echo "\033]0;${PROMPT:-${USER}}@${SERVER}\07\r\c"`"${PS1}"
+      PS1=`printf "\033]0;${PROMPT:-${USER}}@${SERVER}\07\r"`"${PS1}"
     }
     export SHELLDEPTH=`expr "${SHELLDEPTH:-0}" + 1`
     PS2="(cont) "                                             
