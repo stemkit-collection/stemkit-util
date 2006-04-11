@@ -12,7 +12,7 @@ eval <<'RUBY'
     PATH = %w{
       /sbin 
       #{userinfo.dir}/projects/sf/stemkit-util/trunk/src/scripts
-      #{userinfo.dir}/projects/sf/tsc-tpm/0.1.0/src/scripts
+      #{userinfo.dir}/projects/sf/tsc-tpm/trunk/src/scripts
       #{userinfo.dir}/projects/sf/tsc-build/trunk/src/scripts
       #{userinfo.dir}/projects/tools/src/scripts
       #{userinfo.dir}/bin/#{sysid} 
