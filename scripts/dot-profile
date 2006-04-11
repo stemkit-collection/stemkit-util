@@ -12,7 +12,7 @@ eval <<'RUBY'
     PATH = %w{
       /sbin 
       #{userinfo.dir}/projects/sf/stemkit-util/trunk/src/scripts
-      #{userinfo.dir}/projects/sf/tsc-tpm/trunk/src/scripts
+      #{userinfo.dir}/projects/sf/tsc-tpm/0.1.0/src/scripts
       #{userinfo.dir}/projects/sf/tsc-build/trunk/src/scripts
       #{userinfo.dir}/projects/tools/src/scripts
       #{userinfo.dir}/bin/#{sysid} 
@@ -270,6 +270,16 @@ act_as_rc()
     }
     __cd__() { 
       cd "${@}" && __dir__
+    }
+    ptweak() {
+      [ "${#}" -eq 2 ] || {
+        echo "USAGE: ptweak <product> <old version> <new version>"
+      }
+      product="${1}"
+      version="${2}"
+
+      export PATH=`echo ${PATH} | sed "s#/${product}/[^/]*#/${product}/${version}#g"`
+      echo "${PATH}" | sed 's/:/\n/g' | grep "/${product}/"
     }
 
     P4PORT=localhost:1 export P4PORT
