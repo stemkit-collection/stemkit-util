@@ -239,6 +239,8 @@ act_as_rc()
         [ "${SHELLDEPTH:+set}" != set ] && {
           alias bye=exit
           alias logout=exit
+
+          set -o ignoreeof
         }
       ;;
     esac
@@ -305,6 +307,9 @@ act_as_rc()
         alias 'cdsrc=__cd__ `getdir src`'
         alias 'cdinc=__cd__ `getdir inc`'
         alias 'cdlib=__cd__ `getdir lib`'
+
+        set -o noclobber
+        set -o vi
       ;;
     esac
 
