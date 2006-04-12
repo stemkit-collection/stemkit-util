@@ -7,12 +7,12 @@
 
 $VERBOSE = nil
 
-[ 'sk/application.rb' ].each do |a|
+[ 'tsc/application.rb' ].each do |a|
   $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
   require a
 end
 
-require 'sk/errors.rb'
+require 'tsc/errors.rb'
 require 'yaml'
 require 'open3'
 
@@ -23,7 +23,7 @@ require 'open3'
 #   %u is replaced by the current URL, handy in 'svn log %u' command.
 #   %t is replaced by the top working directory.
 #
-class Application < SK::Application
+class Application < TSC::Application
   def start
     handle_errors {
       self.verbose = ENV['TRACE'].to_s.split.include?(script_name)
@@ -63,7 +63,7 @@ class Application < SK::Application
           YAML.parse(_io).transform
         }
       rescue Exception => exception
-        raise SK::Error.new("Error parsing #{resource_path.inspect}", exception)
+        raise TSC::Error.new("Error parsing #{resource_path.inspect}", exception)
       end
     else
       process_resource(File.dirname(directory), resource) unless directory == '/'
@@ -93,7 +93,7 @@ class Application < SK::Application
   def root
     @root ||= begin
       dot_info[ROOT_INFO] or ENV['SVN_ROOT'] or config['Root'] or begin
-        raise SK::Error.new('No repository root found') 
+        raise TSC::Error.new('No repository root found') 
       end
     end
   end

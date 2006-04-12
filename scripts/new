@@ -7,7 +7,7 @@
 
 $VERBOSE = nil
 
-[ 'sk/application.rb' ].each do |a|
+[ 'tsc/application.rb' ].each do |a|
   $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
   require a
 end
@@ -16,7 +16,7 @@ end
 # to specification provided in a configuration file (src/config/new.yaml or
 # ~/.new.yaml).
 #
-class Application < SK::Application
+class Application < TSC::Application
   def initialize
     super('<class_name> ...',
       [ '--config', 'Use config file', 'yaml_file', '-c' ],
@@ -36,9 +36,9 @@ class Application < SK::Application
       require 'yaml'
 
       throw :TEST if options.has_key?('test')
-      raise SK::UsageError, 'Nothing to do' if ARGV.empty?
+      raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
 
-      SK::Error.undo(Exception) do |_stack|
+      TSC::Error.undo(Exception) do |_stack|
         generator = Generator.new(options, _stack)
         ARGV.each do |_name|
           generate _name, generator

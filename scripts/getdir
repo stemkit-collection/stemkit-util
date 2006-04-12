@@ -2,19 +2,19 @@
 
 $VERBOSE = nil
 
-[ 'sk/application.rb' ].each do |a|
+[ 'tsc/application.rb' ].each do |a|
   $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
   require a
 end                                                                                                                      
 
-class Application < SK::Application
+class Application < TSC::Application
   def initialize
     super((scopedirs + topscopedirs + [ 'lib', 'inc' ]).join('|'))
   end
 
   def main
     start do
-      raise SK::UsageError, 'No scope directory specified' unless ARGV.size == 1
+      raise TSC::UsageError, 'No scope directory specified' unless ARGV.size == 1
       puts File.join(process(ARGV.first).flatten)
     end
   end
@@ -33,7 +33,7 @@ class Application < SK::Application
       when *topscopedirs
         [ scope.first, directory[3 .. -1] ]
       else
-        raise SK::UsageError, "Wrong scope directory #{directory.inspect}"
+        raise TSC::UsageError, "Wrong scope directory #{directory.inspect}"
     end
   end
 

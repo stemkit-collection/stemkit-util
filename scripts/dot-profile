@@ -182,9 +182,7 @@ eval <<'RUBY'
     end
     def sysid
       @sysid ||= begin
-	require 'sk/platform.rb'
-	SK::Platform.current.name
-      rescue LoadError
+	require 'tsc/platform.rb'
 	PLATFORM
       end
     end
