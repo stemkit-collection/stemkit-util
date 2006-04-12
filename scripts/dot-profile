@@ -183,6 +183,8 @@ eval <<'RUBY'
     def sysid
       @sysid ||= begin
 	require 'tsc/platform.rb'
+	TSC::Platform.current.name
+      rescue LoadError
 	PLATFORM
       end
     end
@@ -277,7 +279,18 @@ act_as_rc()
       version="${2}"
 
       export PATH=`echo ${PATH} | sed "s#/${product}/[^/]*#/${product}/${version}#g"`
-      echo "${PATH}" | sed 's/:/\n/g' | grep "/${product}/"
+
+      IFS=':'
+      set -- ${PATH}
+      unset IFS
+
+      for path in "${@}"; do
+        case "${path}" in
+          */${product}/*)
+            echo "${path}"
+          ;;
+        esac
+      done
     }
 
     P4PORT=localhost:1 export P4PORT
