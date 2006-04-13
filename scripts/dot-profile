@@ -184,7 +184,7 @@ eval <<'RUBY'
       @sysid ||= begin
 	require 'tsc/platform.rb'
 	TSC::Platform.current.name
-      rescue LoadError
+      rescue LoadError, TSC::Platform::UnsupportedError
 	PLATFORM
       end
     end
