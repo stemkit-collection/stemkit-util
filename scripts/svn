@@ -5,130 +5,142 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
-$VERBOSE = nil
+if defined? Installation::Generator
+  class Generator < Installation::Generator
+    def create(io)
+      bindir = File.join(self.class.installation_tools, 'bin')
+      [
+        '#!' + File.join(bindir, 'ruby'),
+        "ENV['PATH'] = [ #{bindir.inspect}, *ENV.to_hash['PATH'].split(':') ].join(':')"
+      ] + IO::readlines(__FILE__).slice(1..-1)
+    end
+  end
+else
+  $VERBOSE = nil
 
-[ 'tsc/application.rb' ].each do |a|
-  $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
-  require a
-end
-
-require 'tsc/errors.rb'
-require 'yaml'
-require 'open3'
-
-# This is a Subversion front-end that transforms its arguments as follows:
-#   %r is replaced by a repository root found either in environment variable
-#     SVN_ROOT or in the first file .svnrc found in the current directory or
-#     any directory up to '/'  (YAML property 'Root').
-#   %u is replaced by the current URL, handy in 'svn log %u' command.
-#   %t is replaced by the top working directory.
-#
-class Application < TSC::Application
-  def start
-    handle_errors {
-      self.verbose = ENV['TRACE'].to_s.split.include?(script_name)
-
-      commands = find_in_path(script_name)
-      commands.shift while commands.first == $0
-
-      raise "No #{script_name.inspect} in PATH" if commands.empty?
-      invoke commands.first
-    }
+  [ 'tsc/application.rb' ].each do |a|
+    $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
+    require a
   end
 
-  private
-  #######
+  require 'tsc/errors.rb'
+  require 'yaml'
+  require 'open3'
 
-  ROOT_INFO = 'Repository Root'
-  URL_INFO = 'URL'
+  # This is a Subversion front-end that transforms its arguments as follows:
+  #   %r is replaced by a repository root found either in environment variable
+  #     SVN_ROOT or in the first file .svnrc found in the current directory or
+  #     any directory up to '/'  (YAML property 'Root').
+  #   %u is replaced by the current URL, handy in 'svn log %u' command.
+  #   %t is replaced by the top working directory.
+  #
+  class Application < TSC::Application
+    def start
+      handle_errors {
+        self.verbose = ENV['TRACE'].to_s.split.include?(script_name)
 
-  def invoke(command)
-    @command = command
-    exec command, *ARGV.map { |_item|
-      _item.gsub(%r{%[rtu]}i) { |_match|
-        case _match.downcase
-          when '%r' then root
-          when '%u' then url
-          when '%t' then top
-        end
+        commands = find_in_path(script_name)
+        commands.shift while commands.first == $0
+
+        raise "No #{script_name.inspect} in PATH" if commands.empty?
+        invoke commands.first
       }
-    }
-  end
+    end
 
-  def process_resource(directory, resource)
-    resource_path = File.join directory, resource
-    if File.exists? resource_path
-      begin
-        File.open(resource_path) { |_io|
-          YAML.parse(_io).transform
+    private
+    #######
+
+    ROOT_INFO = 'Repository Root'
+    URL_INFO = 'URL'
+
+    def invoke(command)
+      @command = command
+      exec command, *ARGV.map { |_item|
+        _item.gsub(%r{%[rtu]}i) { |_match|
+          case _match.downcase
+            when '%r' then root
+            when '%u' then url
+            when '%t' then top
+          end
         }
-      rescue Exception => exception
-        raise TSC::Error.new("Error parsing #{resource_path.inspect}", exception)
-      end
-    else
-      process_resource(File.dirname(directory), resource) unless directory == '/'
+      }
     end
-  end
 
-  def config
-    @config ||= begin 
-      process_resource(Dir.pwd, '.svnrc') or Hash.new
-    end
-  end
-
-  def info(location)
-    Open3.popen3("#{@command} info #{location}") do |_in, _out, _err|
-      YAML.parse(_out).transform rescue Hash.new
-    end
-  end
-
-  def dot_info
-    @dot_info ||= info('.')
-  end
-
-  def url
-    @url ||= dot_info[URL_INFO]
-  end
-
-  def root
-    @root ||= begin
-      dot_info[ROOT_INFO] or ENV['SVN_ROOT'] or config['Root'] or begin
-        raise TSC::Error.new('No repository root found') 
+    def process_resource(directory, resource)
+      resource_path = File.join directory, resource
+      if File.exists? resource_path
+        begin
+          File.open(resource_path) { |_io|
+            YAML.parse(_io).transform
+          }
+        rescue Exception => exception
+          raise TSC::Error.new("Error parsing #{resource_path.inspect}", exception)
+        end
+      else
+        process_resource(File.dirname(directory), resource) unless directory == '/'
       end
     end
-  end
 
-  def locate_top(*components)
-    upper = [ '..', *components ]
-    info(File.join(upper))[ROOT_INFO] == root ? locate_top(upper) : components
-  end
+    def config
+      @config ||= begin 
+        process_resource(Dir.pwd, '.svnrc') or Hash.new
+      end
+    end
 
-  def top
-    @top ||= begin
-      File.join locate_top('.')
+    def info(location)
+      Open3.popen3("#{@command} info #{location}") do |_in, _out, _err|
+        YAML.parse(_out).transform rescue Hash.new
+      end
+    end
+
+    def dot_info
+      @dot_info ||= info('.')
+    end
+
+    def url
+      @url ||= dot_info[URL_INFO]
+    end
+
+    def root
+      @root ||= begin
+        dot_info[ROOT_INFO] or ENV['SVN_ROOT'] or config['Root'] or begin
+          raise TSC::Error.new('No repository root found') 
+        end
+      end
+    end
+
+    def locate_top(*components)
+      upper = [ '..', *components ]
+      info(File.join(upper))[ROOT_INFO] == root ? locate_top(upper) : components
+    end
+
+    def top
+      @top ||= begin
+        File.join locate_top('.')
+      end
     end
   end
-end
 
-unless defined? Test::Unit::TestCase
-  catch :TEST do
-    Application.new.start
-    exit 0
-  end
-end
-
-require 'test/unit'
-
-class ApplicationTest < Test::Unit::TestCase
-  def test_something
-    flunk 'Not implemented'
+  unless defined? Test::Unit::TestCase
+    catch :TEST do
+      Application.new.start
+      exit 0
+    end
   end
 
-  def setup
-    @app = Application.new
-  end
+  require 'test/unit'
 
-  def teardown
-    @app = nil
+  class ApplicationTest < Test::Unit::TestCase
+    def test_something
+      flunk 'Not implemented'
+    end
+
+    def setup
+      @app = Application.new
+    end
+
+    def teardown
+      @app = nil
+    end
   end
 end

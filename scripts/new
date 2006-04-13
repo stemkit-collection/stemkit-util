@@ -5,663 +5,676 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
-$VERBOSE = nil
+if defined? Installation::Generator
+  class Generator < Installation::Generator
+    def create(io)
+      bindir = File.join(self.class.installation_tools, 'bin')
+      [
+        '#!' + File.join(bindir, 'ruby'),
+        "ENV['PATH'] = [ #{bindir.inspect}, *ENV.to_hash['PATH'].split(':') ].join(':')"
+      ] + IO::readlines(__FILE__).slice(1..-1)
+    end
+  end
+else
+  $VERBOSE = nil
 
-[ 'tsc/application.rb' ].each do |a|
-  $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
-  require a
-end
-
-# This script performs code generation for c/c++ and ruby classes according
-# to specification provided in a configuration file (src/config/new.yaml or
-# ~/.new.yaml).
-#
-class Application < TSC::Application
-  def initialize
-    super('<class_name> ...',
-      [ '--config', 'Use config file', 'yaml_file', '-c' ],
-      [ '--namespace', 'Use namespace', 'string', '-n' ],
-      [ '--local', 'Enforce file creation in the current directory', nil, '-l' ],
-      [ '--indent', 'Use so many spaces for indent (2 by default)', 'number', '-i' ],
-      [ '--print', 'Print out instead of creating files', nil, '-p' ],
-      [ '--mode', 'Set generation mode (e.g. test)', 'mode', '-m' ],
-      [ '--test', 'Run internal tests', nil ]
-    )
+  [ 'tsc/application.rb' ].each do |a|
+    $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
+    require a
   end
 
-  def start
-    handle_errors {
-      process_command_line
-      require 'etc'
-      require 'yaml'
+  # This script performs code generation for c/c++ and ruby classes according
+  # to specification provided in a configuration file (src/config/new.yaml or
+  # ~/.new.yaml).
+  #
+  class Application < TSC::Application
+    def initialize
+      super('<class_name> ...',
+        [ '--config', 'Use config file', 'yaml_file', '-c' ],
+        [ '--namespace', 'Use namespace', 'string', '-n' ],
+        [ '--local', 'Enforce file creation in the current directory', nil, '-l' ],
+        [ '--indent', 'Use so many spaces for indent (2 by default)', 'number', '-i' ],
+        [ '--print', 'Print out instead of creating files', nil, '-p' ],
+        [ '--mode', 'Set generation mode (e.g. test)', 'mode', '-m' ],
+        [ '--test', 'Run internal tests', nil ]
+      )
+    end
 
-      throw :TEST if options.has_key?('test')
-      raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
+    def start
+      handle_errors {
+        process_command_line
+        require 'etc'
+        require 'yaml'
 
-      TSC::Error.undo(Exception) do |_stack|
-        generator = Generator.new(options, _stack)
-        ARGV.each do |_name|
-          generate _name, generator
+        throw :TEST if options.has_key?('test')
+        raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
+
+        TSC::Error.undo(Exception) do |_stack|
+          generator = Generator.new(options, _stack)
+          ARGV.each do |_name|
+            generate _name, generator
+          end
         end
-      end
-    }
-  end
+      }
+    end
 
-  def global_namespace=(namespace)
-    @global_namespace = split_namespace namespace
-  end
+    def global_namespace=(namespace)
+      @global_namespace = split_namespace namespace
+    end
 
-  private
-  #######
-  def generate(name, generator)
-    namespace = split_namespace(name)
-    name, extention = namespace.pop.scan(%r{^(.+?)(?:[.](.+))?$}).first
+    private
+    #######
+    def generate(name, generator)
+      namespace = split_namespace(name)
+      name, extention = namespace.pop.scan(%r{^(.+?)(?:[.](.+))?$}).first
 
-    generator.guess(name, global_namespace + namespace, extention.to_s)
-  end
+      generator.guess(name, global_namespace + namespace, extention.to_s)
+    end
 
-  def global_namespace
-    @global_namespace ||= split_namespace options['namespace']
-  end
+    def global_namespace
+      @global_namespace ||= split_namespace options['namespace']
+    end
 
-  def split_namespace(namespace)
-    namespace.to_s.split(%r{:+})
-  end
-end
-
-class Generator
-  attr_reader :options, :undo_stack
-
-  def initialize(options, *args)
-    @options = options
-    @undo_stack = args.first
-  end
-
-  def guess(name, namespace, extention)
-    case extention
-      when ''
-        cc_header name, namespace, 'h'
-        cc_body name, namespace, 'cc'
-      when 'h'
-        cc_header name, namespace, extention
-      when 'cc'
-        cc_body name, namespace, extention
-      when 'c'
-        c name, namespace, extention
-      when 'rb'
-        ruby name, namespace, extention
-      else
-        raise "Unsupported type #{extention.inspect} for #{name.inspect}"
+    def split_namespace(namespace)
+      namespace.to_s.split(%r{:+})
     end
   end
 
-  def cc_header(name, namespace, extention)
-    filename = locator.figure_for 'include', name, extention
-    namespace = locator.namespace(namespace)
+  class Generator
+    attr_reader :options, :undo_stack
 
-    save filename, name, namespace, [
-      append_newline_if(make_c_comments(make_copyright_notice)),
-      make_h_guard(namespace, name) {
-        [
-          '',
-          append_newline_if(make_includes(config.header_includes)),
-          make_namespace(namespace) {
-            make_class_definition(name)
-          },
-          ''
-        ]
-      }
-    ]
-  end
+    def initialize(options, *args)
+      @options = options
+      @undo_stack = args.first
+    end
 
-  def cc_body(name, namespace, extention)
-    filename = locator.figure_for 'lib', name, extention
-    namespace = locator.namespace(namespace)
-    scope = (namespace + [ name, '' ]).join('::')
+    def guess(name, namespace, extention)
+      case extention
+        when ''
+          cc_header name, namespace, 'h'
+          cc_body name, namespace, 'cc'
+        when 'h'
+          cc_header name, namespace, extention
+        when 'cc'
+          cc_body name, namespace, extention
+        when 'c'
+          c name, namespace, extention
+        when 'rb'
+          ruby name, namespace, extention
+        else
+          raise "Unsupported type #{extention.inspect} for #{name.inspect}"
+      end
+    end
 
-    save filename, name, namespace, [
-      make_c_comments(make_copyright_notice),
-      prepend_newline_if(make_includes(config.body_includes)),
-      prepend_newline_if(make_includes([ locator.header_specification(name, extention) ])),
-      config.constructors.map { |_constructor|
-        [
-          '',
-          scope,
-          "#{name}#{_constructor.parameters}",
-          indent(make_initialization_list(config.initializes)),
-          '{',
-           indent(_constructor.body),
-          '}'
-        ]
-      },
-      config.destructors.map { |_destructor|
-        [
-          '',
-          scope,
-          "~#{name}()",
-          '{',
-          indent(_destructor.body),
-          '}'
-        ]
-      },
-      (config.public_methods + config.protected_methods + config.private_methods).map { |_method|
-        [
-          '',
-          _method.returns,
-          scope,
-          _method.signature,
-          '{',
-          indent(_method.body),
-          '}'
-        ]
-      }
-    ]
-  end
+    def cc_header(name, namespace, extention)
+      filename = locator.figure_for 'include', name, extention
+      namespace = locator.namespace(namespace)
 
-  def c(name, namespace, extention)
-    save "#{name}.#{extention}", name, namespace, [
-      make_c_comments(make_copyright_notice),
-      prepend_newline_if(make_namespace(namespace))
-    ]
-  end
-
-  def ruby(name, namespace, extention)
-    save "#{name}.#{extention}", name, namespace, [
-      append_newline_if(make_ruby_comments(make_copyright_notice)),
-      make_ruby_modules(namespace) {
-        [
-          "class #{ruby_module_name(name)}",
-          'end'
-        ]
-      },
-      '',
-      'if $0 == __FILE__ or defined?(Test::Unit::TestCase)',
-      indent(
-        "require 'test/unit'",
-        '',
-        make_ruby_modules(namespace) {
+      save filename, name, namespace, [
+        append_newline_if(make_c_comments(make_copyright_notice)),
+        make_h_guard(namespace, name) {
           [
-            "class #{ruby_module_name(name)}Test < Test::Unit::TestCase",
-            indent(
-              'def setup',
-              'end',
-              '',
-              'def teardown',
-              'end'
-            ),
-            'end'
+            '',
+            append_newline_if(make_includes(config.header_includes)),
+            make_namespace(namespace) {
+              make_class_definition(name)
+            },
+            ''
           ]
         }
-      ),
-      'end'
-    ]
-  end
-
-  private
-  #######
-
-  def config
-    @config ||= Config.new(options)
-  end
-
-  def locator
-    @locator ||= Locator.new(options, Dir.pwd)
-  end
-
-  def ruby_module_name(name)
-    name.split(%r{[_-]}).map { |_part| _part[0,1].upcase + _part[1..-1] }.join
-  end
-
-  def make_ruby_modules(namespace, &block)
-    return block.call if namespace.empty?
-    [
-      "module #{ruby_module_name(namespace.first)}",
-      indent(
-        make_ruby_modules(namespace[1..-1], &block)
-      ),
-      'end'
-    ]
-  end
-
-  def make_namespace(namespace, &block)
-    block ||= proc {
-      []
-    }
-    return block.call if namespace.empty?
-    [
-      "namespace #{namespace.first} {",
-      indent(
-        make_namespace(namespace[1..-1], &block)
-      ),
-      '}'
-    ]
-  end
-
-  def decorate(content, &block)
-    (block.nil? or content.empty?) ? content : block.call(content)
-  end
-
-  def make_class_definition(name)
-    [ 
-      "class #{name}",
-      indent(make_initialization_list(config.extends)),
-      '{',
-      indent(
-        append_newline_if(config.class_init),
-        decorate(
-          append_newline_if(
-            config.constructors.map { |_constructor|
-              "#{name}#{_constructor.parameters};"
-            } + 
-            config.destructors.map { |_destructor|
-              "#{_destructor.type} ~#{name}();".strip
-            }
-          ) +
-          append_newline_if(make_method_definition(config.public_methods))
-        ) { |_out|
-          [ 'public:', indent(_out) ]
-        },
-        decorate(make_method_definition(config.protected_methods)) { |_out| 
-          [ 'protected:', indent(_out), '' ]
-        },
-        'private:',
-        indent(
-          "#{name}(const #{name}& other);",
-          "#{name}& operator = (const #{name}& other);",
-          prepend_newline_if(make_method_definition(config.private_methods)),
-          prepend_newline_if(config.data)
-        )
-      ),
-      '};'
-    ]
-  end
-
-  def prepend_newline_if(content)
-    content.empty? ? content : [ '', content ]
-  end
-
-  def append_newline_if(content)
-    content.empty? ? content : [ content, '' ]
-  end
-
-  def save(file, name, namespace, *content)
-    if options.has_key?('print')
-      $stderr.puts "=== #{file}"
-      output name, namespace, content, $stdout
-    else
-      
-      File.open(file, File::CREAT | File::EXCL | File::WRONLY) do |_io|
-        @undo_stack.add {
-          File.unlink(file)
-          $stderr.puts "Removed: #{file}"
-        }
-        output name, namespace, content, _io
-      end
-      $stderr.puts "Created: #{file}"
-    end
-  end
-
-  def output(name, namespace, content, stream)
-    substitutions = Hash[
-      'FULL_CLASS_NAME' => (namespace + [name]).join('::'),
-      'CLASS_NAME' => name,
-      'NAMESPACE' => namespace.join('::')
-    ]
-    pattern = Regexp.new substitutions.keys.map { |_variable|
-      Regexp.quote('#{' + _variable + '}')
-    }.join('|')
-
-    stream.puts content.flatten.join("\n").gsub(pattern) { |_match|
-      substitutions[_match[2...-1]]
-    }
-  end
-
-  def make_includes(includes)
-    return includes if includes.empty?
-    includes.map { |_include|
-      "#include #{_include}"
-    }
-  end
-
-  def make_copyright_notice
-    @notice ||= begin
-      result = config.copyright_holders.map { |_holder|
-        "Copyright (c) #{Time.now.year}, #{_holder}"
-      }
-      license = config.license
-      return result if license.empty? or result.empty?
-      result + [''] + license
-    end
-  end
-
-  def make_method_definition(methods)
-    return methods if methods.empty?
-    methods.map { |_method|
-      [
-        _method.comments,
-        "#{_method.returns} #{_method.signature};"
       ]
-    }
-  end
-
-  def indent(*content)
-    @indent_prefix ||= begin
-      indent = options['indent'].to_i
-      ' ' * (indent.zero? ? 2 : indent)
     end
-    content.flatten.map { |_line| (@indent_prefix) + _line } 
-  end
-   
-  def make_initialization_list(content)
-    return content if content.empty?
-    [ ': ' + content.first, *content[1..-1].map { |_line| '  ' + _line } ]
-  end
 
-  def make_h_guard(*args)
-    tag = "_#{args.flatten.join('_').upcase}_"
-    [
-      "#ifndef #{tag}",
-      "#define #{tag}",
-      yield,
-      "#endif /* #{tag} */"
-    ]
-  end
+    def cc_body(name, namespace, extention)
+      filename = locator.figure_for 'lib', name, extention
+      namespace = locator.namespace(namespace)
+      scope = (namespace + [ name, '' ]).join('::')
 
-  def make_ruby_comments(lines)
-    lines.map { |_line|
-      '# ' + _line
-    }
-  end
+      save filename, name, namespace, [
+        make_c_comments(make_copyright_notice),
+        prepend_newline_if(make_includes(config.body_includes)),
+        prepend_newline_if(make_includes([ locator.header_specification(name, extention) ])),
+        config.constructors.map { |_constructor|
+          [
+            '',
+            scope,
+            "#{name}#{_constructor.parameters}",
+            indent(make_initialization_list(config.initializes)),
+            '{',
+             indent(_constructor.body),
+            '}'
+          ]
+        },
+        config.destructors.map { |_destructor|
+          [
+            '',
+            scope,
+            "~#{name}()",
+            '{',
+            indent(_destructor.body),
+            '}'
+          ]
+        },
+        (config.public_methods + config.protected_methods + config.private_methods).map { |_method|
+          [
+            '',
+            _method.returns,
+            scope,
+            _method.signature,
+            '{',
+            indent(_method.body),
+            '}'
+          ]
+        }
+      ]
+    end
 
-  def make_c_comments(lines)
-    return lines if lines.empty?
+    def c(name, namespace, extention)
+      save "#{name}.#{extention}", name, namespace, [
+        make_c_comments(make_copyright_notice),
+        prepend_newline_if(make_namespace(namespace))
+      ]
+    end
 
-    first, *rest = lines
-    return [ "// #{first}" ] if rest.empty?
+    def ruby(name, namespace, extention)
+      save "#{name}.#{extention}", name, namespace, [
+        append_newline_if(make_ruby_comments(make_copyright_notice)),
+        make_ruby_modules(namespace) {
+          [
+            "class #{ruby_module_name(name)}",
+            'end'
+          ]
+        },
+        '',
+        'if $0 == __FILE__ or defined?(Test::Unit::TestCase)',
+        indent(
+          "require 'test/unit'",
+          '',
+          make_ruby_modules(namespace) {
+            [
+              "class #{ruby_module_name(name)}Test < Test::Unit::TestCase",
+              indent(
+                'def setup',
+                'end',
+                '',
+                'def teardown',
+                'end'
+              ),
+              'end'
+            ]
+          }
+        ),
+        'end'
+      ]
+    end
 
-    [ "/*  #{first}" ] + rest.map { |_line| " *  #{_line}" } + [ '*/' ]
-  end
-end
+    private
+    #######
 
-class Config
-  def initialize(options, hash = nil)
-    @options = options
-    @config = (hash && check_config(hash, 'Bad given config')) || begin
-      parser = proc { |_io|
-        result = YAML.parse(_io)
-        result.transform if result
+    def config
+      @config ||= Config.new(options)
+    end
+
+    def locator
+      @locator ||= Locator.new(options, Dir.pwd)
+    end
+
+    def ruby_module_name(name)
+      name.split(%r{[_-]}).map { |_part| _part[0,1].upcase + _part[1..-1] }.join
+    end
+
+    def make_ruby_modules(namespace, &block)
+      return block.call if namespace.empty?
+      [
+        "module #{ruby_module_name(namespace.first)}",
+        indent(
+          make_ruby_modules(namespace[1..-1], &block)
+        ),
+        'end'
+      ]
+    end
+
+    def make_namespace(namespace, &block)
+      block ||= proc {
+        []
       }
-      file = find_config_file
-      if File.exist?(file)
-        check_config File.open(file, &parser), "Bad config in #{file.inspect}"
+      return block.call if namespace.empty?
+      [
+        "namespace #{namespace.first} {",
+        indent(
+          make_namespace(namespace[1..-1], &block)
+        ),
+        '}'
+      ]
+    end
+
+    def decorate(content, &block)
+      (block.nil? or content.empty?) ? content : block.call(content)
+    end
+
+    def make_class_definition(name)
+      [ 
+        "class #{name}",
+        indent(make_initialization_list(config.extends)),
+        '{',
+        indent(
+          append_newline_if(config.class_init),
+          decorate(
+            append_newline_if(
+              config.constructors.map { |_constructor|
+                "#{name}#{_constructor.parameters};"
+              } + 
+              config.destructors.map { |_destructor|
+                "#{_destructor.type} ~#{name}();".strip
+              }
+            ) +
+            append_newline_if(make_method_definition(config.public_methods))
+          ) { |_out|
+            [ 'public:', indent(_out) ]
+          },
+          decorate(make_method_definition(config.protected_methods)) { |_out| 
+            [ 'protected:', indent(_out), '' ]
+          },
+          'private:',
+          indent(
+            "#{name}(const #{name}& other);",
+            "#{name}& operator = (const #{name}& other);",
+            prepend_newline_if(make_method_definition(config.private_methods)),
+            prepend_newline_if(config.data)
+          )
+        ),
+        '};'
+      ]
+    end
+
+    def prepend_newline_if(content)
+      content.empty? ? content : [ '', content ]
+    end
+
+    def append_newline_if(content)
+      content.empty? ? content : [ content, '' ]
+    end
+
+    def save(file, name, namespace, *content)
+      if options.has_key?('print')
+        $stderr.puts "=== #{file}"
+        output name, namespace, content, $stdout
       else
-        check_config parser.call(DATA), 'Bad default config'
+        
+        File.open(file, File::CREAT | File::EXCL | File::WRONLY) do |_io|
+          @undo_stack.add {
+            File.unlink(file)
+            $stderr.puts "Removed: #{file}"
+          }
+          output name, namespace, content, _io
+        end
+        $stderr.puts "Created: #{file}"
       end
     end
 
-    return unless @options.has_key? 'mode'
+    def output(name, namespace, content, stream)
+      substitutions = Hash[
+        'FULL_CLASS_NAME' => (namespace + [name]).join('::'),
+        'CLASS_NAME' => name,
+        'NAMESPACE' => namespace.join('::')
+      ]
+      pattern = Regexp.new substitutions.keys.map { |_variable|
+        Regexp.quote('#{' + _variable + '}')
+      }.join('|')
 
-    mode = @config[@options['mode']]
-    @config.update mode if Hash === mode
-  end
-
-  def check_config(config, message)
-    raise message unless Hash === config
-    config
-  end
-
-  def copyright_holders
-    lines(@config['copyright_holders'] || user_credentials.gecos)
-  end
-
-  def license
-    lines @config['license']
-  end
-
-  def header_includes
-    lines @config['header_includes']
-  end
-
-  def body_includes
-    lines @config['body_includes']
-  end
-
-  def extends
-    lines @config['extends']
-  end
-
-  def initializes
-    lines @config['initializes']
-  end
-
-  def data
-    lines @config['data']
-  end
-  
-  def constructors
-    klass = Struct.new(:parameters, :body, :comments)
-    process_methods(@config['factory']) { |_returns, _name, _parameters, _body, _comments|
-      klass.new(_parameters, _body, _comments) if _name == 'constructor'
-    }.compact
-  end
-
-  def destructors
-    klass = Struct.new(:type, :body, :comments)
-    process_methods(@config['factory']) { |_returns, _name, _parameters, _body, _comments|
-      klass.new(_returns, _body, _comments) if _name == 'destructor'
-    }.compact
-  end
-
-  def class_init
-    lines @config['class_init']
-  end
-
-  def public_methods
-    @public_methods ||= map_methods(@config['public_methods'])
-  end
-
-  def protected_methods
-    @protected_methods ||= map_methods(@config['protected_methods'])
-  end
-
-  def private_methods
-    @private_methods ||= map_methods(@config['private_methods'])
-  end
-  
-  private
-  #######
-  def lines(content)
-    content.to_s.map { |_line| 
-      _line.chomp 
-    }
-  end
-
-  def process_methods(methods, &block)
-    return [] unless block and Hash === methods
-
-    methods.map { |_declaration, _body|
-      returns, name, parameters = _declaration.scan(%r{^(.*?)\s*(\w+)\s*([(][^)]*[)].*)$}).first
-      comments, body = lines(_body).partition { |_line|
-        _line.match %r{^\s*//}
+      stream.puts content.flatten.join("\n").gsub(pattern) { |_match|
+        substitutions[_match[2...-1]]
       }
-      block.call returns, name, parameters, body, comments
-    }
-  end
-  
+    end
 
-  def map_methods(methods)
-    klass = Struct.new(:returns, :signature, :body, :comments)
-    process_methods(methods) { |_returns, _name, _parameters, _body, _comments|
-      klass.new _returns, "#{_name}#{_parameters}", _body, _comments
-    }
-  end
+    def make_includes(includes)
+      return includes if includes.empty?
+      includes.map { |_include|
+        "#include #{_include}"
+      }
+    end
 
-  def find_config_file
-    config = 'config'
-    @config_file ||= @options.has_key?(config) ? @options[config] : begin
-      file = 'new.yaml'
-      src_from_current = Dir.pwd.scan(%r{^(.+/src)(/.*)*$}).first
+    def make_copyright_notice
+      @notice ||= begin
+        result = config.copyright_holders.map { |_holder|
+          "Copyright (c) #{Time.now.year}, #{_holder}"
+        }
+        license = config.license
+        return result if license.empty? or result.empty?
+        result + [''] + license
+      end
+    end
 
-      src_from_current && [ [], ['*'], ['*','*'] ].map { |_components|
-        Dir[ File.join(*([src_from_current.first] + _components + [config, file])) ]
-      }.flatten.first
-    end || File.join(user_credentials.dir, ".#{file}")
-  end
+    def make_method_definition(methods)
+      return methods if methods.empty?
+      methods.map { |_method|
+        [
+          _method.comments,
+          "#{_method.returns} #{_method.signature};"
+        ]
+      }
+    end
 
-  def user_credentials
-    @credentials ||= Etc.getpwuid
-  end
+    def indent(*content)
+      @indent_prefix ||= begin
+        indent = options['indent'].to_i
+        ' ' * (indent.zero? ? 2 : indent)
+      end
+      content.flatten.map { |_line| (@indent_prefix) + _line } 
+    end
+     
+    def make_initialization_list(content)
+      return content if content.empty?
+      [ ': ' + content.first, *content[1..-1].map { |_line| '  ' + _line } ]
+    end
 
-  def find_src_from_current
-    @src = Dir.pwd.gsub(%r{^(.+/src)(/.*)$}, '\1')
-  end
-end
+    def make_h_guard(*args)
+      tag = "_#{args.flatten.join('_').upcase}_"
+      [
+        "#ifndef #{tag}",
+        "#define #{tag}",
+        yield,
+        "#endif /* #{tag} */"
+      ]
+    end
 
-class Locator
-  def initialize(options, cwd)
-    @options, @cwd = options, cwd
+    def make_ruby_comments(lines)
+      lines.map { |_line|
+        '# ' + _line
+      }
+    end
 
-    @top, @kind, rest = @cwd.scan(%r{^(.+)/(lib|include)/(.*)*$}).first
-    @components = rest ? rest.split('/') : []
-  end
+    def make_c_comments(lines)
+      return lines if lines.empty?
 
-  def namespace(namespace)
-    namespace.empty? ? @components : namespace
-  end
+      first, *rest = lines
+      return [ "// #{first}" ] if rest.empty?
 
-  def figure_for(kind, name, extention)
-    file = name + '.' + extention
-    return file if (local? or @kind == kind)
-
-    directory = [ '..' ] * @components.size.next + [ kind, *@components ]
-    File.join directory, file
-  end
-
-  def header_specification(name, extention)
-    file = name + '.h'
-    return '"' + file + '"' if local?
-
-    '<' + File.join(@components, file) + '>'
-  end
-
-  private
-  #######
-  def local?
-    @is_local ||= (@options.has_key?('local') or @top.nil?)
-  end
-end
-
-unless defined? Test::Unit::TestCase
-  catch :TEST do
-    Application.new.start
-    exit 0
-  end
-end
-
-$VERBOSE = true
-
-require 'test/unit'
-
-class MockGenerator < Generator
-  attr_reader :trace
-
-  def initialize
-    super []
-  end
-
-  def cc_header(*args)
-    add_trace 'cc_header', *args
-  end
-
-  def cc_body(*args)
-    add_trace 'cc_body', *args
-  end
-
-  def c(*args)
-    add_trace 'c', *args
-  end
-
-  private
-  #######
-
-  def add_trace(*args)
-    (@trace ||= []).push args
-  end
-end
-
-class ApplicationTest < Test::Unit::TestCase
-  def test_split_namespace
-    assert_equal [], @app.send(:split_namespace, '')
-    assert_equal ['aaa'], @app.send(:split_namespace, 'aaa')
-    assert_equal ['aaa', 'bbb'], @app.send(:split_namespace, 'aaa::bbb')
-    assert_equal ['aaa', 'bbb'], @app.send(:split_namespace, 'aaa:bbb::')
-    assert_equal ['aaa.bbb'], @app.send(:split_namespace, 'aaa.bbb')
-  end
-
-  def test_generate_raises_for_unsupported_extention
-    assert_raises(RuntimeError) do
-      invoke_generate 'Abc.ccccc'
+      [ "/*  #{first}" ] + rest.map { |_line| " *  #{_line}" } + [ '*/' ]
     end
   end
 
-  def test_generate_no_extention
-    invoke_generate 'Abc'
+  class Config
+    def initialize(options, hash = nil)
+      @options = options
+      @config = (hash && check_config(hash, 'Bad given config')) || begin
+        parser = proc { |_io|
+          result = YAML.parse(_io)
+          result.transform if result
+        }
+        file = find_config_file
+        if File.exist?(file)
+          check_config File.open(file, &parser), "Bad config in #{file.inspect}"
+        else
+          check_config parser.call(DATA), 'Bad default config'
+        end
+      end
 
-    assert_equal 2, @generator.trace.size
-    assert_equal 'Abc', @generator.trace.first[1]
-    assert_equal [], @generator.trace.first[2]
+      return unless @options.has_key? 'mode'
 
-    setup
-    invoke_generate 'aaa::bbb:Abc'
+      mode = @config[@options['mode']]
+      @config.update mode if Hash === mode
+    end
 
-    assert_equal 2, @generator.trace.size
-    assert_equal 'Abc', @generator.trace.first[1]
-    assert_equal ['aaa', 'bbb'], @generator.trace.first[2]
+    def check_config(config, message)
+      raise message unless Hash === config
+      config
+    end
+
+    def copyright_holders
+      lines(@config['copyright_holders'] || user_credentials.gecos)
+    end
+
+    def license
+      lines @config['license']
+    end
+
+    def header_includes
+      lines @config['header_includes']
+    end
+
+    def body_includes
+      lines @config['body_includes']
+    end
+
+    def extends
+      lines @config['extends']
+    end
+
+    def initializes
+      lines @config['initializes']
+    end
+
+    def data
+      lines @config['data']
+    end
+    
+    def constructors
+      klass = Struct.new(:parameters, :body, :comments)
+      process_methods(@config['factory']) { |_returns, _name, _parameters, _body, _comments|
+        klass.new(_parameters, _body, _comments) if _name == 'constructor'
+      }.compact
+    end
+
+    def destructors
+      klass = Struct.new(:type, :body, :comments)
+      process_methods(@config['factory']) { |_returns, _name, _parameters, _body, _comments|
+        klass.new(_returns, _body, _comments) if _name == 'destructor'
+      }.compact
+    end
+
+    def class_init
+      lines @config['class_init']
+    end
+
+    def public_methods
+      @public_methods ||= map_methods(@config['public_methods'])
+    end
+
+    def protected_methods
+      @protected_methods ||= map_methods(@config['protected_methods'])
+    end
+
+    def private_methods
+      @private_methods ||= map_methods(@config['private_methods'])
+    end
+    
+    private
+    #######
+    def lines(content)
+      content.to_s.map { |_line| 
+        _line.chomp 
+      }
+    end
+
+    def process_methods(methods, &block)
+      return [] unless block and Hash === methods
+
+      methods.map { |_declaration, _body|
+        returns, name, parameters = _declaration.scan(%r{^(.*?)\s*(\w+)\s*([(][^)]*[)].*)$}).first
+        comments, body = lines(_body).partition { |_line|
+          _line.match %r{^\s*//}
+        }
+        block.call returns, name, parameters, body, comments
+      }
+    end
+    
+
+    def map_methods(methods)
+      klass = Struct.new(:returns, :signature, :body, :comments)
+      process_methods(methods) { |_returns, _name, _parameters, _body, _comments|
+        klass.new _returns, "#{_name}#{_parameters}", _body, _comments
+      }
+    end
+
+    def find_config_file
+      config = 'config'
+      @config_file ||= @options.has_key?(config) ? @options[config] : begin
+        file = 'new.yaml'
+        src_from_current = Dir.pwd.scan(%r{^(.+/src)(/.*)*$}).first
+
+        src_from_current && [ [], ['*'], ['*','*'] ].map { |_components|
+          Dir[ File.join(*([src_from_current.first] + _components + [config, file])) ]
+        }.flatten.first
+      end || File.join(user_credentials.dir, ".#{file}")
+    end
+
+    def user_credentials
+      @credentials ||= Etc.getpwuid
+    end
+
+    def find_src_from_current
+      @src = Dir.pwd.gsub(%r{^(.+/src)(/.*)$}, '\1')
+    end
   end
 
-  def test_generate_with_extention
-    invoke_generate 'aaa::Abc.cc'
+  class Locator
+    def initialize(options, cwd)
+      @options, @cwd = options, cwd
 
-    assert_equal 1, @generator.trace.size
-    assert_equal 'cc_body', @generator.trace.first[0]
-    assert_equal 'Abc', @generator.trace.first[1]
-    assert_equal ['aaa'], @generator.trace.first[2]
+      @top, @kind, rest = @cwd.scan(%r{^(.+)/(lib|include)/(.*)*$}).first
+      @components = rest ? rest.split('/') : []
+    end
+
+    def namespace(namespace)
+      namespace.empty? ? @components : namespace
+    end
+
+    def figure_for(kind, name, extention)
+      file = name + '.' + extention
+      return file if (local? or @kind == kind)
+
+      directory = [ '..' ] * @components.size.next + [ kind, *@components ]
+      File.join directory, file
+    end
+
+    def header_specification(name, extention)
+      file = name + '.h'
+      return '"' + file + '"' if local?
+
+      '<' + File.join(@components, file) + '>'
+    end
+
+    private
+    #######
+    def local?
+      @is_local ||= (@options.has_key?('local') or @top.nil?)
+    end
   end
 
-  def test_global_namespace_prepended
-    @app.global_namespace = 'vvv::zzz'
-    invoke_generate 'aaa::Abc.h'
-
-    assert_equal 1, @generator.trace.size
-    assert_equal 'cc_header', @generator.trace.first[0]
-    assert_equal 'Abc', @generator.trace.first[1]
-    assert_equal ['vvv', 'zzz', 'aaa'], @generator.trace.first[2]
+  unless defined? Test::Unit::TestCase
+    catch :TEST do
+      Application.new.start
+      exit 0
+    end
   end
 
-  def test_global_namespace_used
-    @app.global_namespace = 'vvv::zzz'
-    invoke_generate 'Abc.c'
+  $VERBOSE = true
 
-    assert_equal 1, @generator.trace.size
-    assert_equal 'c', @generator.trace.first[0]
-    assert_equal 'Abc', @generator.trace.first[1]
-    assert_equal ['vvv', 'zzz'], @generator.trace.first[2]
+  require 'test/unit'
+
+  class MockGenerator < Generator
+    attr_reader :trace
+
+    def initialize
+      super []
+    end
+
+    def cc_header(*args)
+      add_trace 'cc_header', *args
+    end
+
+    def cc_body(*args)
+      add_trace 'cc_body', *args
+    end
+
+    def c(*args)
+      add_trace 'c', *args
+    end
+
+    private
+    #######
+
+    def add_trace(*args)
+      (@trace ||= []).push args
+    end
   end
 
-  def invoke_generate(name)
-    @app.send :generate, name, @generator
-  end
+  class ApplicationTest < Test::Unit::TestCase
+    def test_split_namespace
+      assert_equal [], @app.send(:split_namespace, '')
+      assert_equal ['aaa'], @app.send(:split_namespace, 'aaa')
+      assert_equal ['aaa', 'bbb'], @app.send(:split_namespace, 'aaa::bbb')
+      assert_equal ['aaa', 'bbb'], @app.send(:split_namespace, 'aaa:bbb::')
+      assert_equal ['aaa.bbb'], @app.send(:split_namespace, 'aaa.bbb')
+    end
 
-  def setup
-    @generator = MockGenerator.new
-    @app = Application.new
-  end
+    def test_generate_raises_for_unsupported_extention
+      assert_raises(RuntimeError) do
+        invoke_generate 'Abc.ccccc'
+      end
+    end
 
-  def teardown
-    @app = nil
-    @generator = nil
+    def test_generate_no_extention
+      invoke_generate 'Abc'
+
+      assert_equal 2, @generator.trace.size
+      assert_equal 'Abc', @generator.trace.first[1]
+      assert_equal [], @generator.trace.first[2]
+
+      setup
+      invoke_generate 'aaa::bbb:Abc'
+
+      assert_equal 2, @generator.trace.size
+      assert_equal 'Abc', @generator.trace.first[1]
+      assert_equal ['aaa', 'bbb'], @generator.trace.first[2]
+    end
+
+    def test_generate_with_extention
+      invoke_generate 'aaa::Abc.cc'
+
+      assert_equal 1, @generator.trace.size
+      assert_equal 'cc_body', @generator.trace.first[0]
+      assert_equal 'Abc', @generator.trace.first[1]
+      assert_equal ['aaa'], @generator.trace.first[2]
+    end
+
+    def test_global_namespace_prepended
+      @app.global_namespace = 'vvv::zzz'
+      invoke_generate 'aaa::Abc.h'
+
+      assert_equal 1, @generator.trace.size
+      assert_equal 'cc_header', @generator.trace.first[0]
+      assert_equal 'Abc', @generator.trace.first[1]
+      assert_equal ['vvv', 'zzz', 'aaa'], @generator.trace.first[2]
+    end
+
+    def test_global_namespace_used
+      @app.global_namespace = 'vvv::zzz'
+      invoke_generate 'Abc.c'
+
+      assert_equal 1, @generator.trace.size
+      assert_equal 'c', @generator.trace.first[0]
+      assert_equal 'Abc', @generator.trace.first[1]
+      assert_equal ['vvv', 'zzz'], @generator.trace.first[2]
+    end
+
+    def invoke_generate(name)
+      @app.send :generate, name, @generator
+    end
+
+    def setup
+      @generator = MockGenerator.new
+      @app = Application.new
+    end
+
+    def teardown
+      @app = nil
+      @generator = nil
+    end
   end
 end
+
 __END__
 copyright_holders: |
 
