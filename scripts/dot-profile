@@ -278,7 +278,7 @@ act_as_rc()
       product="${1}"
       version="${2}"
 
-      export PATH=`echo ${PATH} | sed "s#/${product}/[^/]*#/${product}/${version}#g"`
+      export PATH=`echo ${PATH} | sed "s#/${product}/[^/:]*#/${product}/${version}#g"`
 
       IFS=':'
       set -- ${PATH}
