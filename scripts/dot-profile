@@ -10,7 +10,6 @@ eval <<'RUBY'
 
   class Profile
     PATH = %w{
-      /sbin 
       #{userinfo.dir}/projects/sf/stemkit-util/trunk/src/scripts
       #{userinfo.dir}/projects/sf/tsc-tpm/trunk/src/scripts
       #{userinfo.dir}/projects/sf/tsc-build/trunk/src/scripts
@@ -18,6 +17,7 @@ eval <<'RUBY'
       #{userinfo.dir}/bin/#{sysid} 
       #{userinfo.dir}/bin
       #{userinfo.dir}/local/#{sysid}/bin
+      /sbin 
       /opt/ansic/bin
       /usr/vac/bin
       /opt/SUNWspro/bin 
@@ -247,7 +247,7 @@ act_as_rc()
 
     PS1="[${SYSID}.${SERVER}:!]${PROMPT:-${USER}}${SHELLDEPTH:+_${SHELLDEPTH}}> "                          
     [ "${TERM}" = xterm ] && {
-      PS1=`printf "\033]0;${PROMPT:-${USER}}@${SERVER}\07\r"`"${PS1}"
+      PS1=`printf "\033]0;${PROMPT:-${USER}}@${SYSID}-${SERVER}\07\r"`"${PS1}"
     }
     export SHELLDEPTH=`expr "${SHELLDEPTH:-0}" + 1`
     PS2="(cont) "                                             
