@@ -122,7 +122,8 @@ class Generator
           make_namespace(namespace) {
             make_class_definition(name)
           },
-          ''
+          '',
+          append_newline_if(config.header_bottom)
         ]
       }
     ]
@@ -436,6 +437,10 @@ class Config
     lines @config['header_includes']
   end
 
+  def header_bottom
+    lines @config['header_bottom']
+  end
+
   def body_includes
     lines @config['body_includes']
   end
@@ -714,7 +719,10 @@ test:
     <cppunit/TestFixture.h>
     <cppunit/extensions/HelperMacros.h>
 
-  # body_includes: |
+  header_bottom: |
+    CPPUNIT_TEST_SUITE_REGISTRATION(#{FULL_CLASS_NAME});
+
+  body_includes: |
 
   extends: |
     public CppUnit::TestFixture
