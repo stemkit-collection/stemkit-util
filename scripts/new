@@ -138,6 +138,7 @@ class Generator
       make_c_comments(make_copyright_notice),
       prepend_newline_if(make_includes(config.body_includes)),
       prepend_newline_if(make_includes([ locator.header_specification(name, extention) ])),
+      prepend_newline_if(config.body_top),
       config.constructors.map { |_constructor|
         [
           '',
@@ -441,6 +442,10 @@ class Config
     lines @config['header_bottom']
   end
 
+  def body_top
+    lines @config['body_top']
+  end
+
   def body_includes
     lines @config['body_includes']
   end
@@ -719,8 +724,10 @@ test:
     <cppunit/TestFixture.h>
     <cppunit/extensions/HelperMacros.h>
 
-  header_bottom: |
+  body_top: |
     CPPUNIT_TEST_SUITE_REGISTRATION(#{FULL_CLASS_NAME});
+
+  header_bottom: |
 
   body_includes: |
 
