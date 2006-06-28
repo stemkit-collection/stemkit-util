@@ -273,7 +273,8 @@ act_as_rc()
     }
     ptweak() {
       [ "${#}" -eq 2 ] || {
-        echo "USAGE: ptweak <product> <old version> <new version>"
+        echo "USAGE: ptweak <product> <new version>"
+        return 1
       }
       product="${1}"
       version="${2}"
@@ -287,6 +288,28 @@ act_as_rc()
       for path in "${@}"; do
         case "${path}" in
           */${product}/*)
+            echo "${path}"
+          ;;
+        esac
+      done
+    }
+    pchange() {
+      [ "${#}" -eq 2 ] || {
+        echo "USAGE: pchange <from> <to> (${#})"
+        return 1
+      }
+      from="${1}"
+      to="${2}"
+
+      export PATH=`echo ${PATH} | sed "s#${from}#${to}#g"`
+
+      IFS=':'
+      set -- ${PATH}
+      unset IFS
+
+      for path in "${@}"; do
+        case "${path}" in
+          *${to}*)
             echo "${path}"
           ;;
         esac
