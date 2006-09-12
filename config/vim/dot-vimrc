@@ -1,0 +1,114 @@
+
+:if has("terminfo")
+:  set t_Co=8
+:  set t_Sf=[3%p1%dm
+:  set t_Sb=[4%p1%dm
+:else
+:  set t_Co=8
+:  set t_Sf=[3%dm
+:  set t_Sb=[4%dm
+:endif
+
+set nocompatible autowrite background=dark nowrap nohls
+set showmode showmatch autoindent shiftwidth=2 nowrapscan
+
+set expandtab smarttab softtabstop=8
+
+set hidden
+set history=50
+set viminfo='50,\"1000,%,n~/.viminfo
+
+set ruler
+set laststatus=2
+set keywordprg=man\ -a
+set bs=indent,start
+set ttyfast
+
+let mysyntaxfile = "~gbystrit/.vimsyntax"
+syntax on
+
+map  :set autoindent! cindent! autoindent?<CR>
+map  1G!Gjindent<CR>
+map  1G!Gjindent -p Sun-Style.jin<CR>
+
+map == /^[ 	]*{<CR>z.$
+map -- 0?^[ 	]*{<CR>z.$
+map }} mn>'m'n
+map {{ mn<'m'n
+
+imap <C-L> <C-X><C-L>
+imap <C-F> <C-X><C-F>
+
+command Make set makeprg=make <Bar> make
+command Jam  set makeprg=jam <Bar> make
+command Test make test
+command Open execute "!svn status \\%t"
+command Revert execute "!svn revert %" <Bar> e
+command Diff execute "!svn diff % | less"
+
+"set shellpipe=2>&1\|sed\ \'s/:\ warning:/\ [WARNING]/g\'\|tee
+
+command Syntax if exists("syntax_on") <Bar> syntax off <Bar> else <Bar> syntax on <Bar> endif
+command Wrap set wrap!
+
+map cc :cc<CR>
+map cn :cn<CR>
+map cp :cp<CR>
+map cl :cl<CR>
+map cm :Make<CR>
+map cj :Jam<CR>
+map co :Open<CR>
+map cs :Syntax<CR>
+map cd :Diff<CR>
+
+map <F1><F1> :help<CR>
+map <F1>m :Make <CR>
+map <F1>j :Jam<CR>
+map <F1>t :Test<CR>
+map <F1>c :cc<CR>
+map <F1>n :cn<CR>
+map <F1>p :cp<CR>
+map <F1>l :cl<CR>
+
+map <F2> :Syntax<CR>
+map <F3> :Wrap<CR>
+
+map <F1><F4> :Open<CR>
+map <F1><F5> :Open<CR>
+
+set tw=78
+
+if has("autocmd")
+ augroup cprog
+  au!
+  autocmd FileType *      set formatoptions=tcql nocindent comments&
+  autocmd FileType c,cpp  set formatoptions=croql cindent comments=fl:/**/,sl1:/**,mb:*,ex:*/,://,sl:/*,mb:**,ex:*/
+ augroup END
+endif
+
+set path=.,,*;~/products/*/*/src,/usr/include,/usr/local/include,/usr/local/lib/gcc-lib/*/*/include
+set tags=tags;~/products/*/*/src
+
+filetype on           " Enable fieltype detection
+filetype indent on    " Enable filetype-specific indenting
+filetype plugin on    " Enable filetype-specific plugins
+
+set foldmethod=syntax
+set foldtext=getline(v:foldstart)
+set foldlevel=10
+set fillchars=fold:\ " note the whitespace after   
+" not neccessary but useful (so you can use the TAB key to fold/unfold):
+map <TAB> za
+
+set cedit=<Esc>
+set cmdwinheight=1
+
+let Tlist_Enable_Fold_Column=0
+let Tlist_Exit_OnlyWindow=1
+let Tlist_Compact_Format=1
+
+"so ~gbystrit/.vim/fold/outlinetoggle.vim
+"augroup C
+"  au FileType c,cpp so ~bystr/.vim/fold/c-fold.vim
+"augroup END
+

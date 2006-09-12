@@ -252,15 +252,23 @@ act_as_rc()
     export SHELLDEPTH=`expr "${SHELLDEPTH:-0}" + 1`
     PS2="(cont) "                                             
 
-    __showdir__() {
-      [ "${#}" -le 1 ] && {
-        echo Current directory is $PWD
-      }
+    update_columns() {
       columns=`stty -a|sed -n 's/^.*columns[^0-9]* \([0-9][0-9]*\).*$/\1/p'`
       [ "${columns:+set}" = set ] || {
         columns=`stty -a|sed -n 's/^.* \([0-9][0-9]*\) columns.*$/\1/p'`
       }
-      COLUMNS=${columns:-80} ls "${@}"
+      export COLUMNS="${columns:-80}"
+      export COLS="${COLUMNS}"
+
+      unset columns
+    }
+
+    __showdir__() {
+      [ "${#}" -le 1 ] && {
+        echo Current directory is $PWD
+      }
+      update_columns
+      ls "${@}"
     }
     __dir__() {
       __showdir__ -axF "${@}" | less
@@ -315,14 +323,11 @@ act_as_rc()
         esac
       done
     }
-
-    P4PORT=localhost:1 export P4PORT
+    CDPATH=".:${HOME}/local/${SYSID}" export CDPATH
     EDITOR=vim export EDITOR
     VISUAL=vim export VISUAL
-    PAGER=less export PAGER
-    LESS=-XMFe export LESS
-    HISTSIZE=1000 export HISTSIZE
-    RI=-fbs export RI
+
+    update_columns
 
     case "${SHELL}" in
       */bash | */ksh)
@@ -377,6 +382,11 @@ act_as_profile()
   INPUTRC=~/.inputrc export INPUTRC
   JINDENT_PROPERTY="$HOME/.jindent" export JINDENT_PROPERTY
   EXINIT="so $HOME/.exrc" export EXINIT
+  P4PORT=localhost:1 export P4PORT
+  PAGER=less export PAGER
+  LESS=-XMFe export LESS
+  HISTSIZE=1000 export HISTSIZE
+  RI=-fbs export RI
 
   umask 2
   mesg y

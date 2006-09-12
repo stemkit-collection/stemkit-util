@@ -1,0 +1,22 @@
+"vim
+
+if &background == "dark"
+  hi Comment    term=bold ctermfg=DarkGrey guifg=#80a0ff
+  hi Constant   term=underline ctermfg=DarkCyan guifg=#ffa0a0
+  hi Special    term=bold ctermfg=Magenta guifg=Orange
+  hi Identifier term=underline cterm=bold ctermfg=Grey guifg=#40ffff
+  hi Statement  term=bold ctermfg=Brown guifg=#ffff60 gui=bold
+  hi PreProc    term=underline ctermfg=DarkGreen guifg=#ff80ff
+  hi Type       term=underline ctermfg=Brown guifg=#60ff60 gui=bold
+  hi Ignore     ctermfg=black guifg=bg
+else
+  hi Comment    term=bold ctermfg=DarkBlue guifg=Blue
+  hi Constant   term=underline ctermfg=DarkRed guifg=Magenta
+  hi Special    term=bold ctermfg=DarkMagenta guifg=SlateBlue
+  hi Identifier term=underline ctermfg=DarkCyan guifg=DarkCyan
+  hi Statement  term=bold ctermfg=Brown gui=bold guifg=Brown
+  hi PreProc    term=underline ctermfg=DarkMagenta guifg=Purple
+  hi Type       term=underline ctermfg=DarkGreen guifg=SeaGreen gui=bold
+  hi Ignore     ctermfg=white guifg=bg
+endif
+
