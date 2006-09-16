@@ -391,6 +391,7 @@ act_as_profile()
   umask 2
   mesg y
   stty intr ^c susp ^z kill ^u eol ^w erase ^h -tabs tostop 
+  ulimit -c unlimited
 
   case "${SHELL}" in
     */bash | */sh)
