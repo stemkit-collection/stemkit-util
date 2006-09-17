@@ -7,6 +7,15 @@
 module SK
   module Svn
     class Admin
+      attr_reader :repository, :revision
+      def initialize(repository, revision)
+        @repository = repository
+        @revision = revision
+      end
+
+      def dump(file)
+        launch "svnadmin dump -r #{revision} --incremental --deltas -q #{repository} > #{file}"
+      end
     end
   end
 end
