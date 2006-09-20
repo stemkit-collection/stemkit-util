@@ -11,10 +11,17 @@ if defined? Installation::Generator
       bindir = File.join(self.class.installation_tools, 'bin')
       [
         '#!' + File.join(bindir, 'ruby'),
-        "ENV['PATH'] = [ #{bindir.inspect}, *ENV.to_hash['PATH'].split(':') ].join(':')"
+        "ENV['PATH'] = [ #{bindir.inspect}, *ENV.to_hash['PATH'].split(':') ].join(':')",
+        "SVN_ORIGINAL = #{original(target).inspect}"
       ] + IO::readlines(__FILE__).slice(1..-1)
     end
+
+    def original(target)
+      directory, file = File.split(target)
+      File.join(directory, 'original', file)
+    end
   end
+
   throw :generator, Generator
 end
 
@@ -24,10 +31,6 @@ $VERBOSE = nil
   $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
   require a
 end
-
-require 'tsc/errors.rb'
-require 'yaml'
-require 'open3'
 
 # This is a Subversion front-end that transforms its arguments as follows:
 #   %r is replaced by a repository root found either in environment variable
@@ -40,12 +43,21 @@ class Application < TSC::Application
   def start
     handle_errors {
       self.verbose = ENV['TRACE'].to_s.split.include?(script_name)
+      localize_ruby_loadpath
 
-      commands = find_in_path(script_name)
-      commands.shift while commands.first == $0
+      require 'tsc/errors.rb'
+      require 'yaml'
+      require 'open3'
 
-      raise "No #{script_name.inspect} in PATH" if commands.empty?
-      invoke commands.first
+      if defined? SVN_ORIGINAL
+        invoke SVN_ORIGINAL
+      else
+        commands = find_in_path(script_name)
+        commands.shift while commands.first == $0
+
+        raise "No #{script_name.inspect} in PATH" if commands.empty?
+        invoke commands.first
+      end
     }
   end
 
