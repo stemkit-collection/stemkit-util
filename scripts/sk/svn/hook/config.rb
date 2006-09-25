@@ -21,6 +21,49 @@ module SK
         def repository_base
           @repository_base ||= File.expand_path(content['repository_base'])
         end
+
+        def request_wait_timeout
+          @request_wait_timeout ||= begin
+            timeout = content['request_wait_timeout'].to_s
+            timeout =~ %r{^\d+$} ? timeout.to_i : 60
+          end
+
+          @request_wait_timeout.zero? ? nil : @request_wait_timeout
+        end
+
+        def repository_path(repository)
+          File.join repository_base, repository
+        end
+
+        def plugins(repository)
+          list = repositories[repository]['plugins'] rescue nil
+          Array(list)
+        end
+
+        def notify(repository)
+          list = repositories[repository]['notify'] rescue nil
+          Array(list)
+        end
+
+        def url_base
+          content['url_base']
+        end
+
+        def admin
+          Array(content['admin'])
+        end
+
+        def notify_from
+          (content['notify_from'] || "nobody@#{domain}").to_s
+        end
+
+        def domain
+          (content['domain'] || 'localhost').to_s
+        end
+
+        def repositories
+          content['repository'] || Hash.new
+        end
       end
     end
   end

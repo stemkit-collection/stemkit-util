@@ -9,6 +9,7 @@ require 'timeout'
 
 require 'sk/process.rb'
 require 'sk/svn/hook/server.rb'
+require 'sk/svn/hook/error-mailer.rb'
 require 'tsc/ftools.rb'
 
 module SK
@@ -16,6 +17,8 @@ module SK
     module Hook
       class Manager
         attr_reader :name, :config, :repository
+
+        include ErrorMailer
 
         def initialize(name, config, repository)
           @name = name
@@ -72,11 +75,14 @@ module SK
               $stderr.reopen _io
             end
 
-            Thread.abort_on_exception
+            Thread.abort_on_exception = true
 
-            server = Hook::Server.new(name, config, repository)
-            DRb.start_service(service_uri, server)
-            DRb.thread.join
+            report_error('Server') {
+              server = Hook::Server.new(name, config, repository)
+              DRb.start_service(service_uri, server)
+              DRb.thread.join
+            }
+            exit
           end
         end
 

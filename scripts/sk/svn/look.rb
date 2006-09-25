@@ -4,6 +4,8 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
+require 'time'
+
 module SK
   module Svn
     class Look
@@ -70,7 +72,7 @@ module SK
       end
 
       def diff
-        @diff ||= svnlook('diff')
+        @diff ||= svnlook('diff',  '--no-diff-deleted', '--no-diff-added',  '--diff-copy-from')
       end
 
       def modified?
@@ -133,7 +135,7 @@ module SK
               when 'D'
                 hash[:deleted] << content
               when ' '
-                last_categorized_content << "\n    " << content
+                last_categorized_content << ' ' << content
                 next
               else
                 hash[:uncategorized] << _entry
