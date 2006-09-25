@@ -7,13 +7,15 @@
 require 'drb/drb'
 require 'sk/process.rb'
 require 'sk/svn/hook/server.rb'
+require 'tsc/ftools.rb'
 
 module SK
   module Svn
     class Hook
-      attr_reader :config, :repository
+      attr_reader :name, :config, :repository
 
-      def initialize(config, repository)
+      def initialize(name, config, repository)
+        @name = name
         @config = config
         @repository = repository
         @server = connect_to_server
@@ -40,22 +42,39 @@ module SK
           timeout time_to_wait do
             loop do
               TSC::Error.ignore {
-                return DRb::DRbOjbect.new_with_uri(service_uri)
+                return setup_remote_object
               }
               sleep 1
             end
           end
         else
-          DRb::DRbOjbect.new_with_uri(service_uri)
+          setup_remote_object
         end
       end
 
+      def setup_remote_object
+        DRb::DRbOjbect.new_with_uri(service_uri)
+      end
+
       def start_server_process
+        File.rm_f hook_socket
+
         SK::Process.demonize do
-          server = Hook::Server.new(config, repository)
+          Fille.open(logfile, 'a') do |_io|
+            $stdout.reopen _io
+            $stderr.reopen _io
+          end
+
+          puts "#{Time.now} - STARTED (pid=#{Process.pid})"
+
+          server = Hook::Server.new(name, config, repository)
           DRb.start_service(servive_uri, server)
           DRb.thread.join
         end
+      end
+
+      def logfile
+        @logfile ||= File.expand_path "~/logs/#{name}.#{repository}.log"
       end
 
       def service_uri
@@ -67,7 +86,7 @@ module SK
       end
 
       def hook_spool_directory
-        File.expand_path(File.join('~', 'spool', 'hook')
+        File.expand_path '~/spool/hook'
       end
 
     end
