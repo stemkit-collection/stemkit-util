@@ -4,7 +4,9 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
+require 'drb'
 require 'drb/drb'
+require 'drb/unix'
 require 'timeout'
 
 require 'sk/process.rb'

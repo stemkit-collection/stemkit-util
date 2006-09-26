@@ -69,7 +69,16 @@ class Application < TSC::Application
     ENV['LOGNAME'] = entry.name
     ENV['HOME'] = entry.dir
 
-    $:.concat ENV.to_hash['PATH'].split(':')
+    location = script_location
+
+    if File.symlink?(__FILE__)
+      location = File.dirname(File.readlink(__FILE__))
+    end
+
+    path = [ location, *ENV.to_hash['PATH'].split(':') ]
+    ENV['PATH'] = path.join(':')
+
+    $:.concat path
   end
 
   def config
