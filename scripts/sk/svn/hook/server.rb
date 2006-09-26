@@ -24,18 +24,21 @@ module SK
           @repository = repository
           @queue = TSC::SynchroQueue.new(true)
 
-          @processor = Thread.new do 
-            report_error('Hook server') {
-              begin
-                $stderr.puts "#{Time.now} - STARTED (pid=#{::Process.pid}, timeout=#{config.request_wait_timeout})"
-                loop do
-                  invoke_plugins_for @queue.get(config.request_wait_timeout)
+          @processor = Thread.new do
+            begin
+              report_error('Hook server') {
+                begin
+                  $stderr.puts "#{Time.now} - STARTED (pid=#{::Process.pid}, timeout=#{config.request_wait_timeout})"
+                  loop do
+                    invoke_plugins_for @queue.get(config.request_wait_timeout)
+                  end
+                rescue TSC::OperationFailed
                 end
-              rescue TSC::OperationFailed
-              end
-            }
-            $stderr.puts "#{Time.now} - FINISHED (pid=#{::Process.pid})"
-            exit
+              }
+              exit
+            ensure
+              $stderr.puts "#{Time.now} - FINISHED (pid=#{::Process.pid})"
+            end
           end
         end
 
@@ -69,8 +72,17 @@ module SK
           @plugins ||= begin
             config.plugins(repository).map { |_plugin|
               load_plugin(_plugin)
-            }.compact
-          end
+            } + [ SK::Svn::MailNotifier ]
+          end.compact.uniq.map { |_klass|
+            instantiate_plugin(_klass)
+          }.compact
+        end
+
+        def instantiate_plugin(plugin)
+          report_error('Plugin instantiation') {
+            return plugin.new(config)
+          }
+          nil
         end
 
         def load_plugin(spec)
@@ -78,10 +90,9 @@ module SK
             components = spec.split('::')
             require File.join(module_paths(components[0...-1]), class_file(components.last))
 
-            klass = components.inject(Module) { |_module, _constant|
+            return components.inject(Module) { |_module, _constant|
               _module.const_get(_constant)
             }
-            return klass.new(config)
           }
           nil
         end

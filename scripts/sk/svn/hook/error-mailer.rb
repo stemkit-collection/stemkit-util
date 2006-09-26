@@ -16,11 +16,18 @@ module SK
           begin
             block.call
           rescue Exception => exception
+            return if exception.is_a?(SystemExit)
 
             report = [
               "SNV(#{repository.inspect}): #{message}: #{exception.inspect}",
+              if exception.kind_of? TSC::Launcher::TerminateError
+                exception.errors.map { |_error|
+                  "  stderr> #{_error}"
+                }
+              end,
               *exception.backtrace
-            ]
+            ].flatten.compact
+
             $stderr.puts report
             begin
               notify_by_email(report)

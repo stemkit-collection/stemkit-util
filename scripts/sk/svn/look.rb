@@ -107,12 +107,12 @@ module SK
         changed[:uncategorized]
       end
 
-      private
-      #######
-
       def svnlook(*args)
         launch([ 'svnlook', args, '-r', revision, repository ].flatten).first
       end
+
+      private
+      #######
 
       def info
         @info ||= svnlook('info')
