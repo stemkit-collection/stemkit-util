@@ -4,6 +4,8 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
+require 'tsc/errors.rb'
+
 module SK
   class Process 
     class << self
@@ -15,12 +17,14 @@ module SK
         pid = fork do
           File.open('/dev/null', 'w+') do |_io|
             $stdin.reopen _io
+
             if blind
               $stdout.reopen _io
               $stderr.reopen _io
             end
           end
 
+          cleanup_file_descriptors 3...256
           setsid
 
           fork do
@@ -31,6 +35,14 @@ module SK
           exit!
         end
         waitpid pid
+      end
+
+      def cleanup_file_descriptors(descriptors)
+        descriptors.each do |_descriptor|
+          TSC::Error.ignore {
+            IO.open(_descriptor).close
+          }
+        end
       end
     end
   end

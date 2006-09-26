@@ -11,7 +11,7 @@ if defined? Installation::Generator
       bindir = File.join(self.class.installation_tools, 'bin')
       [
         '#!' + File.join(bindir, 'ruby'),
-        "ENV['PATH'] = [ #{bindir.inspect}, *ENV.to_hash['PATH'].split(':') ].join(':')"
+        "ENV['PATH'] = [ #{bindir.inspect}, *ENV.to_hash['PATH'].to_s.split(':') ].join(':')"
       ] + IO::readlines(__FILE__).slice(1..-1)
     end
   end
@@ -75,7 +75,7 @@ class Application < TSC::Application
       location = File.dirname(File.readlink(__FILE__))
     end
 
-    path = [ location, *ENV.to_hash['PATH'].split(':') ]
+    path = [ location, *ENV.to_hash['PATH'].to_s.split(':') ]
     ENV['PATH'] = path.join(':')
 
     $:.concat path
