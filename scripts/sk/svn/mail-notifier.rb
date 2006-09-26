@@ -23,7 +23,7 @@ module SK
 
         mail = MailFactory.new
 
-        mail.subject = "SVN(#{info.depot}): #{info.revision}: #{info.log[0...70]}"
+        mail.subject = "SVN[#{info.depot}] #{info.revision}: #{info.log.to_s.map.first[0...70]}"
         mail.from = "#{info.author}@#{config.domain}"
         mail.to = notification_list
         mail.text = [ info.digest(config.url_base), info.diff ].flatten.join("\n")
