@@ -23,6 +23,8 @@ class Application < TSC::Application
     handle_errors(Exception) {
       process_command_line
 
+      $: << script_location
+
       throw :TEST if options.has_key?('test')
       require 'sk/svn/build/manager.rb'
 
