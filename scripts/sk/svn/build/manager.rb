@@ -23,40 +23,96 @@ module SK
 
         def make
           TSC::Error.undo Exception do |_stack|
-            update_build_config(_stack)
-            launch [
-              'svn', 'cp', '-q', trunk_url, File.join(builds_url, last_build.next.to_s), '-m', reason
-            ]
+            if hierarchy_changed_since? last_build
+              next_build = last_build.next
+
+              api_changed = hierarchy_changed_since? last_build, 'include'
+              update_build_config(next_build, api_changed, _stack)
+
+              branch_off next_build
+              $stderr.puts "Created build #{next_build} for #{credentials}"
+            else
+              $stderr.puts "Last build #{last_build} is up to date for #{credentials}"
+            end
           end
         end
 
+        def credentials
+          "#{product} #{release} at #{top.inspect}"
+        end
+
         def last_build
-          builds.last.to_i
+          @last_build ||= builds.last.to_i
+        end
+
+        def branch_off(build)
+          launch [
+            'svn', 'cp', '-q', trunk_url, File.join(builds_url, build.to_s), 
+            '-m', "[BRANCH] #{product} #{release}, build #{build}"
+          ]
         end
 
         def builds
-          launch("svn ls #{builds_url}").first.map { |_entry|
-            _entry.scan(%r{^(\d+)/})
-          }.flatten.map { |_build|
+          collect_build_info.map { |_build|
             _build.to_i
           }.sort
+        end
+
+        def hierarchy_changed_since?(build, *locations)
+          return true if build == 0
+
+          dirs = locations.map { |_location|
+            _location.split(File::SEPARATOR)
+          }
+          dirs << [] if dirs.empty?
+
+          dirs.any? { |_item|
+            trunk_top = File.join(trunk_url, *_item)
+            build_top = File.join(builds_url, build.to_s, *_item)
+            launch("svn diff #{build_top} #{trunk_top}").first.empty? == false
+          }
         end
 
         private
         #######
 
-        def reason
-          "[Build #{last_build.next}]"
+        def product
+          build_config['product']
         end
 
-        def update_build_config(undo)
-          save_build_config build_config.merge('build' => last_build.next)
+        def release
+          build_config['release']
+        end
+
+        def collect_build_info
+          launch("svn ls #{builds_url}").first.map { |_entry|
+            _entry.scan(%r{^(\d+)/})
+          }.flatten
+        end
+
+        def update_build_config(build, is_api_changed, undo)
+          original_build_config = build_config.clone
           undo.add {
-            save_build_config build_config
+            build_config.replace original_build_config
+          }
+          message = [ "#{product} #{release} - new build #{build}" ]
+
+          build_config['build'] = build
+          build_config['library-major'] = 0 if build == 1
+
+          if is_api_changed
+            build_config['library-major'] += 1
+
+            message << "new library major #{build_config['library-major']}"
+          end
+
+          save_build_config build_config, message.join(', ')
+          undo.add {
+            save_build_config original_build_config, 'Revering to the previous content because of errors'
           }
         end
 
-        def save_build_config(config)
+        def save_build_config(config, message)
           cwd = Dir.getwd
           Dir.temporary(working_area) do
             Dir.cd cwd do
@@ -68,7 +124,7 @@ module SK
               end
 
               launch [
-                'svn', 'commit', file, '-m', "[Build #{config['build']}]"
+                'svn', 'commit', file, '-m', message
               ]
             end
           end
