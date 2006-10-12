@@ -73,7 +73,7 @@ eval <<'RUBY'
       export :SERVER, server
       export :SYSID, sysid
       export :USER, userinfo.name
-      export :HISTFILE, histfile
+      # export :HISTFILE, histfile
       # export :home, userinfo.dir
       export :PATH, path
       export :MANPATH, manpath
@@ -205,6 +205,7 @@ eval <<'RUBY'
   Profile.new.send ARGV.shift
   exit 0
 RUBY
+HISTFILE="/tmp/sh.history.${LOGNAME}"
 __END__() {
   true
 }
@@ -386,6 +387,7 @@ act_as_profile()
   PAGER=less export PAGER
   LESS=-XMFe export LESS
   HISTSIZE=1000 export HISTSIZE
+  export HISTFILE
   RI=-fbs export RI
 
   umask 2
