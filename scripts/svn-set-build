@@ -15,6 +15,7 @@ class Application < TSC::Application
 
   def initialize
     super('<repository path> ...',
+      [ '--dryrun', 'Do not do the actual changes', nil, '-n' ],
       [ '--test', 'Run internal tests', nil ]
     )
   end
@@ -32,7 +33,7 @@ class Application < TSC::Application
         ARGV.each do |_repository|
           _operations.add {
             manager = SK::Svn::Build::Manager.new(_repository)
-            manager.make
+            manager.make(options['dryrun'])
           }
         end
       }

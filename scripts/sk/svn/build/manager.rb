@@ -21,16 +21,19 @@ module SK
           @top = top
         end
 
-        def make
+        def make(dryrun = false)
           TSC::Error.undo Exception do |_stack|
             if hierarchy_changed_since? last_build
               next_build = last_build.next
 
               api_changed = hierarchy_changed_since? last_build, 'include'
-              update_build_config(next_build, api_changed, _stack)
 
-              branch_off next_build
-              $stderr.puts "Created build #{next_build} for #{credentials}"
+              unless dryrun
+                update_build_config(next_build, api_changed, _stack)
+                branch_off next_build
+              end
+
+              $stderr.puts "Created build #{next_build} (api=#{api_changed.inspect}) for #{credentials}"
             else
               $stderr.puts "Last build #{last_build} is up to date for #{credentials}"
             end
