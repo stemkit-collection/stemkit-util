@@ -16,6 +16,7 @@ class Application < TSC::Application
   def initialize
     super('<repository path> ...',
       [ '--dryrun', 'Do not do the actual changes', nil, '-n' ],
+      [ '--list', 'Read release list from file', 'file', '-f', '-l' ],
       [ '--test', 'Run internal tests', nil ]
     )
   end
@@ -30,13 +31,26 @@ class Application < TSC::Application
       require 'sk/svn/build/manager.rb'
 
       TSC::Error.persist { |_operations|
-        ARGV.each do |_repository|
+        (ARGV + list).each do |_repository|
           _operations.add {
             manager = SK::Svn::Build::Manager.new(_repository)
             manager.make(options['dryrun'])
           }
         end
       }
+    }
+  end
+
+  def list
+    @list ||= case file = options['list']
+      when nil 
+        []
+      when '-'
+        $stdin.readlines
+      else
+        IO.readlines(file)
+    end.map { |_line|
+      _line.strip
     }
   end
 
