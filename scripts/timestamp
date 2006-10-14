@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
+# 
+# Distributed under the MIT Licence.
+# This is free software. See 'LICENSE' for details.
+# You must read and accept the license prior to use.
+
+$:.concat ENV.to_hash['PATH'].to_s.split(':')
+
+require 'tsc/application.rb'
+require 'tsc/path.rb'
+
+class Application < TSC::Application
+
+  def start
+    handle_errors {
+      process_command_line
+
+      throw :TEST if options.has_key?('test')
+      raise TSC::UsageError unless ARGV.empty?
+
+      $stdout.sync = true
+
+      ARGF.each do |_line|
+        $stdout.puts Time.now.strftime("%m/%d/%y@%H:%M:%S") + ' ' + _line
+      end
+    }
+  end
+
+  in_generator_context do |_content|
+    _content << '#!' + figure_ruby_path
+    _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
+    _content << IO.readlines(__FILE__).slice(1..-1)
+  end
+
+end
+
+unless defined? Test::Unit::TestCase
+  catch :TEST do
+    Application.new.start
+    exit 0
+  end
+end
+
+require 'test/unit'
+
+class ApplicationTest < Test::Unit::TestCase
+  def test_something
+    flunk 'Not implemented'
+  end
+
+  def setup
+    @app = Application.new
+  end
+
+  def teardown
+    @app = nil
+  end
+end
