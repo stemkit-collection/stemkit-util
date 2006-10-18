@@ -5,6 +5,7 @@
 # You must read and accept the license prior to use.
 
 require 'net/smtp'
+require 'tsc/errors.rb'
 require 'tsc/contrib/mailfactory.rb'
 
 module SK
@@ -19,21 +20,15 @@ module SK
             return if exception.is_a?(SystemExit)
 
             report = [
-              "SNV(#{repository.inspect}): #{message}: #{exception.inspect}",
-              if exception.kind_of? TSC::Launcher::TerminateError
-                exception.errors.map { |_error|
-                  "  stderr> #{_error}"
-                }
-              end,
-              *exception.backtrace
-            ].flatten.compact
+              "SNV(#{repository.inspect}): #{message}",
+              *TSC::Error.textualize(exception, :stderr => true, :backtrace => true)
+            ]
 
             $stderr.puts report
             begin
               notify_by_email(report)
             rescue Exception => exception
-              $stderr.puts "ERROR: Mail notification failed: #{exception.inspect}"
-              $stderr.puts exception.backtrace
+              $stderr.puts "ERROR: Mail notification failed", TSC::Error.textualize(exception, :stderr =>true, :backtrace => true)
             end
           end
         end

@@ -67,7 +67,7 @@ class Application < TSC::Application
       location = File.dirname(File.readlink(__FILE__))
     end
 
-    path = [ location, *ENV.to_hash['PATH'].to_s.split(':') ]
+    path = [ location, '/bin', '/usr/bin', *ENV.to_hash['PATH'].to_s.split(':') ]
     ENV['PATH'] = path.join(':')
 
     $:.concat path
