@@ -80,7 +80,7 @@ module SK
         #######
 
         def product
-          build_config['product']
+          build_config['name']
         end
 
         def release
