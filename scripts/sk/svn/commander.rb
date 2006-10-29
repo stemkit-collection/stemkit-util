@@ -4,9 +4,32 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
-module Sk
+require 'tsc/launch.rb'
+
+module SK
   module Svn
     class Commander
+      attr_reader :launcher
+
+      def initialize
+        @launcher = TSC::Launcher.new
+      end
+
+      def info(path, revision)
+        svn 'info', path, ([ '-r', revision ] if revision)
+      end
+
+      def export(path, revision, target, *args)
+        svn 'export', '-r', revision, path, target, *args
+      end
+
+      def svn(*args)
+        launch 'svn', *args
+      end
+
+      def launch(*args)
+        laucher.launch(args.flatten.compact).first
+      end
     end
   end
 end
@@ -14,9 +37,12 @@ end
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'test/unit'
   
-  module Sk
+  module SK
     module Svn
       class CommanderTest < Test::Unit::TestCase
+        def test_nothing
+        end
+
         def setup
         end
         

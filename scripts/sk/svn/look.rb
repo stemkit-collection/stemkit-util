@@ -163,9 +163,12 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module Sk
     module Svn
       class LookTest < Test::Unit::TestCase
+        def test_nothing
+        end
+
         def setup
         end
-        
+
         def teardown
         end
       end

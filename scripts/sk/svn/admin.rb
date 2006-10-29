@@ -23,9 +23,12 @@ end
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'test/unit'
   
-  module Sk
+  module SK
     module Svn
       class AdminTest < Test::Unit::TestCase
+        def test_nothing
+        end
+
         def setup
         end
         
