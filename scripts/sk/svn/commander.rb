@@ -28,7 +28,7 @@ module SK
       end
 
       def launch(*args)
-        laucher.launch(args.flatten.compact).first
+        launcher.launch(args.flatten.compact).first
       end
     end
   end
