@@ -5,32 +5,10 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
-if defined? Installation::Generator
-  class Generator < Installation::Generator
-    def create(io)
-      bindir = File.join(self.class.installation_tools, 'bin')
-      [
-        '#!' + File.join(bindir, 'ruby'),
-        "ENV['PATH'] = [ #{bindir.inspect}, *ENV.to_hash['PATH'].split(':') ].join(':')",
-        "SVN_ORIGINAL = #{original(target).inspect}"
-      ] + IO::readlines(__FILE__).slice(1..-1)
-    end
+$:.concat ENV.to_hash['PATH'].to_s.split(':')
 
-    def original(target)
-      directory, file = File.split(target)
-      File.join(directory, 'original', file)
-    end
-  end
-
-  throw :generator, Generator
-end
-
-$VERBOSE = nil
-
-[ 'tsc/application.rb' ].each do |a|
-  $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
-  require a
-end
+require 'tsc/application.rb'
+require 'tsc/path.rb'
 
 # This is a Subversion front-end that transforms its arguments as follows:
 #   %r is replaced by a repository root found either in environment variable
@@ -43,9 +21,8 @@ class Application < TSC::Application
   def start
     handle_errors {
       self.verbose = ENV['TRACE'].to_s.split.include?(script_name)
-      localize_ruby_loadpath
 
-      require 'tsc/errors.rb'
+      require 'tsc/config-locator.rb'
       require 'yaml'
       require 'open3'
 
@@ -59,6 +36,22 @@ class Application < TSC::Application
         invoke commands.first
       end
     }
+  end
+
+  class << self
+    def original(target)
+      directory, file = File.split(target)
+      File.join(directory, 'original', file)
+    end
+  end
+
+  in_generator_context do |_content|
+    _content << '#!' + figure_ruby_path
+    _content << '$VERBOSE = nil'
+
+    _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
+    _content << "SVN_ORIGINAL = #{original(target).inspect}"
+    _content << IO.readlines(__FILE__).slice(1..-1)
   end
 
   private
@@ -97,7 +90,7 @@ class Application < TSC::Application
 
   def config
     @config ||= begin 
-      process_resource(Dir.pwd, '.svnrc') or Hash.new
+      TSC::ConfigLocator.new('.svnrc').merge_all_above_with_personal
     end
   end
 
@@ -117,9 +110,7 @@ class Application < TSC::Application
 
   def root
     @root ||= begin
-      dot_info[ROOT_INFO] or ENV['SVN_ROOT'] or config['Root'] or begin
-        raise TSC::Error.new('No repository root found') 
-      end
+      dot_info[ROOT_INFO] or ENV['SVN_ROOT'] or config.fetch('Root')
     end
   end
 
