@@ -38,19 +38,14 @@ class Application < TSC::Application
     }
   end
 
-  class << self
-    def original(target)
-      directory, file = File.split(target)
-      File.join(directory, 'original', file)
-    end
-  end
-
   in_generator_context do |_content|
+    directory, file = File.split(target)
+    original = File.join(directory, 'original', file)
+
     _content << '#!' + figure_ruby_path
     _content << '$VERBOSE = nil'
-
     _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
-    _content << "SVN_ORIGINAL = #{original(target).inspect}"
+    _content << "SVN_ORIGINAL = #{original.inspect}"
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
 
