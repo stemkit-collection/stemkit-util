@@ -13,6 +13,7 @@ eval <<'RUBY'
       #{userinfo.dir}/projects/sf/stemkit-util/trunk/src/scripts
       #{userinfo.dir}/projects/sf/tsc-tpm/trunk/src/scripts
       #{userinfo.dir}/projects/sf/tsc-build/trunk/src/scripts
+      #{userinfo.dir}/projects/sf/tsc-act/trunk/src/scripts
       #{userinfo.dir}/projects/tools/src/scripts
       #{userinfo.dir}/bin/#{sysid} 
       #{userinfo.dir}/bin
