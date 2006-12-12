@@ -29,7 +29,6 @@ class Application < TSC::Application
   def start
     handle_errors {
       process_command_line
-      localize_ruby_loadpath
       fix_environment
 
       require 'sk/svn/hook/manager.rb'
