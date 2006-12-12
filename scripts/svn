@@ -20,8 +20,6 @@ require 'tsc/path.rb'
 class Application < TSC::Application
   def start
     handle_errors {
-      self.verbose = ENV['TRACE'].to_s.split.include?(script_name)
-
       require 'tsc/config-locator.rb'
       require 'yaml'
       require 'open3'
