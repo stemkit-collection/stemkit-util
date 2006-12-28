@@ -273,10 +273,10 @@ act_as_rc()
       ls "${@}"
     }
     __dir__() {
-      __showdir__ -axF "${@}" | less
+      __showdir__ -axF "${@}" | ${PAGER:-cat}
     }
     __ll__() {
-      __showdir__ -al "${@}" | less
+      __showdir__ -al "${@}" | ${PAGER:-cat}
     }
     __cd__() { 
       cd "${@}" && __dir__
