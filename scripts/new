@@ -183,7 +183,7 @@ class Generator
 
   def ruby(name, namespace, extention)
     save "#{name}.#{extention}", name, namespace, [
-      append_newline_if(make_ruby_comments(make_copyright_notice)),
+      append_newline_if(make_ruby_block_comments(make_copyright_notice)),
       make_ruby_modules(namespace) {
         [
           "class #{ruby_module_name(name)}",
@@ -389,6 +389,16 @@ class Generator
     lines.map { |_line|
       '# ' + _line
     }
+  end
+
+  def make_ruby_block_comments(lines)
+    [
+      '=begin',
+      lines.map { |_line|
+        '  ' + _line
+      },
+      '=end'
+    ]
   end
 
   def make_c_comments(lines)
