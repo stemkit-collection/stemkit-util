@@ -54,7 +54,9 @@ class Application < TSC::Application
   URL_INFO = 'URL'
 
   def invoke(command)
-    @command = command
+    @command = find_original(command)
+    setup_library_path_for(@command)
+
     exec command, *ARGV.map { |_item|
       _item.gsub(%r{%[rtu]}i) { |_match|
         case _match.downcase
@@ -64,6 +66,24 @@ class Application < TSC::Application
         end
       }
     }
+  end
+
+  def find_original(command)
+    return command unless File.symlink?(command)
+    find_original File.expand_path(File.readlink(command), File.dirname(command))
+  end
+
+  def setup_library_path_for(command, depth = 3)
+    return if depth.zero?
+
+    location = File.dirname(command)
+    path = File.join(location, 'lib')
+    
+    if File.directory?(path)
+      TSC::LD_LIBRARY_PATH.current.front(path).install
+    else
+      setup_library_path_for(location, depth - 1)
+    end
   end
 
   def process_resource(directory, resource)
