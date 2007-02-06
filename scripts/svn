@@ -57,6 +57,8 @@ class Application < TSC::Application
     @command = find_original(command)
     setup_library_path_for(@command)
 
+    puts "<Using #{@command}>" if verbose?
+
     exec command, *ARGV.map { |_item|
       _item.gsub(%r{%[rtu]}i) { |_match|
         case _match.downcase
