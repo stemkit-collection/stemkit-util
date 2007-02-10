@@ -35,6 +35,12 @@ module SK
             shift(2, modified)
           ],
           '',
+          property? && [
+            'Property Change Paths:',
+            '---------------------',
+            shift(2, property)
+          ],
+          '',
           added? && [
             'Added Paths:',
             '-----------',
@@ -50,7 +56,7 @@ module SK
           uncategorized? && [
             'Uncategorized Paths:',
             '-------------------',
-            sift(2, uncategorized)
+            shift(2, uncategorized)
           ],
         ].flatten.compact
       end
@@ -73,6 +79,14 @@ module SK
 
       def diff
         @diff ||= svnlook('diff',  '--no-diff-deleted', '--no-diff-added',  '--diff-copy-from')
+      end
+
+      def property?
+        true if changed.has_key?(:property)
+      end
+
+      def property
+        changed[:property]
       end
 
       def modified?
@@ -126,17 +140,28 @@ module SK
           last_categorized_content = ''
 
           svnlook('changed', '--copy-info').each { |_entry|
-            category, content = _entry.scan(%r{^(.)\s+(.*)$}).first
+            category, content = _entry.scan(%r{^(..).\s+(.*)$}).first
             case category
-              when 'U'
+              when 'U '
                 hash[:modified] << content
-              when 'A'
+
+              when '_U'
+                hash[:property] << content
+
+              when 'UU'
+                hash[:property] << content
+                hash[:modified] << content
+
+              when 'A '
                 hash[:added] << content
-              when 'D'
+
+              when 'D '
                 hash[:deleted] << content
-              when ' '
+
+              when '  '
                 last_categorized_content << ' ' << content
                 next
+
               else
                 hash[:uncategorized] << _entry
             end
