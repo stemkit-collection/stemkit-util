@@ -10,20 +10,31 @@ require 'tsc/application.rb'
 require 'tsc/path.rb'
 
 class Application < TSC::Application
-
-  in_generator_context do |_content|
-    _content << '#!' + figure_ruby_path
-    _content << TSC::PATH.current.front(installation_tools_bin).to_ruby_eval
-    _content << IO.readlines(__FILE__).slice(1..-1)
-  end
-
   def initialize
-    super('<parameter> ...',
-      [ '--path', 'SVN Repository path', 'path', '-p' ],
-      [ '--revision', 'SVN revision number', 'number', '-r' ],
-      [ '--config', 'Configuration file', 'path', '-c' ],
-      [ '--test', 'Run internal tests', nil ]
-    )
+    super { |_conf|
+      _conf.description = 'Subversion hook driver.'
+      _conf.arguments = '<parameter> ...'
+      _conf.options = [
+        [ '--path', 'SVN Repository path', 'path', '-p' ],
+        [ '--revision', 'SVN revision number', 'number', '-r' ],
+        [ '--transaction', 'SVN transaction number', 'number', '-t' ],
+        [ '--action', 'Hook action (pre-commit, post-commit, etc.)', 'action', '-a' ],
+        [ '--config', 'Configuration file', 'path', '-c' ]
+      ]
+    }
+    @actions = Hash.new { |_hash, _key|
+      size = Array(_key).size
+      raise TSC::UsageError, "A single action expected, #{size} specified" unless size == 1
+      raise "Unsupported action #{_key.inspect}"
+    }
+    @actions.update Hash[
+      'post-commit' => proc { |*_args|
+        process_post_commit *_args
+      },
+      'pre-commit' => proc { |*_args|
+        process_pre_commit *_args
+      }
+    ]
   end
 
   def start
@@ -31,73 +42,69 @@ class Application < TSC::Application
       process_command_line
       fix_environment
 
-      require 'sk/svn/hook/manager.rb'
       require 'sk/svn/hook/config.rb'
-
-      throw :TEST if options.has_key?('test')
+      processor = @actions[action]
 
       path = ARGV.shift || options['path'] or raise 'Repository path not specified'
-      revision = ARGV.shift || options['revision'] or raise 'Revision not specified'
-
       base, depot = File.split(path)
 
       if base != config.repository_base
         raise 'Specified repository not under configured base location'
       end
 
-      SK::Svn::Hook::Manager.new(script_name, config, depot).process(revision)
+      processor.call depot
     }
   end
 
   private
   #######
 
+  def action
+    options['action'] || script_name
+  end
+
+  def process_post_commit(depot)
+    require 'sk/svn/hook/manager.rb'
+
+    revision = ARGV.shift || options['revision'] or raise 'Revision not specified'
+    SK::Svn::Hook::Manager.new(script_name, config, depot).process(revision)
+  end
+
+  def process_pre_commit(depot)
+    raise TSC::NotImplementedError, :process_pre_commit
+  end
+
   def fix_environment
-    require 'etc'
+    ENV['LOGNAME'] = user.name
+    ENV['HOME'] = user.dir
 
-    entry = Etc.getpwuid
+    $:.concat TSC::PATH.current.front(location, '/bin', '/usr/bin').install.entries
+  end
 
-    ENV['LOGNAME'] = entry.name
-    ENV['HOME'] = entry.dir
-
-    location = script_location
-
-    if File.symlink?(__FILE__)
-      location = File.dirname(File.readlink(__FILE__))
+  def location
+    @location ||= begin
+      File.symlink?(__FILE__) ? File.dirname(File.readlink(__FILE__)) : script_location
     end
+  end
 
-    path = [ location, '/bin', '/usr/bin', *ENV.to_hash['PATH'].to_s.split(':') ]
-    ENV['PATH'] = path.join(':')
-
-    $:.concat path
+  def user
+    @user ||= begin
+      require 'etc'
+      Etc.getpwuid
+    end
   end
 
   def config
     @config ||= begin
-      SK::Svn::Hook::Config.new(options['config'] || File.expand_path("~/conf/#{script_name}.yaml"))
+      SK::Svn::Hook::Config.new(options['config'] || File.join(user.dir, 'conf', "#{action}.yaml"))
     end
   end
-end
 
-unless defined? Test::Unit::TestCase
-  catch :TEST do
-    Application.new.start
-    exit 0
+  in_generator_context do |_content|
+    _content << '#!' + figure_ruby_path
+    _content << TSC::PATH.current.front(installation_tools_bin).to_ruby_eval
+    _content << IO.readlines(__FILE__).slice(1..-1)
   end
 end
 
-require 'test/unit'
-
-class ApplicationTest < Test::Unit::TestCase
-  def test_something
-    flunk 'Not implemented'
-  end
-
-  def setup
-    @app = Application.new
-  end
-
-  def teardown
-    @app = nil
-  end
-end
+Application.new.start

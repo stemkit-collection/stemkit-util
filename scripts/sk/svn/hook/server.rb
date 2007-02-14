@@ -4,17 +4,19 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
+require 'timeout'
 require 'tsc/synchro-queue.rb'
-require 'sk/svn/look.rb'
+
+require 'sk/svn/revision-look.rb'
 require 'sk/svn/mail-notifier.rb'
 require 'sk/svn/hook/error-mailer.rb'
-require 'timeout'
+require 'sk/svn/hook/plugin/manager.rb'
 
 module SK
   module Svn
     module Hook
       class Server
-        attr_reader :name, :config, :repository
+        attr_reader :name, :config, :repository, :manager
 
         include ErrorMailer
 
@@ -23,6 +25,7 @@ module SK
           @config = config
           @repository = repository
           @queue = TSC::SynchroQueue.new(true)
+          @manager = Plugin::Manager.new(self, SK::Svn::MailNotifier)
 
           @processor = Thread.new do
             begin
@@ -57,55 +60,12 @@ module SK
           $stderr.puts "#{Time.now} - Revision #{revision} started"
 
           begin
-            info = SK::Svn::Look.new(config.repository_path(repository), revision)
-            plugins.each do |_plugin|
-              report_error('Plugin processing') {
-                _plugin.process(info)
-              }
-            end
+            manager.invoke SK::Svn::RevisionLook.new(config.repository_path(repository), revision)
           ensure
             $stderr.puts "#{Time.now} - Revision #{revision} finished"
           end
         end
 
-        def plugins
-          @plugins ||= begin
-            config.plugins(repository).map { |_plugin|
-              load_plugin(_plugin)
-            } + [ SK::Svn::MailNotifier ]
-          end.compact.uniq.map { |_klass|
-            instantiate_plugin(_klass)
-          }.compact
-        end
-
-        def instantiate_plugin(plugin)
-          report_error('Plugin instantiation') {
-            return plugin.new(config)
-          }
-          nil
-        end
-
-        def load_plugin(spec)
-          report_error("Plugin #{spec.inspect} load") {
-            components = spec.split('::')
-            require File.join(module_paths(components[0...-1]), class_file(components.last))
-
-            return components.inject(Module) { |_module, _constant|
-              _module.const_get(_constant)
-            }
-          }
-          nil
-        end
-
-        def module_paths(names)
-          names.map { |_name| 
-            _name.downcase 
-          }
-        end
-
-        def class_file(name)
-          name.scan(%r{[A-Z][a-z0-9_]*}).map { |_c| _c.downcase }.join('-')
-        end
       end
     end
   end

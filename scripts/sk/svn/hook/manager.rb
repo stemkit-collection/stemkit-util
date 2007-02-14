@@ -97,7 +97,7 @@ module SK
         end
 
         def hook_socket
-          File.join hook_spool_directory, "socket.#{repository}"
+          File.join hook_spool_directory, "socket.#{name}.#{repository}"
         end
 
         def hook_spool_directory

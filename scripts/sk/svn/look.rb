@@ -9,56 +9,10 @@ require 'time'
 module SK
   module Svn
     class Look
-      attr_reader :repository, :revision
+      attr_reader :repository
 
-      def initialize(repository, revision)
+      def initialize(repository)
         @repository = repository
-        @revision = revision
-      end
-
-      def digest(url_base = nil)
-        [
-          [
-          "Revision: #{revision}",
-          (url_base && "(#{url_base}/#{depot}/?Insurrection=log&r1=#{revision})")
-          ].join(' '),
-          "Author:   #{author}",
-          "Date:     #{timestamp.inspect}",
-          '', 
-          'Log Message: ',
-          '-----------',
-          log,
-          '', 
-          modified? && [
-            'Modified Paths:',
-            '--------------',
-            shift(2, modified)
-          ],
-          '',
-          property? && [
-            'Property Change Paths:',
-            '---------------------',
-            shift(2, property)
-          ],
-          '',
-          added? && [
-            'Added Paths:',
-            '-----------',
-            shift(2, added)
-          ],
-          '',
-          deleted? && [
-            'Deleted Paths:',
-            '-------------',
-            shift(2, deleted)
-          ],
-          '',
-          uncategorized? && [
-            'Uncategorized Paths:',
-            '-------------------',
-            shift(2, uncategorized)
-          ],
-        ].flatten.compact
       end
 
       def author
@@ -122,11 +76,15 @@ module SK
       end
 
       def svnlook(*args)
-        launch([ 'svnlook', args, '-r', revision, repository ].flatten).first
+        launch([ 'svnlook', args, svnlook_item_arguments, repository ].flatten).first
       end
 
       private
       #######
+
+      def svnlook_item_arguments
+        raise TSC::NotImplementedError, :svnlook_item_arguments
+      end
 
       def info
         @info ||= svnlook('info')

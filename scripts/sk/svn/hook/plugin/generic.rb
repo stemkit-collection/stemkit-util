@@ -7,7 +7,9 @@
 module SK
   module Svn
     module Hook
-      class Plugin
+      module Plugin
+        class Generic
+        end
       end
     end
   end
@@ -19,11 +21,13 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Svn
       module Hook
-        class PluginTest < Test::Unit::TestCase
-          def setup
-          end
-          
-          def teardown
+        module Plugin
+          class GenericTest < Test::Unit::TestCase
+            def setup
+            end
+            
+            def teardown
+            end
           end
         end
       end
