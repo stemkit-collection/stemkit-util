@@ -12,20 +12,27 @@ module SK
   module Svn
     class AccessGrantor < Hook::Plugin::Generic
       def process(info)
-        access = config.repositories[info.depot]['access'] or Hash.new
+        access = config.repositories[info.depot]['access'] or return 
 
-        access.each_pair do |_item, _params|
-          allow_patterns = make_pattern_list(_params['allow'])
-          deny_patterns = make_pattern_list(_params['deny'])
-          path_pattern = make_pattern_list(_item).first
+        [access].flatten.each do |_access|
+          _access.each_pair do |_item, _params|
+            allow_patterns = make_pattern_list(_params['allow'])
+            deny_patterns = make_pattern_list(_params['deny'] || '^.+$')
+            path_patterns = make_pattern_list(_item)
 
-          info.affected.each do |_path|
-            next unless _path =~ path_pattern
-            next if validate(info.author, allow_patterns, deny_patterns)
-
-            box _params['message']
-
-            raise 'Access denied'
+            info.affected.each do |_path|
+              next unless path_patterns.any? { |_pattern|
+                _path =~ _pattern 
+              }
+              next unless deny_patterns.any? { |_pattern|
+                info.author =~ _pattern
+              }
+              next if allow_patterns.any? { |_pattern|
+                info.author =~ _pattern
+              }
+              box _params['message']
+              raise 'Access denied'
+            end
           end
         end
       end
@@ -46,7 +53,8 @@ module SK
 
       def make_pattern_list(*args)
         args.flatten.compact.map { |_item|
-          Regexp.new(_item)
+          pattern = _item.to_s.strip
+          Regexp.new [ ('^\s*' unless pattern.slice(0) == ?^), pattern ].join
         }
       end
 
