@@ -62,7 +62,9 @@ module SK
         end
 
         def repositories
-          content['repository'] || Hash.new
+          content['repository'] || Hash.new { |_hash, _key|
+            _hash[_key] = Hash.new
+          }
         end
       end
     end

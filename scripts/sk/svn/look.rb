@@ -79,6 +79,10 @@ module SK
         launch([ 'svnlook', args, svnlook_item_arguments, repository ].flatten).first
       end
 
+      def affected
+        changed.values.flatten.compact.uniq
+      end
+
       private
       #######
 

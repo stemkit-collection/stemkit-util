@@ -4,11 +4,22 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
+require 'tsc/errors.rb'
+
 module SK
   module Svn
     module Hook
       module Plugin
         class Generic
+          attr_reader :config
+
+          def initialize(config)
+            @config = config
+          end
+
+          def process(info)
+            raise TSC::NotImplementedError, :process
+          end
         end
       end
     end

@@ -6,9 +6,13 @@
   You must read and accept the license prior to use.
 =end
 
+require 'sk/svn/look.rb'
+
 module SK
   module Svn
-    class TransactionLook
+    class TransactionLook < Look
+      attr_reader :transaction
+
       def initialize(repository, transaction)
         super repository
         @transaction = transaction

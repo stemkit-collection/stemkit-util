@@ -60,7 +60,11 @@ class Application < TSC::Application
   #######
 
   def action
-    options['action'] || script_name
+    @action ||= begin
+      options['action'] || begin
+        script_name
+      end
+    end
   end
 
   def process_post_commit(depot)
@@ -71,7 +75,10 @@ class Application < TSC::Application
   end
 
   def process_pre_commit(depot)
-    raise TSC::NotImplementedError, :process_pre_commit
+    require 'sk/svn/hook/transaction-processor.rb'
+
+    transaction = ARGV.shift || options['transaction'] or raise 'Transaction not specified'
+    SK::Svn::Hook::TransactionProcessor.new(script_name, config, depot).process(transaction)
   end
 
   def fix_environment
