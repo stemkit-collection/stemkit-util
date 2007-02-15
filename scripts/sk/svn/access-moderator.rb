@@ -10,7 +10,7 @@ require 'sk/svn/hook/plugin/generic.rb'
 
 module SK
   module Svn
-    class AccessGrantor < Hook::Plugin::Generic
+    class AccessModerator < Hook::Plugin::Generic
       def process(info)
         access = config.repositories[info.depot]['access'] or return 
 
@@ -80,7 +80,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   
   module SK
     module Svn
-      class AccessGrantorTest < Test::Unit::TestCase
+      class AccessModeratorTest < Test::Unit::TestCase
         def setup
         end
         
