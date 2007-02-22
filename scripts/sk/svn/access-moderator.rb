@@ -7,6 +7,7 @@
 =end
 
 require 'sk/svn/hook/plugin/generic.rb'
+require 'tsc/border-box.rb'
 
 module SK
   module Svn
@@ -30,25 +31,11 @@ module SK
               next if allow_patterns.any? { |_pattern|
                 info.author =~ _pattern
               }
-              box _params['message']
+              $stderr.puts TSC::BorderBox[ _params['message'] ]
               raise 'Access denied'
             end
           end
         end
-      end
-
-      def box(*args)
-        message = args.flatten.compact.map { |_item| Array(_item) }.flatten.map { |_line|
-          _line.chomp
-        }
-        size = message.map { |_line| _line.size }.max
-        $stderr.puts [
-          "+-#{'-'*size}-+",
-          message.map { |_line|
-            "| #{_line}#{' '*(size-_line.size)} |"
-          },
-          "+-#{'-'*size}-+"
-        ]
       end
 
       def make_pattern_list(*args)
@@ -56,18 +43,6 @@ module SK
           pattern = _item.to_s.strip
           Regexp.new [ ('^\s*' unless pattern.slice(0) == ?^), pattern ].join
         }
-      end
-
-      def validate(user, allow, deny)
-        allow.each do |_pattern|
-          return true if user =~ _pattern
-        end
-
-        deny.each do |_pattern|
-          return false if user =~ _pattern
-        end
-
-        true
       end
     end
   end
