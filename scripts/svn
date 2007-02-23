@@ -125,7 +125,9 @@ class Application < TSC::Application
 
   def root
     @root ||= begin
-      dot_info[ROOT_INFO] or ENV['SVN_ROOT'] or config.fetch('Root')
+      ENV['SVN_ROOT'] or config.hash['Root'] or dot_info[ROOT_INFO] or begin
+        raise 'Cannot figure out the root (check for .svnrc or working copy)'
+      end
     end
   end
 
