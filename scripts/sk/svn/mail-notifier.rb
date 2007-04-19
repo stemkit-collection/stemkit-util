@@ -18,8 +18,10 @@ module SK
       end
 
       def process(info)
-        notification_list = config.notify(info.depot)
+        notification_list = figure_notification_list(info)
         return if notification_list.empty?
+
+        $stderr.puts "L: #{notification_list.inspect}"
 
         mail = MailFactory.new
 
@@ -33,20 +35,63 @@ module SK
         }
         $stderr.puts "Notified: #{notification_list.join(', ')}"
       end
+
+      def figure_notification_list(info)
+        Array(config.notify(info.depot)).map { |_param|
+          element, list = Array(_param)
+          item = element.to_s.strip
+          if list
+            pattern = Regexp.new [ ('^\s*' unless item.slice(0) == ?^), item ].join
+            info.affected.map { |_path|
+              list if pattern.match(_path)
+            }
+          else
+            item
+          end
+        }.flatten.compact.uniq
+      end
     end
   end
 end
 
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'test/unit'
+  require 'mocha'
+  require 'stubba'
+
+  require 'set'
   
   module SK
     module Svn
       class MailNotifierTest < Test::Unit::TestCase
-        def setup
+        attr_reader :config, :notifier, :info
+
+        def test_per_location_list
+          info.stubs(:depot).returns 'abc'
+          config.stubs(:notify).returns Hash[
+            '.*?/bbb' => [ 'zzz', 'uuu' ],
+            'ccc/uuu/' => 'bbb',
+            '.*' => 'iii'
+          ]
+          info.stubs(:affected).returns [ 
+            'aaa/zzz/ccc/bbb',
+            'ccc/'
+          ]
+
+          assert_equal Set[ 'zzz', 'iii', 'uuu' ], Set[*notifier.figure_notification_list(info)]
         end
-        
-        def teardown
+
+        def test_simple_notification_list
+          info.stubs(:depot).returns 'abc'
+          config.stubs(:notify).returns [ 'aaa', 'bbb', 'ccc', 'aaa' ]
+
+          assert_equal [ 'aaa', 'bbb', 'ccc' ], notifier.figure_notification_list(info)
+        end
+
+        def setup
+          @config = mock('Config')
+          @info = mock('Info')
+          @notifier = MailNotifier.new config
         end
       end
     end
