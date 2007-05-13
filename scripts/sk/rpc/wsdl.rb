@@ -10,6 +10,8 @@ require 'xmlsimple'
 require 'sk/rpc/data.rb'
 require 'sk/rpc/array.rb'
 
+require 'enumerator'
+
 module SK
   module RPC
     class Wsdl
@@ -28,30 +30,39 @@ module SK
       end
 
       def actions
-        pp data.fetch(:message)
+        @actions ||= begin
+          data.fetch(:message).enum_slice(2).inject({}) { |_hash, _info|
+            name = _info.first.fetch('name')
+            response_part = _info.last.fetch(:part)
+            raise "No return type for #{name}" unless response_part['name'] == 'return'
+
+            _hash.update name => {
+              :input => [ _info.first.fetch(:part) ].flatten.map { |_item|
+                [ _item.fetch('name'), normalize_type(_item.fetch('type')) ]
+              },
+              :output => normalize_type(response_part.fetch('type'))
+            }
+          }
+        end
       end
 
       def types
-        pp service
-        pp endpoint
-        pp actions
-
         @types ||= begin
           data[:types][:complextype].map { |_item|
             members = _item[:all]
             complex = _item[:complexcontent]
 
             Hash[
-              _item.fetch('name') => begin
+              normalize_type('typens:' + _item.fetch('name')) => begin
                 if members
                   SK::RPC::Data.new members.inject({}) { |_hash, _member|
-                    _hash.update _member.fetch('name') => _member.fetch('type')
+                    _hash.update _member.fetch('name') => normalize_type(_member.fetch('type'))
                   }
                 elsif complex
                   base = complex.fetch('base')
                   case base
                     when 'soapenc:Array'
-                      SK::RPC::Array.new(complex[:attribute]['wsdl:arrayType'].slice(0...-2))
+                      SK::RPC::Array.new normalize_type(complex[:attribute]['wsdl:arrayType'].slice(0...-2))
                     else
                       raise "Unsupported complex type #{base.inspect}"
                   end
@@ -66,6 +77,17 @@ module SK
 
       private
       #######
+
+      def normalize_type(type)
+        case type
+          when %r{^xsd:(.*)$} 
+            $1
+          when %r{^typens:(.*)$}
+            $1.split('..')
+          else 
+            raise "Unknown type #{type.inspect}"
+        end
+      end
 
       def parser
         @parser ||= XmlSimple.new Hash[

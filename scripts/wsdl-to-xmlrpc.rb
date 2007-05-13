@@ -41,6 +41,9 @@ class Application < TSC::Application
     require 'sk/rpc/wsdl.rb'
     wsdl = SK::RPC::Wsdl.new(data)
 
+    pp wsdl.service
+    pp wsdl.endpoint
+    pp wsdl.actions
     pp wsdl.types
   end
 
