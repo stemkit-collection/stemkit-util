@@ -6,17 +6,13 @@
   You must read and accept the license prior to use.
 =end
 
-require 'sk/rpc/builder.rb'
-
 module SK
   module RPC
-    module Java
-      class Builder < SK::RPC::Builder
-        def make_xmlrpc(destination)
-          pp wsdl.service
-          pp wsdl.endpoint
-          pp wsdl.actions
-        end
+    class Builder
+      attr_reader :wsdl
+
+      def initialize(wsdl)
+        @wsdl = wsdl
       end
     end
   end
