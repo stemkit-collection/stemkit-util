@@ -33,14 +33,15 @@ module SK
         @actions ||= begin
           data.fetch(:message).enum_slice(2).inject({}) { |_hash, _info|
             name = _info.first.fetch('name')
-            response_part = _info.last.fetch(:part)
-            raise "No return type for #{name}" unless response_part['name'] == 'return'
+            response_part = _info.last[:part]
+
+            raise "No return type for #{name}" if response_part && response_part['name'] != 'return'
 
             _hash.update name => {
               :input => [ _info.first.fetch(:part) ].flatten.map { |_item|
                 [ _item.fetch('name'), normalize_type(_item.fetch('type')) ]
               },
-              :output => normalize_type(response_part.fetch('type'))
+              :output => (response_part ? normalize_type(response_part.fetch('type')) : 'none')
             }
           }
         end
