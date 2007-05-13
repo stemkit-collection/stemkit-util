@@ -41,8 +41,7 @@ class Application < TSC::Application
     require 'sk/rpc/wsdl.rb'
     wsdl = SK::RPC::Wsdl.new(data)
 
-    pp wsdl.data.keys
-    pp wsdl.data[:types][:complextype]
+    pp wsdl.types
   end
 
   in_generator_context do |_content|
