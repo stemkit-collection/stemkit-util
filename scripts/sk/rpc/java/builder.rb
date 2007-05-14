@@ -13,9 +13,29 @@ module SK
     module Java
       class Builder < SK::RPC::Builder
         def make_xmlrpc(destination)
-          pp wsdl.service
-          pp wsdl.endpoint
-          pp wsdl.actions
+          puts [
+            append_newline_if(namespace.empty? && "package #{namespace.join('.')};"),
+            "public class #{wsdl.service} {",
+            indent(
+              "#{wsdl.service}() {",
+              '}',
+              '',
+              "#{wsdl.service}(String endpoint) {",
+              '}',
+              service_methods
+            ),
+            "}"
+          ].compact.flatten
+        end
+
+        def service_methods
+          wsdl.actions.map { |_name, _info|
+            [
+              '',
+              "#{_info[:output]} #{_name}() {",
+              '}'
+            ]
+          }
         end
       end
     end

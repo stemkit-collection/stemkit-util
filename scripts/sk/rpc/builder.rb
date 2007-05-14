@@ -9,10 +9,25 @@
 module SK
   module RPC
     class Builder
-      attr_reader :wsdl
+      attr_reader :wsdl, :namespace
 
-      def initialize(wsdl)
+      def initialize(wsdl, namespace)
         @wsdl = wsdl
+        @namespace = namespace
+      end
+
+      def prepend_newline_if(content)
+        (!content || content.empty?) ? [] : [ '', content ]
+      end
+
+      def append_newline_if(content)
+        (!content || content.empty?) ? content : [ content, '' ]
+      end
+
+      def indent(*lines)
+        lines.flatten.map { |_line|
+          '  ' + _line
+        }
       end
     end
   end

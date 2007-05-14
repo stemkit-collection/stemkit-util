@@ -18,6 +18,7 @@ class Application < TSC::Application
       [ '--language', 'Specifies output language', 'language', '-l' ],
       [ '--protocol', 'Specifies ouptut protocol', 'protocol', '-p' ],
       [ '--output', 'Specifies output directory', 'directory', '-o' ],
+      [ '--namespace', 'Specifies a namespace for generated code', 'namespace', '-n' ],
       [ '--test', 'Runs internal tests', nil ]
     )
   end
@@ -43,7 +44,7 @@ class Application < TSC::Application
   def process(data)
     require 'sk/rpc/wsdl.rb'
 
-    builder = builder_factory.new SK::RPC::Wsdl.new(data)
+    builder = builder_factory.new SK::RPC::Wsdl.new(data), namespace
     method_name = "make_#{protocol}"
 
     unless builder.respond_to? method_name
@@ -59,8 +60,8 @@ class Application < TSC::Application
       "SK::RPC::#{language.capitalize}::Builder".split('::').inject(Module) { |_module, _name|
         _module.const_get(_name)
       }
-      # rescue
-      # raise "Lanuguage #{language.inspect} not supported"
+    rescue
+      raise "Lanuguage #{language.inspect} not supported"
     end
   end
 
@@ -88,6 +89,12 @@ class Application < TSC::Application
 
       item
     end
+  end
+
+  def namespace
+    @namespace ||= options['namespace'].to_s.split(%r{(?:::)|(?:[.])}).map { |_item|
+      _item.strip
+    }
   end
 
   in_generator_context do |_content|
