@@ -14,6 +14,8 @@ module SK
       class Builder < SK::RPC::Builder
         def make_xmlrpc(destination)
           puts [
+            "=== File #{ [ namespace, wsdl.service ].join('/') }.java ===",
+            '',
             append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
             "public class #{wsdl.service} {",
             indent(
@@ -57,6 +59,7 @@ module SK
               case _key
                 when 'int' then 'Integer'
                 when 'string' then 'String'
+                when 'boolean' then 'Boolean'
                 when 'none' then 'void'
                 else infer_native_type(_key)
               end
@@ -73,7 +76,9 @@ module SK
         end
 
         def convert_pod(name, item)
-          normalize_type(name)
+          normalized = normalize_type(name)
+          genereate_pod normalized, item
+          normalized
         end
 
         def normalize_type(type)
@@ -83,6 +88,24 @@ module SK
             }, 
             type.last 
           ].flatten.join('.')
+        end
+
+        def genereate_pod(name, data)
+          components = name.split('.')
+          namespace = components.slice(0...-1)
+          puts [
+            "=== File #{name.tr('.', '/')}.java ===",
+            '',
+            append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
+            "public class #{components.last} {",
+            indent(
+              data.map { |_name, _type|
+                "public #{typemap[_type]} #{_name};"
+              }
+            ),
+            '}',
+            ''
+          ]
         end
       end
     end
