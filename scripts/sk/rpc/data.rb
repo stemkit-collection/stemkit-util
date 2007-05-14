@@ -11,6 +11,9 @@ require 'sk/rpc/type.rb'
 module SK
   module RPC
     class Data < SK::RPC::Type
+      def convert(name, processor)
+        processor.convert_data(name, item)
+      end
     end
   end
 end

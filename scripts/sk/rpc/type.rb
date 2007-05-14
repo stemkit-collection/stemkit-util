@@ -6,6 +6,8 @@
   You must read and accept the license prior to use.
 =end
 
+require 'tsc/errors.rb'
+
 module SK
   module RPC
     class Type
@@ -13,6 +15,10 @@ module SK
 
       def initialize(item)
         @item = item
+      end
+
+      def convert(name, processor)
+        raise TSC::NotImplementedError, :convert
       end
     end
   end
