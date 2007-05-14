@@ -10,9 +10,9 @@ require 'sk/rpc/type.rb'
 
 module SK
   module RPC
-    class Data < SK::RPC::Type
+    class Pod < SK::RPC::Type
       def convert(name, processor)
-        processor.convert_data(name, item)
+        processor.convert_pod(name, item)
       end
     end
   end

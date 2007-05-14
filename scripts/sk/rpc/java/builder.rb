@@ -72,7 +72,7 @@ module SK
           "List<#{typemap[item]}>"
         end
 
-        def convert_data(name, item)
+        def convert_pod(name, item)
           normalize_type(name)
         end
 

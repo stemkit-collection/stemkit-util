@@ -7,7 +7,7 @@
 =end
 
 require 'xmlsimple'
-require 'sk/rpc/data.rb'
+require 'sk/rpc/pod.rb'
 require 'sk/rpc/array.rb'
 
 require 'enumerator'
@@ -56,7 +56,7 @@ module SK
             Hash[
               normalize_type('typens:' + _item.fetch('name')) => begin
                 if members
-                  SK::RPC::Data.new members.inject({}) { |_hash, _member|
+                  SK::RPC::Pod.new members.inject({}) { |_hash, _member|
                     _hash.update _member.fetch('name') => normalize_type(_member.fetch('type'))
                   }
                 elsif complex
