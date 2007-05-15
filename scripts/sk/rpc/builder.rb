@@ -17,11 +17,11 @@ module SK
       end
 
       def prepend_newline_if(content)
-        (!content || content.empty?) ? [] : [ '', content ]
+        (!content || content==true || content.empty?) ? [] : [ '', content ]
       end
 
       def append_newline_if(content)
-        (!content || content.empty?) ? content : [ content, '' ]
+        (!content || content==true || content.empty?) ? [] : [ content, '' ]
       end
 
       def indent(*lines)

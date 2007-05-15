@@ -66,7 +66,7 @@ class Application < TSC::Application
   end
 
   def destination
-    @destination ||= options[:output] || Dir.pwd
+    @destination ||= (options['output'] || Dir.pwd)
   end
 
   def language

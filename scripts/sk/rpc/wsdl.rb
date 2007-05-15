@@ -22,7 +22,7 @@ module SK
       end
 
       def service
-        data.fetch('name')
+        data.fetch(:service).fetch('name')
       end
 
       def endpoint

@@ -7,29 +7,39 @@
 =end
 
 require 'sk/rpc/builder.rb'
+require 'fileutils'
 
 module SK
   module RPC
     module Java
       class Builder < SK::RPC::Builder
+        include FileUtils
+
         def make_xmlrpc(destination)
-          puts [
-            "=== File #{ [ namespace, wsdl.service ].join('/') }.java ===",
-            '',
-            append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
-            "public class #{wsdl.service} {",
-            indent(
-              "public #{wsdl.service}() {",
-                indent('// Will connect to the default XML-RPC endpoint taken from WSDL.'),
-              '}',
+          @destination = destination
+          filename = File.join(@destination, namespace, wsdl.service) + '.java'
+          mkdir_p File.dirname(filename)
+
+          File.open(filename, 'w') do |_io|
+            _io.puts [
               '',
-              "public #{wsdl.service}(String endpoint) {",
-                 indent('// Will connect to the specified XML-RPC endpoint.'),
-              '}',
-              service_methods
-            ),
-            "}"
-          ].compact.flatten
+              append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
+              "public class #{wsdl.service} {",
+              indent(
+                "public #{wsdl.service}() {",
+                  indent('// Will connect to the default XML-RPC endpoint taken from WSDL.'),
+                '}',
+                '',
+                "public #{wsdl.service}(String endpoint) {",
+                   indent('// Will connect to the specified XML-RPC endpoint.'),
+                '}',
+                service_methods
+              ),
+              "}"
+            ].compact.flatten
+
+          end
+          puts filename
         end
 
         def service_methods
@@ -72,7 +82,7 @@ module SK
         end
 
         def convert_array(name, item)
-          "List<#{typemap[item]}>"
+          "java.util.List<#{typemap[item]}>"
         end
 
         def convert_pod(name, item)
@@ -93,19 +103,24 @@ module SK
         def genereate_pod(name, data)
           components = name.split('.')
           namespace = components.slice(0...-1)
-          puts [
-            "=== File #{name.tr('.', '/')}.java ===",
-            '',
-            append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
-            "public class #{components.last} {",
-            indent(
-              data.map { |_name, _type|
-                "public #{typemap[_type]} #{_name};"
-              }
-            ),
-            '}',
-            ''
-          ]
+
+          filename = File.join(@destination, components) + '.java'
+          mkdir_p File.dirname(filename)
+
+          File.open(filename, "w") do |_io|
+            _io.puts [
+              append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
+              "public class #{components.last} {",
+              indent(
+                data.map { |_name, _type|
+                  "public #{typemap[_type]} #{_name};"
+                }
+              ),
+              '}',
+              ''
+            ]
+          end
+          puts filename
         end
       end
     end
