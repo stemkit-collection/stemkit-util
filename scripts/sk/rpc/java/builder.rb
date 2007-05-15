@@ -24,19 +24,40 @@ module SK
             _io.puts [
               '',
               append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
+              'import java.net.*;',
+              'import java.util.*;',
+              '',
+              'import org.apache.xmlrpc.client.*;',
+              'import org.apache.xmlrpc.*;',
+              '',
               "public class #{wsdl.service} {",
               indent(
-                "public #{wsdl.service}() {",
-                  indent('// Will connect to the default XML-RPC endpoint taken from WSDL.'),
+                "public #{wsdl.service}(String endpoint) throws MalformedURLException {",
+                 indent(
+                   'XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();',
+                   'config.setServerURL(new URL(endpoint));',
+                   '_client = new XmlRpcClient();',
+                   '_client.setConfig(config);'
+                 ),
                 '}',
                 '',
-                "public #{wsdl.service}(String endpoint) {",
-                   indent('// Will connect to the specified XML-RPC endpoint.'),
+                "public #{wsdl.service}() throws MalformedURLException {",
+                 indent(
+                   %Q{this("#{wsdl.endpoint}");}
+                 ),
                 '}',
-                service_methods
+                '',
+                'public String endpoint() {',
+                indent(
+                  %Q{return "#{wsdl.endpoint}";}
+                ),
+                '}',
+                service_methods,
+                '',
+                'private XmlRpcClient _client;'
               ),
               "}"
-            ].compact.flatten
+            ].flatten.compact
 
           end
           puts filename
@@ -46,11 +67,20 @@ module SK
           wsdl.actions.map { |_name, _info|
             [
               '',
-              "public #{typemap[_info[:output]]} #{_name}(#{params(_info[:input])}) {",
+              "public #{typemap[_info[:output]]} #{_name}(#{params(_info[:input])}) throws XmlRpcException, ClassCastException {",
               indent(
-                '// Generated XML-RPC code to invoke the service with converting',
-                '// input and output parameters.',
-                %Q{throw new UnsupportedOperationException("#{wsdl.service}##{_name}() not yet implemented.");}
+                'Vector<Object> params = new Vector<Object>();',
+                _info[:input].map { |_parameter, _type|
+                  %Q{params.addElement(#{_parameter});}
+                },
+                '',
+                %Q{Object result = _client.execute("#{_name}", params);},
+                unless _info[:output] == 'none'
+                  [ 
+                    "#{typemap[_info[:output]]} value = (#{typemap[_info[:output]]})result;",
+                    "return value;"
+                  ]
+                end
               ),
               '}'
             ]

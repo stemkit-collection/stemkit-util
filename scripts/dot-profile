@@ -18,6 +18,7 @@ eval <<'RUBY'
       #{userinfo.dir}/bin/#{sysid} 
       #{userinfo.dir}/bin
       #{userinfo.dir}/local/#{sysid}/bin
+      #{userinfo.dir}/local/#{sysid}/java/jdk1.5.0_11/bin
       /sbin 
       /opt/ansic/bin
       /usr/vac/bin

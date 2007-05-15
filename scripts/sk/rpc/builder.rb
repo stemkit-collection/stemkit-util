@@ -25,7 +25,7 @@ module SK
       end
 
       def indent(*lines)
-        lines.flatten.map { |_line|
+        lines.flatten.compact.map { |_line|
           '  ' + _line
         }
       end
