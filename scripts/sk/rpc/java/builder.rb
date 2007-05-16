@@ -109,13 +109,12 @@ module SK
           }
           upcastor = wsdl.types.fetch(type)
           [
-            "List<Object> result = Arrays.asList((Object[])#{statement});",
-            'Iterator<Object> iterator = result.iterator();',
+            "Object[] result = (Object[])#{statement};",
             "ArrayList<#{array_type}> array = new ArrayList<#{array_type}>();",
             '',
-            'while(iterator.hasNext()) {',
+            'for(Object object : result) {',
             indent(
-              upcastor.upcast(self, type, "iterator.next()") { |_result|
+              upcastor.upcast(self, type, 'object') { |_result|
                 "array.add(#{_result});"
               }
             ),
