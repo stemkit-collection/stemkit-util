@@ -6,23 +6,17 @@
   You must read and accept the license prior to use.
 =end
 
-require 'tsc/errors.rb'
+require 'sk/rpc/type.rb'
 
 module SK
   module RPC
-    class Type
-      attr_reader :item
-
-      def initialize(item = nil)
-        @item = item
-      end
-
+    class Builtin < SK::RPC::Type
       def convert(processor, name)
-        raise TSC::NotImplementedError, "#{self.class.name}#convert"
+        processor.convert_builtin(item)
       end
 
       def upcast(processor, name, statement, &block)
-        raise TSC::NotImplementedError, "#{self.class.name}#upcast"
+        processor.upcast_builtin(item, statement, &block)
       end
     end
   end

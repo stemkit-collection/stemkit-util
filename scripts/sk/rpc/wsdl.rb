@@ -9,6 +9,8 @@
 require 'xmlsimple'
 require 'sk/rpc/pod.rb'
 require 'sk/rpc/array.rb'
+require 'sk/rpc/none.rb'
+require 'sk/rpc/builtin.rb'
 
 require 'enumerator'
 
@@ -19,6 +21,9 @@ module SK
 
       def initialize(input)
         @data = parser.xml_in input
+        @standard_types = { 
+          'none' => SK::RPC::None.new 
+        }
       end
 
       def service
@@ -72,7 +77,7 @@ module SK
                 end
               end
             ]
-          }.inject { |_hash, _item| _hash.update _item }
+          }.inject(@standard_types.clone) { |_hash, _item| _hash.update _item }
         end
       end
 
@@ -82,6 +87,7 @@ module SK
       def normalize_type(type)
         case type
           when %r{^xsd:(.*)$} 
+            @standard_types[$1] = SK::RPC::Builtin.new($1)
             $1
           when %r{^typens:(.*)$}
             $1.split('..')

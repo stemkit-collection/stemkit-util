@@ -11,8 +11,12 @@ require 'sk/rpc/type.rb'
 module SK
   module RPC
     class Pod < SK::RPC::Type
-      def convert(name, processor)
+      def convert(processor, name)
         processor.convert_pod(name, item)
+      end
+
+      def upcast(processor, name, statement, &block)
+        processor.upcast_pod(name, item, statement, &block)
       end
     end
   end

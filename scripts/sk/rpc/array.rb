@@ -11,8 +11,12 @@ require 'sk/rpc/type.rb'
 module SK
   module RPC
     class Array < SK::RPC::Type
-      def convert(name, processor)
-        processor.convert_array(name, item)
+      def convert(processor, name)
+        processor.convert_array(item)
+      end
+
+      def upcast(processor, name, statement, &block)
+        processor.upcast_array(item, statement, &block)
       end
     end
   end

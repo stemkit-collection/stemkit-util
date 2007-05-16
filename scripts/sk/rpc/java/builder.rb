@@ -65,22 +65,17 @@ module SK
 
         def service_methods
           wsdl.actions.map { |_name, _info|
+            return_type = _info[:output]
             [
               '',
-              "public #{typemap[_info[:output]]} #{_name}(#{params(_info[:input])}) throws XmlRpcException, ClassCastException {",
+              "public #{typemap[return_type]} #{_name}(#{params(_info[:input])}) throws XmlRpcException, ClassCastException {",
               indent(
                 'Vector<Object> params = new Vector<Object>();',
                 _info[:input].map { |_parameter, _type|
                   %Q{params.addElement(#{_parameter});}
                 },
                 '',
-                %Q{Object result = _client.execute("#{_name}", params);},
-                unless _info[:output] == 'none'
-                  [ 
-                    "#{typemap[_info[:output]]} value = (#{typemap[_info[:output]]})result;",
-                    "return value;"
-                  ]
-                end
+                wsdl.types.fetch(return_type).upcast(self, return_type, %Q{_client.execute("#{_name}", params)})
               ),
               '}'
             ]
@@ -95,29 +90,75 @@ module SK
 
         def typemap
           @typemap ||= Hash.new { |_hash, _key|
-            _hash[_key] = begin
-              case _key
-                when 'int' then 'Integer'
-                when 'string' then 'String'
-                when 'boolean' then 'Boolean'
-                when 'none' then 'void'
-                else infer_native_type(_key)
-              end
-            end
+            _hash[_key] = wsdl.types.fetch(_key).convert(self, _key)
           }
         end
 
-        def infer_native_type(type)
-          wsdl.types.fetch(type).convert(type, self)
+        def upcast_pod(type, members, statement, &block)
+          pod_type = typemap[type]
+          block ||= proc { |_result|
+            "return #{_result};"
+          }
+          [ 
+            "HashMap map = (HashMap)#{statement};",
+            "#{pod_type} pod = new #{pod_type}();",
+            block.call('pod')
+          ]
         end
 
-        def convert_array(name, item)
-          "java.util.List<#{typemap[item]}>"
+        def upcast_array(type, statement, &block)
+          array_type = typemap[type]
+          block ||= proc { |_result|
+            "return #{_result};"
+          }
+          upcastor = wsdl.types.fetch(type)
+          [
+            "List<Object> result = Arrays.asList((Object[])#{statement});",
+            'Iterator<Object> iterator = result.iterator();',
+            "ArrayList<#{array_type}> array = new ArrayList<#{array_type}>();",
+            '',
+            'while(iterator.hasNext()) {',
+            indent(
+              upcastor.upcast(self, type, "iterator.next()") { |_result|
+                "array.add(#{_result});"
+              }
+            ),
+            '}',
+            block.call('array')
+          ]
+        end
+
+        def upcast_builtin(type, statement, &block)
+          block ||= proc { |_result|
+            "return #{_result};"
+          }
+          block.call "(#{convert_builtin(type)})#{statement}"
+        end
+        
+        def upcast_none(statement)
+          "#{statement};"
+        end
+
+        def convert_array(type)
+          "java.util.List<#{typemap[type]}>"
+        end
+
+        def convert_builtin(type)
+          case type
+            when 'int' then 'Integer'
+            when 'string' then 'String'
+            when 'boolean' then 'Boolean'
+          end
+        end
+
+        def convert_none
+          'void'
         end
 
         def convert_pod(name, item)
           normalized = normalize_type(name)
           genereate_pod normalized, item
+
           normalized
         end
 
@@ -142,6 +183,12 @@ module SK
               append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
               "public class #{components.last} {",
               indent(
+                "public String toString() {",
+                indent(
+                  %Q{return "#{name}: " + #{java_inspect(data)};}
+                ),
+                '}',
+                '',
                 data.map { |_name, _type|
                   "public #{typemap[_type]} #{_name};"
                 }
@@ -151,6 +198,12 @@ module SK
             ]
           end
           puts filename
+        end
+
+        def java_inspect(members)
+          members.map { |_name, _type|
+            %Q{"#{_name}=" + this.#{_name}}
+          }.join(' + ", " +')
         end
       end
     end
