@@ -99,11 +99,7 @@ module SK
           block ||= proc { |_result|
             "return #{_result};"
           }
-          [ 
-            "HashMap map = (HashMap)#{statement};",
-            "#{pod_type} pod = new #{pod_type}();",
-            block.call('pod')
-          ]
+          block.call("new #{pod_type}((HashMap)#{statement})")
         end
 
         def upcast_array(type, statement, &block)
@@ -132,7 +128,7 @@ module SK
           block ||= proc { |_result|
             "return #{_result};"
           }
-          block.call "(#{convert_builtin(type)})#{statement}"
+          block.call("(#{convert_builtin(type)})#{statement}")
         end
         
         def upcast_none(statement)
@@ -140,7 +136,7 @@ module SK
         end
 
         def convert_array(type)
-          "java.util.List<#{typemap[type]}>"
+          "List<#{typemap[type]}>"
         end
 
         def convert_builtin(type)
@@ -157,7 +153,7 @@ module SK
 
         def convert_pod(name, item)
           normalized = normalize_type(name)
-          genereate_pod normalized, item
+          generate_pod normalized, item
 
           normalized
         end
@@ -171,9 +167,10 @@ module SK
           ].flatten.join('.')
         end
 
-        def genereate_pod(name, data)
+        def generate_pod(name, data)
           components = name.split('.')
           namespace = components.slice(0...-1)
+          pod = components.last
 
           filename = File.join(@destination, components) + '.java'
           mkdir_p File.dirname(filename)
@@ -181,29 +178,41 @@ module SK
           File.open(filename, "w") do |_io|
             _io.puts [
               append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
-              "public class #{components.last} {",
+              'import java.util.*;',
+              '',
+              "public class #{pod} {",
               indent(
+                "public #{pod}(HashMap data) {",
+                indent(
+                  '_data = data;'
+                ),
+                '}',
+                '',
                 "public String toString() {",
                 indent(
-                  %Q{return "#{name}: " + #{java_inspect(data)};}
+                  %Q{return "#{name}: " + _data;}
                 ),
                 '}',
                 '',
                 data.map { |_name, _type|
-                  "public #{typemap[_type]} #{_name};"
-                }
+                  type = typemap[_type]
+                  upcastor = wsdl.types.fetch(_type)
+                  [
+                    "public #{type} #{_name}() throws ClassCastException {",
+                    indent(
+                      upcastor.upcast(self, type, %Q{_data.get("#{_name}")})
+                    ),
+                    '}',
+                    ''
+                  ]
+                },
+                'private HashMap _data;'
               ),
               '}',
               ''
             ]
           end
           puts filename
-        end
-
-        def java_inspect(members)
-          members.map { |_name, _type|
-            %Q{"#{_name}=" + this.#{_name}}
-          }.join(' + ", " +')
         end
       end
     end
