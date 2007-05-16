@@ -66,9 +66,10 @@ module SK
         def service_methods
           wsdl.actions.map { |_name, _info|
             return_type = _info[:output]
+            method_name = _name.slice(0, 1).downcase + _name.slice(1..-1)
             [
               '',
-              "public #{typemap[return_type]} #{_name}(#{params(_info[:input])}) throws XmlRpcException, ClassCastException {",
+              "public #{typemap[return_type]} #{method_name}(#{params(_info[:input])}) throws XmlRpcException, ClassCastException {",
               indent(
                 'Vector<Object> params = new Vector<Object>();',
                 _info[:input].map { |_parameter, _type|
@@ -196,8 +197,12 @@ module SK
                 data.map { |_name, _type|
                   type = typemap[_type]
                   upcastor = wsdl.types.fetch(_type)
+                  method_name = [ _name.split('_') ].map { |_first, *_rest|
+                    [ _first.downcase, _rest.map { |_component| _component.capitalize } ]
+                  }.flatten.join
+
                   [
-                    "public #{type} #{_name}() throws ClassCastException {",
+                    "public #{type} #{method_name}() throws ClassCastException {",
                     indent(
                       upcastor.upcast(self, type, %Q{_data.get("#{_name}")})
                     ),
