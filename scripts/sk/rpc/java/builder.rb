@@ -144,6 +144,9 @@ module SK
             when 'int' then 'Integer'
             when 'string' then 'String'
             when 'boolean' then 'Boolean'
+            when 'dateTime' then 'Date'
+            else 
+              raise "Unsupported native type #{type.inspect}"
           end
         end
 
