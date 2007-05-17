@@ -91,7 +91,9 @@ module SK
 
         def typemap
           @typemap ||= Hash.new { |_hash, _key|
-            _hash[_key] = wsdl.types.fetch(_key).convert(self, _key)
+            mapped = wsdl.types.fetch(_key).convert(self, _key)
+            _hash[_key] = mapped
+            _hash[mapped] = mapped
           }
         end
 
