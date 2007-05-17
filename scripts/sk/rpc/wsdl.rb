@@ -43,7 +43,7 @@ module SK
             raise "No return type for #{name}" if response_part && response_part['name'] != 'return'
 
             _hash.update name => {
-              :input => [ _info.first.fetch(:part) ].flatten.map { |_item|
+              :input => [ _info.first[:part] ].flatten.compact.map { |_item|
                 [ _item.fetch('name'), normalize_type(_item.fetch('type')) ]
               },
               :output => (response_part ? normalize_type(response_part.fetch('type')) : 'none')
