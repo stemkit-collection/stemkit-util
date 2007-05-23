@@ -32,11 +32,25 @@ module SK
               '',
               "public class #{wsdl.service} {",
               indent(
+                'public interface IXmlRpcClientFactory {',
+                indent(
+                  'public IXmlRpcClient getXmlRpcClient();'
+                ),
+                '}',
+                '',
+                'public interface IXmlRpcClient {',
+                indent(
+                  'public Object execute(String methodName, List params) throws XmlRpcException;',
+                  'public void setConfig(XmlRpcClientConfig config);'
+                ),
+                '}',
+                '',
                 "public #{wsdl.service}(String endpoint) throws MalformedURLException {",
                  indent(
                    'XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();',
                    'config.setServerURL(new URL(endpoint));',
-                   '_client = new XmlRpcClient();',
+                   '', 
+                   '_client = getXmlRpcClientFactory().getXmlRpcClient();',
                    '_client.setConfig(config);'
                  ),
                 '}',
@@ -54,7 +68,34 @@ module SK
                 '}',
                 service_methods,
                 '',
-                'private XmlRpcClient _client;'
+                'private IXmlRpcClientFactory getXmlRpcClientFactory() {',
+                indent(
+                  'if(_clientFactory == null) {',
+                  indent(
+                    '_clientFactory = new IXmlRpcClientFactory() {',
+                    indent(
+                      'public IXmlRpcClient getXmlRpcClient() {',
+                      indent(
+                        'class Client extends XmlRpcClient implements IXmlRpcClient {};',
+                        'return new Client();'
+                      ),
+                      '}'
+                    ),
+                    '};'
+                  ),
+                  '}',
+                  'return _clientFactory;'
+                ),
+                '}',
+                '',
+                'public static void setXmlRpcClientFactory(IXmlRpcClientFactory factory) {',
+                indent(
+                  '_clientFactory = factory;'
+                ),
+                '}',
+                '',
+                'private static IXmlRpcClientFactory _clientFactory;',
+                'private IXmlRpcClient _client;'
               ),
               "}"
             ].flatten.compact
