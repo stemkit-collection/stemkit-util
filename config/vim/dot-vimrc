@@ -45,6 +45,9 @@ command Test make test
 command Open execute "!svn status \\%t"
 command Revert execute "!svn revert %" <Bar> e
 command Diff execute "!svn diff % | less"
+command Blame execute "!svn annotate % | less"
+        command Log execute "!svn log % | less"
+command Resolved execute "!svn resolved %"
 
 "set shellpipe=2>&1\|sed\ \'s/:\ warning:/\ [WARNING]/g\'\|tee
 
@@ -112,3 +115,8 @@ let Tlist_Compact_Format=1
 "  au FileType c,cpp so ~bystr/.vim/fold/c-fold.vim
 "augroup END
 
+" <F8> to toggle display of special chars
+nnoremap <F8> :set invlist list?<CR>
+
+" when turning on special chars, tabs are '>---'
+execute 'set listchars+=tab:>-' 
