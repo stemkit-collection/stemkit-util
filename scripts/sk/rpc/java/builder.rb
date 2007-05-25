@@ -24,34 +24,45 @@ module SK
             _io.puts [
               '',
               append_newline_if(namespace.empty? || "package #{namespace.join('.')};"),
-              'import java.net.*;',
-              'import java.util.*;',
-              '',
-              'import org.apache.xmlrpc.client.*;',
-              'import org.apache.xmlrpc.*;',
+              normalize_lines('
+                import java.net.*;
+                import java.util.*;
+
+                import org.apache.xmlrpc.client.*;
+                import org.apache.xmlrpc.*;
+              '),
               '',
               "public class #{wsdl.service} {",
               indent(
-                'public interface IXmlRpcClientFactory {',
-                indent(
-                  'public IXmlRpcClient getXmlRpcClient();'
-                ),
-                '}',
-                '',
-                'public interface IXmlRpcClient {',
-                indent(
-                  'public Object execute(String methodName, List params) throws XmlRpcException;',
-                  'public void setConfig(XmlRpcClientConfig config);'
-                ),
-                '}',
+                normalize_lines('
+                  public interface DriverFactory {
+                    public Driver getDriver(String endpoint) throws MalformedURLException;
+                  }
+
+                  public interface Driver {
+                    public Object execute(String methodName, List params) throws DriverException;
+                  }
+                  
+                  public class DriverException extends Exception {
+                    public DriverException(Exception original) {
+                      _original = original;
+                    }
+
+                    public String toString() {
+                      return _original.toString();
+                    }
+
+                    public String getMessage() {
+                      return _original.getMessage();
+                    }
+
+                    private Exception _original;
+                  }
+                '),
                 '',
                 "public #{wsdl.service}(String endpoint) throws MalformedURLException {",
                  indent(
-                   'XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();',
-                   'config.setServerURL(new URL(endpoint));',
-                   '', 
-                   '_client = getXmlRpcClientFactory().getXmlRpcClient();',
-                   '_client.setConfig(config);'
+                   '_driver = getDriverFactory().getDriver(endpoint);'
                  ),
                 '}',
                 '',
@@ -68,34 +79,41 @@ module SK
                 '}',
                 service_methods,
                 '',
-                'private IXmlRpcClientFactory getXmlRpcClientFactory() {',
-                indent(
-                  'if(_clientFactory == null) {',
-                  indent(
-                    '_clientFactory = new IXmlRpcClientFactory() {',
-                    indent(
-                      'public IXmlRpcClient getXmlRpcClient() {',
-                      indent(
-                        'class Client extends XmlRpcClient implements IXmlRpcClient {};',
-                        'return new Client();'
-                      ),
-                      '}'
-                    ),
-                    '};'
-                  ),
-                  '}',
-                  'return _clientFactory;'
-                ),
-                '}',
-                '',
-                'public static void setXmlRpcClientFactory(IXmlRpcClientFactory factory) {',
-                indent(
-                  '_clientFactory = factory;'
-                ),
-                '}',
-                '',
-                'private static IXmlRpcClientFactory _clientFactory;',
-                'private IXmlRpcClient _client;'
+                normalize_lines('
+                  public static void setDriverFactory(DriverFactory factory) {
+                    _driverFactory = factory;
+                  }
+                  
+                  private DriverFactory getDriverFactory() {
+                    if(_driverFactory == null) {
+                      _driverFactory = new DriverFactory() {
+                        public Driver getDriver(String endpoint) throws MalformedURLException {
+                          XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+                          config.setServerURL(new URL(endpoint));
+
+                          final XmlRpcClient client = new XmlRpcClient();
+                          client.setConfig(config);
+
+                          return new Driver() {
+                            public Object execute(String service, List params) throws DriverException {
+                              try {
+                                return _client.execute(service, params);
+                              }
+                              catch(XmlRpcException exception) {
+                                throw new DriverException(exception);
+                              }
+                            }
+                            private XmlRpcClient _client = client;
+                          };
+                        }
+                      };
+                    }
+                    return _driverFactory;
+                  }
+                  
+                  private static DriverFactory _driverFactory;
+                  private Driver _driver;
+                ')
               ),
               "}"
             ].flatten.compact
@@ -110,17 +128,29 @@ module SK
             method_name = _name.slice(0, 1).downcase + _name.slice(1..-1)
             [
               '',
-              "public #{typemap[return_type]} #{method_name}(#{params(_info[:input])}) throws XmlRpcException, ClassCastException {",
+              "public #{typemap[return_type]} #{method_name}(#{params(_info[:input])}) throws DriverException, ClassCastException {",
               indent(
                 'Vector<Object> params = new Vector<Object>();',
                 _info[:input].map { |_parameter, _type|
                   %Q{params.addElement(#{_parameter});}
                 },
                 '',
-                wsdl.types.fetch(return_type).upcast(self, return_type, %Q{_client.execute("#{_name}", params)})
+                wsdl.types.fetch(return_type).upcast(self, return_type, %Q{_driver.execute("#{_name}", params)})
               ),
               '}'
             ]
+          }
+        end
+
+        def normalize_lines(arg)
+          sizes, lines = arg.strip.map { |_line|
+            [ (_line.slice(%r{^\s*(?=\S)}) or '').size, _line.chomp ]
+          }.transpose
+
+          offset = sizes.reject { |_number| _number.zero? }.min
+
+          lines.map { |_line|
+            _line.sub %r{^#{' ' * offset}}, ''
           }
         end
 
@@ -265,6 +295,23 @@ module SK
           puts filename
         end
       end
+    end
+  end
+end
+
+if $0 == __FILE__ or defined?(Test::Unit::TestCase)
+  require 'test/unit'
+
+  class SK::RPC::Java::BuilderTest < Test::Unit::TestCase
+    def test_normalize_lines
+      builder = SK::RPC::Java::Builder.new(nil, nil)
+
+      assert_equal '', builder.normalize_lines('
+      aaa
+        bbb
+          ccc
+        ddd
+      ')
     end
   end
 end
