@@ -24,7 +24,7 @@ set keywordprg=man\ -a
 set bs=indent,start
 set ttyfast
 
-let mysyntaxfile = "~gbystrit/.vimsyntax"
+let mysyntaxfile = "~/.vimsyntax"
 syntax on
 
 map  :set autoindent! cindent! autoindent?<CR>
@@ -110,7 +110,7 @@ let Tlist_Enable_Fold_Column=0
 let Tlist_Exit_OnlyWindow=1
 let Tlist_Compact_Format=1
 
-"so ~gbystrit/.vim/fold/outlinetoggle.vim
+"so ~/.vim/fold/outlinetoggle.vim
 "augroup C
 "  au FileType c,cpp so ~bystr/.vim/fold/c-fold.vim
 "augroup END
