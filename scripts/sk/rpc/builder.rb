@@ -16,6 +16,21 @@ module SK
         @namespace = namespace
       end
 
+      def typemap
+        @typemap ||= Hash.new { |_hash, _key|
+          mapped = wsdl.types.fetch(_key).convert(self, _key)
+          _hash[_key] = mapped
+          _hash[mapped] = mapped
+        }
+      end
+
+      def convert_pod(name, item)
+        normalized = normalize_type(name)
+        generate_pod normalized, item
+
+        normalized
+      end
+
       def prepend_newline_if(content)
         (!content || content==true || content.empty?) ? [] : [ '', content ]
       end

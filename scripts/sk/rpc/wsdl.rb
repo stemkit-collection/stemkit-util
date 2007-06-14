@@ -49,7 +49,9 @@ module SK
               :output => (response_part ? normalize_type(response_part.fetch('type')) : 'none')
             }
           }
-        end
+        end.sort_by { |_name, _type|
+          _name
+        }
       end
 
       def types

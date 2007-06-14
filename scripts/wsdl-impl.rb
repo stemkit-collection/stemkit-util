@@ -60,7 +60,7 @@ class Application < TSC::Application
       "SK::RPC::#{language.capitalize}::Builder".split('::').inject(Module) { |_module, _name|
         _module.const_get(_name)
       }
-    rescue
+    rescue StandardError, LoadError
       raise "Lanuguage #{language.inspect} not supported"
     end
   end
