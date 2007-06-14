@@ -63,9 +63,9 @@ module SK
             Hash[
               normalize_type('typens:' + _item.fetch('name')) => begin
                 if members
-                  SK::RPC::Pod.new [ members ].flatten.compact.inject({}) { |_hash, _member|
-                    _hash.update _member.fetch('name') => normalize_type(_member.fetch('type'))
-                  }
+                  SK::RPC::Pod.new [ members ].flatten.compact.map { |_member|
+                    [ _member.fetch('name'), normalize_type(_member.fetch('type')) ]
+                  }.sort_by { |_element| _element.first }
                 elsif complex
                   base = complex.fetch('base')
                   case base
