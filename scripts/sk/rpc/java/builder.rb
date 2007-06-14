@@ -125,10 +125,9 @@ module SK
         def service_methods
           wsdl.actions.map { |_name, _info|
             return_type = _info[:output]
-            method_name = _name.slice(0, 1).downcase + _name.slice(1..-1)
             [
               '',
-              "public #{typemap[return_type]} #{method_name}(#{params(_info[:input])}) throws DriverException, ClassCastException {",
+              "public #{typemap[return_type]} #{java_method(_name)}(#{params(_info[:input])}) throws DriverException, ClassCastException {",
               indent(
                 'Vector<Object> params = new Vector<Object>();',
                 _info[:input].map { |_parameter, _type|
@@ -258,14 +257,23 @@ module SK
                 data.map { |_name, _type|
                   type = typemap[_type]
                   upcastor = wsdl.types.fetch(_type)
-                  method_name = [ _name.split('_') ].map { |_first, *_rest|
-                    [ _first.downcase, _rest.map { |_component| _component.capitalize } ]
-                  }.flatten.join
-
                   [
-                    "public #{type} #{method_name}() throws ClassCastException {",
+                    "public boolean #{java_checker_method(_name)}() {",
                     indent(
-                      upcastor.upcast(self, type, %Q{_data.get("#{_name}")})
+                      %Q{return _data.containsKey("#{_name}");}
+                    ),
+                    '}',
+                    '',
+                    "public #{type} #{java_getter_method(_name)}() throws ClassCastException, MissingResourceException {",
+                    indent(
+                      %Q{Object value = _data.get("#{_name}");},
+                      '',
+                      'if(value == null) {',
+                      indent(
+                        %Q{throw new MissingResourceException("Parameter '#{_name}' not available", "HashMap", "#{_name}");}
+                      ),
+                      '}',
+                      upcastor.upcast(self, type, %Q{value})
                     ),
                     '}',
                     ''
@@ -278,6 +286,21 @@ module SK
             ]
           end
           puts filename
+        end
+
+        private
+        #######
+
+        def java_getter_method(name)
+          join_capitalized_but_first 'get', *extract_name_components(name)
+        end
+
+        def java_checker_method(name)
+          join_capitalized_but_first 'has', *extract_name_components(name)
+        end
+
+        def java_method(name)
+          join_capitalized_but_first *extract_name_components(name)
         end
       end
     end

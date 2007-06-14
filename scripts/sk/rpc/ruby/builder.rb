@@ -171,21 +171,17 @@ module SK
         end
 
         def ruby_module_name(name)
-          File.basename(name).split(%r{[_-]}).map { |_part| _part[0,1].upcase + _part[1..-1] }.join
-        end
-
-        def ruby_name(name, separator)
-          name.split(%r{(?=[A-Z_])}).map { |_item| _item.downcase }.join(separator)
+          join_capitalized_but_first '', *extract_name_components(File.basename(name))
         end
 
         def ruby_file_name(*args)
           args.flatten.map { |_item|
-            ruby_name(_item, '-')
+            extract_name_components(_item).join('-')
           }
         end
 
         def ruby_method_name(name)
-          ruby_name(name, '_')
+          extract_name_components(name).join('_')
         end
 
         def make_ruby_modules(namespace, &block)

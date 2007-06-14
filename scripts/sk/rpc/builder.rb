@@ -44,6 +44,18 @@ module SK
           '  ' + _line
         }
       end
+
+      def extract_name_components(name)
+        name.split(%r{[_-]}).map { |_partial|
+          _partial.split(%r{(?=[A-Z])}).map { |_item| 
+            _item.downcase 
+          }
+        }.flatten
+      end
+
+      def join_capitalized_but_first(first, *components)
+        [ first, components.map { |_item| _item.capitalize } ].join
+      end
     end
   end
 end
