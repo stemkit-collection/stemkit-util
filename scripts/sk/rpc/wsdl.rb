@@ -27,7 +27,7 @@ module SK
       end
 
       def service
-        data.fetch(:service).fetch('name')
+        data.fetch(:service).fetch('name') rescue raise 'Service not defined'
       end
 
       def endpoint
