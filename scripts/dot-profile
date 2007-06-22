@@ -18,6 +18,7 @@ eval <<'RUBY'
       #{userinfo.dir}/bin/#{sysid} 
       #{userinfo.dir}/bin
       #{userinfo.dir}/local/#{sysid}/bin
+      #{userinfo.dir}/local/bin
       #{userinfo.dir}/local/#{sysid}/java/jdk1.5.0_11/bin
       /sbin 
       /opt/ansic/bin
@@ -386,6 +387,7 @@ act_as_profile()
   JINDENT_PROPERTY="$HOME/.jindent" export JINDENT_PROPERTY
   EXINIT="so $HOME/.exrc" export EXINIT
   P4PORT=localhost:1 export P4PORT
+  P4CONFIG=.p4rc export P4CONFIG
   PAGER=less export PAGER
   LESS=-XMFe export LESS
   HISTSIZE=1000 export HISTSIZE
