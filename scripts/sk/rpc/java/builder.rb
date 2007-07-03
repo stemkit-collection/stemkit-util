@@ -199,7 +199,7 @@ module SK
               'return 0L;'
             ),
             '}',
-            'Long bignum = (((Integer)result[1]).longValue() << 32) | (((Integer)result[0]).longValue() & 0xffffffffL);',
+            'Long bignum = (((Integer)result[0]).longValue() << 32) | (((Integer)result[1]).longValue() & 0xffffffffL);',
             '',
             block.call('bignum')
           ]
