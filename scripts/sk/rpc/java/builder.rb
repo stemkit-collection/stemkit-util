@@ -188,6 +188,23 @@ module SK
           ]
         end
 
+        def upcast_bignum(statement, &block)
+          block ||= proc { |_result|
+            "return #{_result};"
+          }
+          [
+            "Object[] result = (Object[])#{statement};",
+            'if(result.length == 0) {', 
+            indent(
+              'return 0L;'
+            ),
+            '}',
+            'Long bignum = (((Integer)result[1]).longValue() << 32) | (((Integer)result[0]).longValue() & 0xffffffffL);',
+            '',
+            block.call('bignum')
+          ]
+        end
+
         def upcast_builtin(type, statement, &block)
           block ||= proc { |_result|
             "return #{_result};"
@@ -201,6 +218,10 @@ module SK
 
         def convert_array(type)
           "List<#{typemap[type]}>"
+        end
+
+        def convert_bignum
+          'Long'
         end
 
         def convert_builtin(type)

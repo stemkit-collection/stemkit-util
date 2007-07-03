@@ -10,6 +10,7 @@ require 'xmlsimple'
 require 'sk/rpc/pod.rb'
 require 'sk/rpc/array.rb'
 require 'sk/rpc/none.rb'
+require 'sk/rpc/bignum.rb'
 require 'sk/rpc/builtin.rb'
 
 require 'enumerator'
@@ -70,7 +71,12 @@ module SK
                   base = complex.fetch('base')
                   case base
                     when 'soapenc:Array'
-                      SK::RPC::Array.new normalize_type(complex[:attribute]['wsdl:arrayType'].slice(0...-2))
+                      array_type = complex[:attribute]['wsdl:arrayType'].slice(0...-2)
+                      if array_type == 'xsd:int'
+                        SK::RPC::Bignum.new 
+                      else
+                        SK::RPC::Array.new normalize_type(array_type)
+                      end
                     else
                       raise "Unsupported complex type #{base.inspect}"
                   end
