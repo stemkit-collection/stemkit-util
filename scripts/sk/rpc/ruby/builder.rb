@@ -142,6 +142,20 @@ module SK
           ]
         end
 
+        def upcast_bignum(statement, &block)
+          [
+            "#{statement}.map.reverse.inject(0) { |_number, _item|",
+            indent(
+              '(_number << 32) | (_item & 0xffffffff)'
+            ),
+            '}'
+          ]
+        end
+
+        def convert_bignum
+          ''
+        end
+
         def convert_array(type)
           ''
         end
