@@ -34,7 +34,7 @@ module SK
               '',
               "public class #{wsdl.service} {",
               indent(
-                normalize_lines('
+                normalize_lines("
                   public interface DriverFactory {
                     public Driver getDriver(String endpoint) throws MalformedURLException;
                   }
@@ -56,9 +56,18 @@ module SK
                       return _original.getMessage();
                     }
 
+                    public String getCode() {
+                      String message = _original.getMessage();
+                      int colon = message.indexOf(':');
+                      if(colon < 0) {
+                        return null;
+                      }
+                      return message.substring(0, colon);
+                    }
+
                     private Exception _original;
                   }
-                '),
+                "),
                 '',
                 "public #{wsdl.service}(String endpoint) throws MalformedURLException {",
                  indent(
