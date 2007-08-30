@@ -5,6 +5,7 @@
 # You must read and accept the license prior to use.
 
 require 'tsc/errors.rb'
+require 'timeout'
 
 module SK
   class Process 
@@ -42,6 +43,20 @@ module SK
           TSC::Error.ignore {
             IO.open(_descriptor).close
           }
+        end
+      end
+
+      def stop(pid, tolerance = 3)
+        kill 'INT', pid rescue return
+        begin 
+          timeout tolerance do
+            loop do
+              kill 0, pid rescue break
+              sleep 1
+            end
+          end
+        rescue Timeout::Error
+          kill 'KILL', pid
         end
       end
     end

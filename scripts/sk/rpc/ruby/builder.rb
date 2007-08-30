@@ -36,7 +36,7 @@ module SK
                     ),
                     'end',
                     '',
-                    'def endpoint',
+                    "def #{wsdl.service}.endpoint",
                     indent(
                       "'#{wsdl.endpoint}'"
                     ),
