@@ -269,7 +269,7 @@ act_as_rc()
 
     __showdir__() {
       [ "${#}" -le 1 ] && {
-        echo Current directory is $PWD
+        echo Current directory is `pwd`
       }
       update_columns
       ls "${@}"
