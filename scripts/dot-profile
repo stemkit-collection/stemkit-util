@@ -34,6 +34,10 @@ eval <<'RUBY'
       /usr/X11/demo /usr/openwin/demo
       /opt/imake/bin
       /opt/gcc.3.3/bin
+      /usr/contrib/bin
+      /usr/contrib/win32/bin
+      /dev/fs/C/SFU-ROOT/common
+      /dev/fs/C/WINDOWS/system32
     }
     MANPATH = %w{
       /usr/man
@@ -140,6 +144,10 @@ eval <<'RUBY'
         class << info
           def dir
             ENV['HOME']
+          end
+
+          def name
+            ENV['LOGNAME'] || super
           end
         end
 
@@ -403,6 +411,8 @@ act_as_profile()
   HISTSIZE=1000 export HISTSIZE
   export HISTFILE
   RI=-fbs export RI
+  PATH_WINDOWS=/dev/fs/C/WINDOWS/system32/.com,.exe,.ksh,.bat,.cmd,:/dev/fs/C/SFU-ROOT/common/.com,.exe,.ksh,.bat,.cmd,
+  export PATH_WINDOWS
 
   umask 2
   mesg y
