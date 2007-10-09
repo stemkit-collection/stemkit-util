@@ -14,7 +14,7 @@ eval <<'RUBY'
       #{userinfo.dir}/projects/sf/tsc-tpm/trunk/src/scripts
       #{userinfo.dir}/projects/sf/tsc-build/trunk/src/scripts
       #{userinfo.dir}/projects/sf/tsc-act/trunk/src/scripts
-      #{userinfo.dir}/projects/tools/src/scripts
+      #{userinfo.dir}/projects/tools/2.4/src/scripts
       #{userinfo.dir}/bin/#{sysid} 
       #{userinfo.dir}/bin
       #{userinfo.dir}/local/#{sysid}/bin
@@ -345,7 +345,7 @@ act_as_rc()
         esac
       done
     }
-    CDPATH=".:${HOME}/local/${SYSID}" export CDPATH
+    CDPATH=".:${HOME}:${HOME}/projects:${HOME}/projects/sf:${HOME}/local/${SYSID}" export CDPATH
     EDITOR=vim export EDITOR
     VISUAL=vim export VISUAL
 
