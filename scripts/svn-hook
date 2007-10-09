@@ -109,7 +109,7 @@ class Application < TSC::Application
 
   in_generator_context do |_content|
     _content << '#!' + figure_ruby_path
-    _content << TSC::PATH.current.front(installation_tools_bin).to_ruby_eval
+    _content << TSC::PATH.current.front(installation_tools_bin, File.join(self.class.installation_top, 'bin')).to_ruby_eval
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
 end

@@ -5,10 +5,13 @@
 # You must read and accept the license prior to use.
 
 require 'tsc/launch.rb'
+require 'sk/svn/hook/logger.rb'
 
 module SK
   module Svn
     class Commander
+      include Hook::Logger
+
       attr_reader :launcher
 
       def initialize
@@ -28,6 +31,7 @@ module SK
       end
 
       def launch(*args)
+        log args
         launcher.launch(args.flatten.compact).first
       end
     end
