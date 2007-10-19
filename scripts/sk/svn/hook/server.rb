@@ -33,7 +33,15 @@ module SK
                 begin
                   $stderr.puts "#{Time.now} - STARTED (pid=#{::Process.pid}, timeout=#{config.request_wait_timeout})"
                   loop do
-                    invoke_plugins_for @queue.get(config.request_wait_timeout)
+                    begin
+                      revision = nil
+                      timeout(config.request_wait_timeout * 2) do
+                        revision = @queue.get(config.request_wait_timeout)
+                      end
+                      invoke_plugins_for revision
+                    rescue Timeout::Error
+                      $stderr.puts "#{Time.now} - TIMEOUT, trying again (pid=#{::Process.pid})"
+                    end
                   end
                 rescue TSC::OperationFailed
                 end
