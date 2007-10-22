@@ -1,0 +1,13 @@
+#!/bin/sh
+
+[ "${#}" -eq 0 ] && {
+  echo "USAGE: `basename ${0}` <location> [ <pattern> [ <extra find options> ...] ]"
+  exit 2
+}
+location="${1}"
+shift
+
+pattern="${1}"
+shift
+
+find "${location:-.}" -name .svn -prune -o -name "*.[CcHh]*" ${pattern:+-exec grep ${pattern} "{}" \;} "${@:--print}"
