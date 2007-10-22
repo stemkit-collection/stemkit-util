@@ -10,4 +10,4 @@ shift
 pattern="${1}"
 shift
 
-find "${location:-.}" -name .svn -prune -o -name "*.[CcHh]*" ${pattern:+-exec grep ${pattern} "{}" \;} "${@:--print}"
+exec find "${location:-.}" -name .svn -prune -o -name "*.[CcHh]*" ${pattern:+-exec grep ${pattern} "{}" \;} "${@:--print}"
