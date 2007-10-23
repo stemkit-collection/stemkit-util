@@ -1,13 +1,28 @@
 #!/bin/sh
 
+unset FOLDER 
+OPTERR=0
+
+while getopts "v" option; do
+  case "${option}" in
+    v)
+      set -xv
+    ;;
+    *)
+      echo "USAGE `basename ${0}` [-d<folder>] [<svn command>]" 1>&2
+      exit 2
+    ;;
+  esac
+done
+shift `expr $OPTIND - 1`
+
 [ "${#}" -eq 0 ] && {
   echo "USAGE: `basename ${0}` <location> [ <pattern> [ <extra find options> ...] ]"
   exit 2
 }
 location="${1}"
+pattern="${2}"
 shift
-
-pattern="${1}"
 shift
 
 exec find "${location:-.}" -name .svn -prune -o -name "*.[CcHh]*" ${pattern:+-exec grep ${pattern} "{}" \;} "${@:--print}"

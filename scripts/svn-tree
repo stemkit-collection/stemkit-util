@@ -12,11 +12,16 @@ while getopts "vd:" option; do
       FOLDER="${FOLDER:+${FOLDER} }${OPTARG}"
     ;;
     *)
-      echo "USAGE `basename ${0}` [-d<folder>] [<svn command>]" 1>&2
+      echo "USAGE `basename ${0}` [-v][-d<folder>][[<folder> ...] <svn command>]" 1>&2
       exit 2
     ;;
   esac
 done
 shift `expr $OPTIND - 1`
+
+while [ "${#}" -gt 1 ]; do
+  FOLDER="${FOLDER:+${FOLDER} }${1}"
+  shift
+done
 
 find ${FOLDER:-.} -name src -prune -print | xargs -n1 svn "${@:-status}"
