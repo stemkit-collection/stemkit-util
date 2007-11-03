@@ -1,6 +1,6 @@
 #!/bin/sh
 
-unset FOLDER 
+unset FOLDERS 
 OPTERR=0
 
 while getopts "vd:" option; do
@@ -9,19 +9,14 @@ while getopts "vd:" option; do
       set -xv
     ;;
     d)
-      FOLDER="${FOLDER:+${FOLDER} }${OPTARG}"
+      FOLDERS="${FOLDERS:+${FOLDERS} }${OPTARG}"
     ;;
     *)
-      echo "USAGE `basename ${0}` [-v][-d<folder>][[<folder> ...] <svn command>]" 1>&2
+      echo "USAGE `basename ${0}` [-v] [[-d<folder>] ...] [<svn command>]" 1>&2
       exit 2
     ;;
   esac
 done
 shift `expr $OPTIND - 1`
 
-while [ "${#}" -gt 1 ]; do
-  FOLDER="${FOLDER:+${FOLDER} }${1}"
-  shift
-done
-
-find ${FOLDER:-.} -name src -prune -print | xargs -n1 svn "${@:-status}"
+find ${FOLDERS:-.} -name src -prune -print | xargs -n1 svn "${@:-status}"
