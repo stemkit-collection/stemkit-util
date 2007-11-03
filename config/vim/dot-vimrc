@@ -50,6 +50,7 @@ command Resolved execute "!svn resolved %"
 command -nargs=* Blame execute "!svn annotate % <args> | less"
 command -nargs=* Diff execute "!svn diff % <args> | less"
 command -nargs=* Log execute "!svn log % <args> | less"
+command -nargs=* RTest execute "!ruby -rubygems -I${PATH} <args> % 2>&1 | less"
 
 "set shellpipe=2>&1\|sed\ \'s/:\ warning:/\ [WARNING]/g\'\|tee
 
