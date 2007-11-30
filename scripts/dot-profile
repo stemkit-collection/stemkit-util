@@ -14,7 +14,7 @@ eval <<'RUBY'
       #{userinfo.dir}/projects/sf/tsc-tpm/trunk/src/scripts
       #{userinfo.dir}/projects/sf/tsc-build/trunk/src/scripts
       #{userinfo.dir}/projects/sf/tsc-act/trunk/src/scripts
-      #{userinfo.dir}/projects/tools/2.4/src/scripts
+      #{userinfo.dir}/projects/tools/trunk/src/scripts
       #{userinfo.dir}/bin/#{sysid} 
       #{userinfo.dir}/bin
       #{userinfo.dir}/local/#{sysid}/bin
