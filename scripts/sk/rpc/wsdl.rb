@@ -57,7 +57,7 @@ module SK
 
       def types
         @types ||= begin
-          data[:types][:complextype].map { |_item|
+          ((data[:types] || {})[:complextype] || []).map { |_item|
             members = _item[:all]
             complex = _item[:complexcontent]
 
