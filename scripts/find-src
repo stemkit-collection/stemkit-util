@@ -22,7 +22,8 @@ shift `expr $OPTIND - 1`
 }
 location="${1}"
 pattern="${2}"
-shift
-shift
+
+[ "${#}" -ne 0 ] && shift
+[ "${#}" -ne 0 ] && shift
 
 exec find "${location:-.}" -name .svn -prune -o -name "*.[CcHh]*" ${pattern:+-exec grep ${pattern} "{}" \;} "${@:--print}"
