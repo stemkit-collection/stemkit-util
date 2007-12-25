@@ -235,7 +235,7 @@ locate_ruby()
 {
   for directory in "${@}"; do
     program="${directory}/ruby"
-    [ "`${program} -e 'puts %q{HELLO}'`" = 'HELLO' ] && {
+    [ "`${program} -rubygems -e 'puts %q{HELLO}'`" = 'HELLO' ] && {
       echo ${program}
       break
     }
@@ -397,7 +397,7 @@ act_as_profile()
 
   PATH="${HOME}/bin:${PATH}" export PATH
   RUBY=`locate_ruby ${HOME}/local/*/bin /usr/local/bin /usr/bin`
-  eval `"${RUBY:-ruby}" "${ENV}" start`
+  eval `"${RUBY:-ruby}" -rubygems "${ENV}" start`
   unset RUBY
 
   INPUTRC=~/.inputrc export INPUTRC
