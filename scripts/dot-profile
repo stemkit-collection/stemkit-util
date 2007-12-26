@@ -348,6 +348,9 @@ act_as_rc()
     EDITOR=vim export EDITOR
     VISUAL=vim export VISUAL
 
+    PROFILE_LOCAL="${HOME}/.profile-local"
+    [ -f "${PROFILE_LOCAL}" ] && . "${PROFILE_LOCAL}"
+
     update_columns
 
     case "${SHELL}" in
