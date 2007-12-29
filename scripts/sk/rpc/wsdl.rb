@@ -32,7 +32,7 @@ module SK
       end
 
       def endpoint
-        @endpoint ||= data[:service][:port][:address]['location']
+        @endpoint ||= Array(data[:service][:port]).first[:address]['location']
       end
 
       def actions

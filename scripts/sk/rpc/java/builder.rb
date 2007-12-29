@@ -133,17 +133,22 @@ module SK
 
         def service_methods
           wsdl.actions.map { |_name, _info|
+            delegate, name = _name.scan(%r{^(.+?)-(.+)$}).flatten.compact
+            name ||= _name
             return_type = _info[:output]
             [
               '',
-              "public #{typemap[return_type]} #{java_method(_name)}(#{params(_info[:input])}) throws DriverException, ClassCastException {",
+              "public #{typemap[return_type]} #{java_method(name)}(#{params(_info[:input])}) throws DriverException, ClassCastException {",
               indent(
                 'Vector<Object> params = new Vector<Object>();',
                 _info[:input].map { |_parameter, _type|
                   %Q{params.addElement(#{_parameter});}
                 },
                 '',
-                wsdl.types.fetch(return_type).upcast(self, return_type, %Q{_driver.execute("#{_name}", params)})
+                wsdl.types.fetch(return_type).upcast(
+                  self, 
+                  return_type, 
+                  %Q{_driver.execute("#{[ delegate, name ].compact.join('.')}", params)})
               ),
               '}'
             ]

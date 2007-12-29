@@ -55,11 +55,16 @@ module SK
           wsdl.actions.map { |_name, _info|
             return_type = _info[:output]
             params = _info[:input].map { |_parameter, _type| _parameter }
+            delegate, name = _name.scan(%r{^(.+?)-(.+)$}).flatten.compact
+            name ||= _name
             [
               '',
-              "def #{ruby_method_name(_name)}(#{params.join(', ')})",
+              "def #{ruby_method_name(name)}(#{params.join(', ')})",
               indent(
-                wsdl.types.fetch(return_type).upcast(self, return_type, "@client.call(#{[ _name.inspect, *params ].join(', ')})")
+                wsdl.types.fetch(return_type).upcast(
+                  self, return_type, 
+                  "@client.call(#{[ [ delegate, name ].compact.join('.').inspect, *params ].join(', ')})"
+                )
               ),
               'end'
             ]
