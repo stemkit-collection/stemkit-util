@@ -26,8 +26,8 @@ module SK
       directories.map { |_directory|
         find(_directory, patterns)
       } + files.select { |_file|
-        patterns.empty? or patterns.any? { |_pattern|
-          File.fnmatch(_pattern, _file)
+        patterns.empty? || patterns.any? { |_pattern|
+          File.fnmatch("**/#{_pattern}", _file, File::FNM_DOTMATCH)
         }
       }
     end
@@ -45,25 +45,53 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   
   module SK
     class FileLocatorTest < Test::Unit::TestCase
-      def test_basics
-        locator = FileLocator.new('.')
+      attr_reader :locator
 
-        locator.expects(:entries).with('.').returns [ 'aaa', 'd1' ]
-        locator.expects(:entries).with('d1').returns [ 'd1/bbb', 'd1/ccc' ]
-        File.expects(:directory?).with('d1').returns true
-        File.expects(:directory?).with('d1/bbb').returns false
-        File.expects(:directory?).with('d1/ccc').returns false
-        File.expects(:directory?).with('aaa').returns false
+      def test_bottom_up_no_params
+        assert_equal [ 
+          './d1/bbb', './d1/ccc.1', 
+          './d2/bbb.1', './d2/ccc.2', 
+          './aaa' 
+        ], locator.find_bottom_up
+      end
 
-        assert_equal [ 'd1/bbb', 'd1/ccc', 'aaa' ], locator.find_bottom_up
+      def test_bottom_up_asterisk
+        assert_equal [ 
+          './d1/bbb', './d1/ccc.1', 
+          './d2/bbb.1', './d2/ccc.2', 
+          './aaa' 
+        ], locator.find_bottom_up('*')
+      end
+
+      def test_bottom_up_select_dot_1
+        assert_equal [ './d1/ccc.1', './d2/bbb.1' ], locator.find_bottom_up('*.1')
+      end
+
+      def test_bottom_up_select_dot_2
+        assert_equal [ './d2/ccc.2' ], locator.find_bottom_up('*.2')
+      end
+
+      def test_bottom_up_select_none_for_dot_3
+        assert_equal [], locator.find_bottom_up('*.3')
       end
 
       def setup
-        super
-      end
-      
-      def teardown
-        super
+        @locator = FileLocator.new('.')
+
+        locator.expects(:entries).with('.').returns [ './aaa', './d1', './d2' ]
+        locator.expects(:entries).with('./d1').returns [ './d1/bbb', './d1/ccc.1' ]
+        locator.expects(:entries).with('./d2').returns [ './d2/bbb.1', './d2/ccc.2' ]
+
+        File.expects(:directory?).with('./d1').returns true
+        File.expects(:directory?).with('./d2').returns true
+
+        File.expects(:directory?).with('./d1/bbb').returns false
+        File.expects(:directory?).with('./d1/ccc.1').returns false
+
+        File.expects(:directory?).with('./d2/bbb.1').returns false
+        File.expects(:directory?).with('./d2/ccc.2').returns false
+
+        File.expects(:directory?).with('./aaa').returns false
       end
     end
   end
