@@ -1,0 +1,26 @@
+#!/bin/sh
+
+scriptname=`basename "${0}"`
+
+[ "${#}" -ne 1 ] && {
+  echo "USAGE: ${scriptname} <file>" 1>&2
+  exit 3
+}
+
+file="${1}"
+result=`svn proplist -v "${file}" 2>&1` || {
+  exit "${?}"
+}
+
+error=`echo "${result}" | grep '^svn: '`
+[ "${error:+set}" = set ] && {
+  echo "${error}" 1>&2
+  exit 2
+}
+
+mime=`echo "${result}" | grep -v '^Properties on' | sed -n 's/^ *svn:mime-type *: *\(.*\) *$/\1/p'`
+[ "${mime:+set}" = set ] && {
+  echo "${scriptname}: ${file} is `echo ${mime}`" 1>&2
+  exit 2
+}
+exit 0
