@@ -26,4 +26,4 @@ pattern="${2}"
 [ "${#}" -ne 0 ] && shift
 [ "${#}" -ne 0 ] && shift
 
-exec find "${location:-.}" -name .svn -prune -o -name "*.[CcHh]*" ${pattern:+-exec grep ${pattern} "{}" \;} "${@:--print}"
+exec find "${location:-.}" -name .svn -prune -o -name "*.[CcHh]*" ${pattern:+-exec grep "${pattern}" "{}" \;} "${@:--print}"
