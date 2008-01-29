@@ -54,7 +54,8 @@ namespace sk
 %ignore *::Scope::detail;
 
 %rename(property) *::Scope::getProperty;
-%predicate(property) hasProperty;
+%rename(has_property) *::Scope::hasProperty;
+%predicate hasProperty;
 
 %include <sk/rt/Scope.h>
 
