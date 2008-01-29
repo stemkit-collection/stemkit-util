@@ -7,6 +7,7 @@
 %{
 #include <sk/rt/config/UprootLocator.h>
 #include <sk/rt/scope/Controller.h>
+#include <sk/rt/Scope.h>
 
 using sk::rt::config::StreamProcessor;
 using sk::rt::config::NamedStreamOpener;
@@ -35,12 +36,25 @@ namespace sk
 
 %ignore getClass;
 %ignore *::SpotLocator::openStream;
-%ignore *::Controller::getAggregator;
-
-%rename(load_xml_config) *::Controller::loadXmlConfig;
 
 %include <sk/rt/config/Locator.h>
 %include <sk/rt/config/SpotLocator.h>
 %include <sk/rt/config/UprootLocator.h>
+
+%ignore *::Controller::getAggregator;
+%rename(load_xml_config) *::Controller::loadXmlConfig;
+
 %include <sk/rt/scope/Controller.h>
+
+%ignore *::Scope::error;
+%ignore *::Scope::warning;
+%ignore *::Scope::notice;
+%ignore *::Scope::info;
+%ignore *::Scope::debug;
+%ignore *::Scope::detail;
+
+%rename(property) *::Scope::getProperty;
+%predicate(property) hasProperty;
+
+%include <sk/rt/Scope.h>
 
