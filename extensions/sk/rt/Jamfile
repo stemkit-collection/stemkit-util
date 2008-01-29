@@ -1,0 +1,13 @@
+
+module = rt ;
+
+local objects =
+;
+
+local swig-objects =
+;
+
+use-stemkit $(module) : sk.util sk.rt.bundle ;
+
+make-ruby-extension $(module) : $(swig-objects) : $(objects) ;
+setup-script $(module).sh : $(module) ;
