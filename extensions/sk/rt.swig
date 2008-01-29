@@ -27,6 +27,8 @@ namespace sk
     $action
   }
   catch(const std::exception& exception) {
+    rb_raise(rb_eRuntimeError, exception.what());
+    throw;
   }
 }
 
