@@ -3,4 +3,4 @@
 [ "${1}" = 'test' ] && {
   return 0
 }
-irb -I ${JAM_SRCDIR}/.. -I ..
+irb -I ${JAM_SRCDIR}/.. -I .. -r sk/rt
