@@ -16,10 +16,15 @@ namespace ruby {
   {
     public:
       LoggerAdaptor(const sk::rt::Scope& scope)
-        : _label(sk::util::String::EMPTY), _scope(scope)  {}
+        : _label(sk::util::String::EMPTY), _scope(scope) {}
 
       LoggerAdaptor(const sk::util::String& label, const sk::rt::Scope& scope)
-        : _labelStore(label), _label(_labelStore), _scope(scope)  {}
+        : _labelStore(label), _label(_labelStore), _scope(scope) {}
+
+      LoggerAdaptor(const LoggerAdaptor& other)
+        : _labelStore(other._labelStore), 
+          _label(&other._label == &sk::util::String::EMPTY ? other._label : _labelStore), 
+          _scope(other._scope) {}
 
       void error(const sk::util::String& message) const {
         _scope.error(_label) << message;
@@ -48,7 +53,6 @@ namespace ruby {
     private:
       const sk::util::String _labelStore;
       const sk::util::String& _label;
-
       const sk::rt::Scope& _scope;
   };
 }
