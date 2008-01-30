@@ -6,6 +6,8 @@
 
 %{
 #include <sk/rt/config/UprootLocator.h>
+#include <sk/rt/config/CwdUprootLocator.h>
+#include <sk/rt/config/HomeLocator.h>
 #include <sk/rt/scope/Controller.h>
 #include <sk/rt/Scope.h>
 
@@ -42,6 +44,8 @@ namespace sk
 %include <sk/rt/config/Locator.h>
 %include <sk/rt/config/SpotLocator.h>
 %include <sk/rt/config/UprootLocator.h>
+%include <sk/rt/config/CwdUprootLocator.h>
+%include <sk/rt/config/HomeLocator.h>
 
 %ignore *::Controller::getAggregator;
 %rename(load_xml_config) *::Controller::loadXmlConfig;
