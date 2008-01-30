@@ -35,6 +35,7 @@ LD_EXPORT_DYNAMIC = -Wl,-E ;
 
 C++FLAGS = -Werror -Wreturn-type -Wno-ctor-dtor-privacy ;
 CCFLAGS = -Werror -Wreturn-type ;
+CCDFLAGS = -g ;
 
 DEFINES  = _REENTRANT ;
 INCLUDES = $(GENTOPDIR)/include $(SRCTOPDIR)/include ;
