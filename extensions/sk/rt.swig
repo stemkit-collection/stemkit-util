@@ -12,6 +12,8 @@
 using sk::rt::config::StreamProcessor;
 using sk::rt::config::NamedStreamOpener;
 
+#include "LoggerAdaptor.h"
+
 %}
 
 namespace sk
@@ -56,6 +58,18 @@ namespace sk
 %rename(property) *::Scope::getProperty;
 %rename(has_property) *::Scope::hasProperty;
 %predicate hasProperty;
+%ignore *::LoggerAdaptor::LoggerAdaptor;
 
 %include <sk/rt/Scope.h>
+%include "LoggerAdaptor.h"
+
+%extend sk::rt::Scope {
+  ruby::LoggerAdaptor log() const {
+    return ruby::LoggerAdaptor(*$self);
+  }
+
+  ruby::LoggerAdaptor log(const sk::util::String& label) const {
+    return ruby::LoggerAdaptor(label, *$self);
+  }
+}
 
