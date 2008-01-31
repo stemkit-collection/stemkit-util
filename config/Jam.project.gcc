@@ -289,7 +289,7 @@ CC ?= $(GCC_ROOT)/bin/gcc ;
 
 SWIG ?= $(TOOLS_HOME)/swig-$(SWIG_VERSION)/bin/swig ;
 
-project.STEMKIT_VERSION = 0.3 ;
+project.STEMKIT_VERSION = 0.4 ;
 project.STEMKIT_ROOT = $(CONTRIB_ROOT)/stemkit-$(project.STEMKIT_VERSION) ;
 project.STEMKIT_LIBDIR = $(project.STEMKIT_ROOT)/lib ;
 project.STEMKIT_INCLUDE = $(project.STEMKIT_ROOT)/include ;
