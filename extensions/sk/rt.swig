@@ -1,6 +1,6 @@
-%include "std_string.i"
-%include "std_vector.i"
+%include "stl.i"
 %include "typemaps.i"
+%include "exception.i"
 
 %module "SK::rt"
 
@@ -27,13 +27,14 @@ namespace sk
 }
 
 %typemaps_std_string(sk::util::String, char, SWIG_AsCharPtrAndSize, SWIG_FromCharPtrAndSize, %checkcode(STDSTRING));
+%template("StringHash") std::map<std::string, std::string>;
 
 %exception {
   try {
     $action
   }
   catch(const std::exception& exception) {
-    rb_raise(rb_eRuntimeError, exception.what());
+    SWIG_exception(SWIG_RuntimeError, exception.what());
     throw;
   }
 }
