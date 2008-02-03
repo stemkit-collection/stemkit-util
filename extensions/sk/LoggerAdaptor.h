@@ -26,28 +26,28 @@ namespace ruby {
           _label(&other._label == &sk::util::String::EMPTY ? other._label : _labelStore), 
           _scope(other._scope) {}
 
-      void error(const sk::util::String& message) const {
-        _scope.error(_label) << message;
+      bool error(const sk::util::String& message) const {
+        return (_scope.error(_label) << message).isEnabled();
       }
       
-      void warning(const sk::util::String& message) const {
-        _scope.warning(_label) << message;
+      bool warning(const sk::util::String& message) const {
+        return (_scope.warning(_label) << message).isEnabled();
       }
 
-      void notice(const sk::util::String& message) const {
-        _scope.notice(_label) << message;
+      bool notice(const sk::util::String& message) const {
+        return (_scope.notice(_label) << message).isEnabled();
       }
 
-      void info(const sk::util::String& message) const {
-        _scope.info(_label) << message;
+      bool info(const sk::util::String& message) const {
+        return (_scope.info(_label) << message).isEnabled();
       }
 
-      void debug(const sk::util::String& message) const {
-        _scope.debug(_label) << message;
+      bool debug(const sk::util::String& message) const {
+        return (_scope.debug(_label) << message).isEnabled();
       }
 
-      void detail(const sk::util::String& message) const {
-        _scope.detail(_label) << message;
+      bool detail(const sk::util::String& message) const {
+        return (_scope.detail(_label) << message).isEnabled();
       }
 
     private:
