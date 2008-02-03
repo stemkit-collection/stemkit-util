@@ -69,12 +69,8 @@ namespace sk
 %include "LoggerAdaptor.h"
 
 %extend sk::rt::Scope {
-  ruby::LoggerAdaptor log() const {
+  const ruby::LoggerAdaptor logger() const {
     return ruby::LoggerAdaptor(*$self);
-  }
-
-  ruby::LoggerAdaptor log(const sk::util::String& label) const {
-    return ruby::LoggerAdaptor(label, *$self);
   }
 }
 
