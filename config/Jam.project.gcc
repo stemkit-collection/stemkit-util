@@ -15,8 +15,6 @@ project.DISTRIB_PRODINFO = $(SRCTOP:J=/)/install/prodinfo ;
 
 TOOLS_HOME = $(HOME)/local/$(JAMCONFIG_PRODUCT_PLATFORM) ;
 
-INSTALL_LAUNCHER = sudo ;
-
 GCC_VERSION = 3.4.3 ;
 SWIG_VERSION = 1.3 ;
 project.RUBY_DIR = $(TOOLS_HOME)/ruby-1.8/lib/ruby/1.8/$(RUBY_PLATFORM) ;
@@ -39,8 +37,6 @@ CCDFLAGS = -g ;
 
 DEFINES  = _REENTRANT ;
 INCLUDES = $(GENTOPDIR)/include $(SRCTOPDIR)/include ;
-
-CONTRIB_ROOT = /usr/local ;
 
 rule platform-nt-x86
 {
@@ -309,4 +305,6 @@ CCALLFLAGS = $(CCFLAGS) $(CCDFLAGS) $(CCOFLAGS) ;
 C++LDALLFLAGS = $(CCFLAGS) $(CCDFLAGS) $(CCOFLAGS) $(C++LDFLAGS) ;
 
 system.export-to-env GCC_LIB_PATHLIST : $(GCC_ROOT)/lib/$(GCC_STDLIBS) ;
+system.export-to-env CONTRIB_ROOT : $(CONTRIB_ROOT) ;
+system.export-to-env STEMKIT_VERSION : $(project.STEMKIT_VERSION) ;
 system.export-to-env MAKE_DLL : $(project.MAKE_DLL) ;
