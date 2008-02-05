@@ -36,7 +36,10 @@ CCFLAGS = -Werror -Wreturn-type ;
 CCDFLAGS = -g ;
 
 DEFINES  = _REENTRANT ;
-INCLUDES = $(GENTOPDIR)/include $(SRCTOPDIR)/include ;
+
+if $(JAM_OFFSET_PLATFORM) = true {
+  system.setup-artifact-offsets : : $(PRODUCT_PLATFORM) ;
+}
 
 rule platform-nt-x86
 {
@@ -55,10 +58,7 @@ rule platform-nt-x86
   INCLUDES = ;
   LIBDIRS = ;
 
-  INCLUDES += [ util.make-path $(GENTOP) include ] ;
-  INCLUDES += [ util.make-path $(SRCTOP) include ] ;
   INCLUDES += [ util.make-path $(SRCTOP) platform include windows-visual-studio ] ;
-  INCLUDES += [ util.make-path $(SRCTOP) platform include generic ] ;
 
   core.ensure-defined JAM_MSVS_ROOT ;
   mswin.setup-visual-studio8 "$(JAM_MSVS_ROOT:J= )" ;
@@ -81,7 +81,7 @@ rule platform-linux-x86
   C++FLAGS += -fpic ;
   CCFLAGS += -fpic ;
   DEFINES += ;
-  INCLUDES += $(SRCTOP:J=/)/platform/include/linux ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include linux ] ;
   SYSLIBS = crypt dl ;
 
   project.PTY_SPECIFICS = linux ;
@@ -98,7 +98,7 @@ rule platform-interix-x86
   C++FLAGS += -fpic ;
   CCFLAGS += -fpic ;
   DEFINES += ;
-  INCLUDES += $(SRCTOP:J=/)/platform/include/interix ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include interix ] ;
   SYSLIBS = crypt dl ;
 
   project.PTY_SPECIFICS = linux ;
@@ -109,7 +109,7 @@ rule platform-linux-amd64
   C++FLAGS += -fPIC -m64 ;
   CCFLAGS += -fPIC -m64 ;
   DEFINES += ;
-  INCLUDES += $(SRCTOP:J=/)/platform/include/linux ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include linux ] ;
   SYSLIBS = crypt dl ;
 
   LDFLAGS += -m elf_i386 ;
@@ -122,7 +122,7 @@ rule platform-osf-alpha
   C++FLAGS += -fPIC ;
   CCFLAGS += -fPIC ;
   DEFINES += ;
-  INCLUDES += $(SRCTOP:J=/)/platform/include/osf ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include osf ] ;
   SYSLIBS = ;
 
   CC_SONAME_FLAG = "-Wl,-soname," ;
@@ -136,7 +136,7 @@ rule platform-aix51-ppc
   project.MAKE_DLL = false ;
 
   DEFINES += ;
-  INCLUDES += $(SRCTOP:J=/)/platform/include/aix ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include aix ] ;
   SYSLIBS = crypt dl ;
 
   project.PTY_SPECIFICS = aix ;
@@ -147,13 +147,13 @@ rule platform-aix52-ppc
   project.MAKE_DLL = false ;
 
   DEFINES += ;
-  INCLUDES += $(SRCTOP:J=/)/platform/include/aix ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include aix ] ;
   SYSLIBS = crypt dl ;
 
   project.PTY_SPECIFICS = aix ;
 }
 
-rule platform-macos-ppc
+rule platform-macos
 {
   project.MAKE_DLL = false ;
 
@@ -179,6 +179,17 @@ rule platform-macos-ppc
   project.PTY_SPECIFICS = posix ;
 }
 
+rule platform-macos-tiger
+{
+  platform-macos ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include macos-tiger ] ;
+}
+
+rule platform-macos-leopard
+{
+  platform-macos ;
+}
+
 rule platform-cygwin-x86
 {
   project.MAKE_DLL = false ;
@@ -200,7 +211,7 @@ rule platform-solaris-sparc
   C++FLAGS += -fPIC ;
   CCFLAGS += -fPIC ;
   DEFINES += _FILE_OFFSET_BITS=64 ;
-  INCLUDES += $(SRCTOP:J=/)/include/solaris ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include solaris ] ;
   SYSLIBS = socket nsl gen ;
 
   project.PTY_SPECIFICS = streams ;
@@ -211,7 +222,7 @@ rule platform-solaris-x86
   C++FLAGS += -fpic ;
   CCFLAGS += -fpic ;
   DEFINES += ;
-  INCLUDES += $(SRCTOP:J=/)/include/solaris ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include solaris ] ;
   SYSLIBS = socket nsl gen ;
 
   project.PTY_SPECIFICS = streams ;
@@ -224,7 +235,7 @@ rule platform-hpux-pa
   C++FLAGS += -fPIC ;
   CCFLAGS += -fPIC ;
   DEFINES += ;
-  INCLUDES += $(SRCTOP:J=/)/include/hpux ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include hpux ] ;
   SYSLIBS = ;
 
   C++LDFLAGS += -Wl,+s ;
@@ -241,7 +252,7 @@ rule platform-hpux-ia64
   C++FLAGS += -fPIC ;
   CCFLAGS += -fPIC ;
   DEFINES += ;
-  INCLUDES += $(SRCTOP:J=/)/include/hpux ;
+  INCLUDES += [ util.make-path $(system.SRCTOP) platform include hpux ] ;
   SYSLIBS = ;
 
   C++LDFLAGS += -Wl,+s ;
@@ -267,15 +278,19 @@ switch $(PRODUCT_PLATFORM) {
   case hp11-00-pa : platform-hpux-pa ;
   case hp11-11-pa : platform-hpux-pa ;
   case hp11-23-ia64 : platform-hpux-ia64 ;
-  case mac-10.4-ppc : platform-macos-ppc ;
-  case mac-10.4-x86 : platform-macos-ppc ;
-  case mac-10.5-ppc : platform-macos-ppc ;
-  case mac-10.5-x86 : platform-macos-ppc ;
+  case mac-10.4-ppc : platform-macos-tiger ;
+  case mac-10.4-x86 : platform-macos-tiger ;
+  case mac-10.5-ppc : platform-macos-leopard ;
+  case mac-10.5-x86 : platform-macos-leopard ;
   case cygwin-xp-x86 : platform-cygwin-x86 ;
   case win32-sfu-x86 : platform-interix-x86 ;
   case windows-x86 : platform-nt-x86 ;
   case * : exit Unknown platform $(PRODUCT_PLATFORM) ;
 }
+
+INCLUDES += [ util.make-path $(system.SRCTOP) platform include generic ] ;
+INCLUDES += [ util.make-path $(system.GENTOP) include ] ;
+INCLUDES += [ util.make-path $(system.SRCTOP) include ] ;
 
 GCC_ROOT ?= $(TOOLS_HOME)/gcc-$(GCC_VERSION) ;
 

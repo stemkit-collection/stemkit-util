@@ -1,8 +1,10 @@
 
 require 'tsc/platform.rb'
 
-class JamConfig
+class JamConfig < TSC::Jam::Config
   def options
+    export_build_resource
+
     [ 
       '-s', "JAMCONFIG_PRODUCT_NAME=stemkit-util", 
       '-s', "JAMCONFIG_PRODUCT_RELEASE=0.0.1", 
