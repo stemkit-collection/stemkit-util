@@ -1,0 +1,200 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
+# 
+# Distributed under the MIT Licence.
+# This is free software. See 'LICENSE' for details.
+# You must read and accept the license prior to use.
+
+$:.concat ENV.to_hash['PATH'].to_s.split(':')
+
+require 'tsc/application.rb'
+require 'tsc/path.rb'
+
+class Application < TSC::Application
+  def initialize
+    super { |_config|
+      _config.arguments = '[<URL>]'
+      _config.description = 'SVN property processor'
+      _config.options = [
+        [ 'file', 'Pick regular file', nil ],
+        [ 'no-file', 'Pick not regular file', nil ],
+        [ 'folder', 'Pick folder', nil ],
+        [ 'no-folder', 'Pick not folder', nil ],
+        [ 'mime', 'Pick containing mime-type', nil ],
+        [ 'no-mime', 'Pick not containing mime-type', nil ],
+        [ 'eol', 'Pick containing eol indicator', nil ],
+        [ 'no-eol', 'Pick not containing eol indicator', nil ],
+        [ 'special', 'Pick special items', nil ],
+        [ 'no-special', 'Pick not special items', nil ],
+        [ 'executable', 'Pick executable items', nil ],
+        [ 'no-executable', 'Pick not executable items', nil ]
+      ]
+    }
+  end
+
+  def start
+    handle_errors {
+      process_command_line
+
+      require 'tsc/launch.rb'
+      require 'set'
+
+      throw :TEST if options.has_key?('test')
+
+      pickup_items
+      populate_props
+
+      puts *reject(select(items.values)).map { |_item|
+        verbose? ? _item.inspect : _item.path
+      }
+    }
+  end
+
+  private
+  #######
+
+  def selectors(*modifiers)
+    [ 'file', 'folder', 'mime', 'eol', 'special', 'executable' ].map { |_query|
+      options[ [ modifiers, _query ].flatten.join('-') ] && proc { |_item| 
+        _item.send "#{_query}?" 
+      }
+    }.compact
+  end
+
+  def rejectors
+    selectors 'no'
+  end
+
+  def select(items)
+    items.select { |_item|
+      selectors.all? { |_selector|
+        _selector.call _item
+      }
+    }
+  end
+
+  def reject(items)
+    items.reject { |_item|
+      rejectors.any? { |_rejector|
+        _rejector.call _item
+      }
+    }
+  end
+
+  def pickup_items
+    launch([ 'svn', 'ls', '-R', *ARGV ]).first.each do |_line|
+      items[_line] = Item.new _line
+    end
+  end
+
+  def populate_props
+    item = nil
+    launch([ 'svn', 'proplist', '-R', '-v', *ARGV ]).first.each do |_line|
+      path = _line.scan(%r{^Properties on '(.*?)'\s*:\s*$}).flatten.compact.first
+      if path
+        item = items[path]
+      else
+        property, value = _line.scan(%r{^\s*(.*?)\s+:\s+(.*?)\s*$}).flatten.compact
+        item[property] = (value || '*') if item and property
+      end
+    end
+  end
+
+  def items
+    @items ||= {}
+  end
+
+  in_generator_context do |_content|
+    _content << '#!' + figure_ruby_path
+    _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
+    _content << IO.readlines(__FILE__).slice(1..-1)
+  end
+end
+
+class Item
+  attr_reader :path
+
+  def initialize(path)
+    @path = path
+    @properties = {}
+  end
+
+  def []=(name, value)
+    if value.nil?
+      @properties.delete name if value.nil?
+    else
+      (@properties[name] ||= Set.new) << value
+    end
+  end
+
+  def inspect
+    "#{@path} #{@properties.inspect}"
+  end
+
+  def property(name)
+    Array(@properties[name])
+  end
+
+  def folder?
+    @path[-1] == ?/
+  end
+
+  def file?
+    folder? == false && special? == false
+  end
+
+  def mime?
+    property('svn:mime-type').empty? == false
+  end
+
+  def app?
+    property('svn:mime-type').detect { |_entry|
+      _entry =~ %r{^application/}
+    }
+  end
+
+  def image?
+    property('svn:mime-type').detect { |_entry|
+      _entry =~ %r{^image/}
+    }
+  end
+
+  def binary?
+    app? or image?
+  end
+
+  def eol?
+    property('svn:eol-style').empty? == false
+  end
+
+  def executable?
+    property('svn:executable').empty? == false
+  end
+
+  def special?
+    property('svn:special').empty? == false
+  end
+end
+
+unless defined? Test::Unit::TestCase
+  catch :TEST do
+    Application.new.start
+    exit 0
+  end
+end
+
+require 'test/unit'
+
+class ApplicationTest < Test::Unit::TestCase
+  def test_something
+    flunk 'Not implemented'
+  end
+
+  def setup
+    @app = Application.new
+  end
+
+  def teardown
+    @app = nil
+  end
+end
