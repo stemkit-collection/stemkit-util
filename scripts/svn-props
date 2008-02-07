@@ -16,19 +16,20 @@ class Application < TSC::Application
       _config.arguments = '[<URL>]'
       _config.description = 'SVN property processor'
       _config.options = [
-        [ 'file', 'Pick regular file', nil ],
-        [ 'no-file', 'Pick not regular file', nil ],
-        [ 'folder', 'Pick folder', nil ],
-        [ 'no-folder', 'Pick not folder', nil ],
-        [ 'mime', 'Pick containing mime-type', nil ],
-        [ 'no-mime', 'Pick not containing mime-type', nil ],
-        [ 'eol', 'Pick containing eol indicator', nil ],
-        [ 'no-eol', 'Pick not containing eol indicator', nil ],
-        [ 'special', 'Pick special items', nil ],
-        [ 'no-special', 'Pick not special items', nil ],
-        [ 'executable', 'Pick executable items', nil ],
-        [ 'no-executable', 'Pick not executable items', nil ]
-      ]
+        [ 'test', 'Run unit tests', nil ],
+      ] + generate_positive_query_options + generate_negative_query_options
+    }
+  end
+
+  def generate_positive_query_options
+    Item.queries.map { |_query|
+      [ _query, "Pick #{_query} items", nil ]
+    }
+  end
+
+  def generate_negative_query_options
+    Item.queries.map { |_query|
+      [ "no-#{_query}", "Pick items other than #{_query}", nil ]
     }
   end
 
@@ -44,7 +45,7 @@ class Application < TSC::Application
       pickup_items
       populate_props
 
-      puts *reject(select(items.values)).map { |_item|
+      puts reject(select(items.values)).map { |_item|
         verbose? ? _item.inspect : _item.path
       }
     }
@@ -54,7 +55,7 @@ class Application < TSC::Application
   #######
 
   def selectors(*modifiers)
-    [ 'file', 'folder', 'mime', 'eol', 'special', 'executable' ].map { |_query|
+    Item.queries.map { |_query|
       options[ [ modifiers, _query ].flatten.join('-') ] && proc { |_item| 
         _item.send "#{_query}?" 
       }
@@ -117,6 +118,14 @@ class Item
   def initialize(path)
     @path = path
     @properties = {}
+  end
+
+  class << self
+    def queries
+      @queries ||= self.instance_methods(false).map { |_method|
+        _method[0...-1] if _method[-1] == ??
+      }.compact
+    end
   end
 
   def []=(name, value)
@@ -186,8 +195,8 @@ end
 require 'test/unit'
 
 class ApplicationTest < Test::Unit::TestCase
-  def test_something
-    flunk 'Not implemented'
+  def test_queries
+    assert_equal 9, Item.queries.size
   end
 
   def setup
