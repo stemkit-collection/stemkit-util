@@ -130,7 +130,7 @@ class Item
 
   def []=(name, value)
     if value.nil?
-      @properties.delete name if value.nil?
+      @properties.delete name
     else
       (@properties[name] ||= Set.new) << value
     end
