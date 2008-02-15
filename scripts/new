@@ -192,6 +192,7 @@ class Application < TSC::Application
 
     def shell(name, namespace, extention)
       save "#{name}.#{extention}", name, namespace, [
+        '#!/bin/sh',
         make_pound_comments(make_copyright_notice),
         prepend_newline_if(
           serialize(
@@ -201,7 +202,7 @@ class Application < TSC::Application
             '{',
             indent(
               'trap "cleanup" EXIT HUP INT QUIT TERM',
-              'unset OPTION ARGUMENT',
+              'unset WRONG_USAGE OPTION ARGUMENT',
               '',
               'while getopts ":oa:" option; do',
               indent(
