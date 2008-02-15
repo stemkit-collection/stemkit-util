@@ -69,11 +69,11 @@ class Application < TSC::Application
   private
   #######
   def generate(filename, generator)
-    basename, extention = filename.scan(%r{^(.+?)(?:[.](.+))?$}).first
+    basename, extension = filename.scan(%r{^(.+?)(?:[.](.+))?$}).first
     namespace = split_namespace(basename)
     name = namespace.pop
 
-    generator.guess(name, global_namespace + namespace, extention.to_s)
+    generator.guess(name, global_namespace + namespace, extension.to_s)
   end
 
   def global_namespace
@@ -92,39 +92,39 @@ class Application < TSC::Application
       @undo_stack = args.first
     end
 
-    def guess(name, namespace, extention)
-      case extention
+    def guess(name, namespace, extension)
+      case extension
         when ''
           cc_header name, namespace, 'h'
           cc_body name, namespace, 'cc'
 
         when 'h', 'hpp', 'hxx', 'cxx'
-          cc_header name, namespace, extention
+          cc_header name, namespace, extension
 
         when 'cc', 'cpp'
-          cc_body name, namespace, extention
+          cc_body name, namespace, extension
 
         when 'c'
-          c name, namespace, extention
+          c name, namespace, extension
 
         when 'rb'
-          ruby name, namespace, extention
+          ruby name, namespace, extension
 
         when 'sh'
-          sh name, namespace, extention
+          sh name, namespace, extension
 
         else
-          raise "Unsupported type #{extention.inspect} for #{name.inspect}"
+          raise "Unsupported type #{extension.inspect} for #{name.inspect}"
       end
     end
 
-    def cc_header(name, namespace, extention)
-      filename = locator.figure_for 'include', name, extention
+    def cc_header(name, namespace, extension)
+      filename = locator.figure_for 'include', name, extension
       namespace = locator.namespace(namespace)
 
       save filename, name, namespace, [
         append_newline_if(make_c_comments(make_copyright_notice)),
-        make_h_guard(namespace, name) {
+        make_h_guard(namespace, name, extension) {
           [
             '',
             append_newline_if(make_includes(config.header_includes)),
@@ -138,15 +138,15 @@ class Application < TSC::Application
       ]
     end
 
-    def cc_body(name, namespace, extention)
-      filename = locator.figure_for 'lib', name, extention
+    def cc_body(name, namespace, extension)
+      filename = locator.figure_for 'lib', name, extension
       namespace = locator.namespace(namespace)
       scope = (namespace + [ name, '' ]).join('::')
 
       save filename, name, namespace, [
         make_c_comments(make_copyright_notice),
         prepend_newline_if(make_includes(config.body_includes)),
-        prepend_newline_if(make_includes([ locator.header_specification(name, extention) ])),
+        prepend_newline_if(make_includes([ locator.header_specification(name, extension) ])),
         prepend_newline_if(config.body_top),
         config.constructors.map { |_constructor|
           [
@@ -183,15 +183,15 @@ class Application < TSC::Application
       ]
     end
 
-    def c(name, namespace, extention)
-      save "#{name}.#{extention}", name, namespace, [
+    def c(name, namespace, extension)
+      save "#{name}.#{extension}", name, namespace, [
         make_c_comments(make_copyright_notice),
         prepend_newline_if(make_namespace(namespace))
       ]
     end
 
-    def sh(name, namespace, extention)
-      save "#{name}.#{extention}", name, namespace, [
+    def sh(name, namespace, extension)
+      save "#{name}.#{extension}", name, namespace, [
         '#!/bin/sh',
         make_pound_comments(make_copyright_notice),
         prepend_newline_if(
@@ -248,8 +248,8 @@ class Application < TSC::Application
       ]
     end
 
-    def ruby(name, namespace, extention)
-      save "#{name}.#{extention}", name, namespace, [
+    def ruby(name, namespace, extension)
+      save "#{name}.#{extension}", name, namespace, [
         append_newline_if(make_ruby_block_comments(make_copyright_notice)),
         make_ruby_modules(namespace) {
           [
@@ -643,15 +643,15 @@ class Application < TSC::Application
       namespace.empty? ? @components : namespace
     end
 
-    def figure_for(kind, name, extention)
-      file = name + '.' + extention
+    def figure_for(kind, name, extension)
+      file = name + '.' + extension
       return file if (local? or @kind == kind)
 
       directory = [ '..' ] * @components.size.next + [ kind, *@components ]
       File.join directory, file
     end
 
-    def header_specification(name, extention)
+    def header_specification(name, extension)
       file = name + '.h'
       return '"' + file + '"' if local?
 
@@ -713,13 +713,13 @@ class ApplicationTest < Test::Unit::TestCase
     assert_equal ['aaa', 'bbb'], @app.send(:split_namespace, 'aaa.bbb')
   end
 
-  def test_generate_raises_for_unsupported_extention
+  def test_generate_raises_for_unsupported_extension
     assert_raises(RuntimeError) do
       invoke_generate 'Abc.ccccc'
     end
   end
 
-  def test_generate_no_extention
+  def test_generate_no_extension
     invoke_generate 'Abc'
 
     assert_equal 2, @generator.trace.size
@@ -734,7 +734,7 @@ class ApplicationTest < Test::Unit::TestCase
     assert_equal ['aaa', 'bbb'], @generator.trace.first[2]
   end
 
-  def test_generate_with_extention
+  def test_generate_with_extension
     invoke_generate 'aaa::Abc.cc'
 
     assert_equal 1, @generator.trace.size
