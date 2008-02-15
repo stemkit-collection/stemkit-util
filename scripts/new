@@ -98,10 +98,10 @@ class Application < TSC::Application
           cc_header name, namespace, 'h'
           cc_body name, namespace, 'cc'
 
-        when 'h'
+        when 'h', 'hpp', 'hxx', 'cxx'
           cc_header name, namespace, extention
 
-        when 'cc'
+        when 'cc', 'cpp'
           cc_body name, namespace, extention
 
         when 'c'
