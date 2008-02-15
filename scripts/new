@@ -111,7 +111,7 @@ class Application < TSC::Application
           ruby name, namespace, extention
 
         when 'sh'
-          shell name, namespace, extention
+          sh name, namespace, extention
 
         else
           raise "Unsupported type #{extention.inspect} for #{name.inspect}"
@@ -190,7 +190,7 @@ class Application < TSC::Application
       ]
     end
 
-    def shell(name, namespace, extention)
+    def sh(name, namespace, extention)
       save "#{name}.#{extention}", name, namespace, [
         '#!/bin/sh',
         make_pound_comments(make_copyright_notice),
@@ -242,7 +242,7 @@ class Application < TSC::Application
             '',
             'exec 3>&1 4>&2',
             'main "${@}"',
-            'exit "${?}"'
+            'exit ${?}'
           )
         )
       ]
