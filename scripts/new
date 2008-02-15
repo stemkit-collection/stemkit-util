@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
+# Author: Gennady Bystritsky
 # 
 # Distributed under the MIT Licence.
 # This is free software. See 'LICENSE' for details.
@@ -96,14 +97,22 @@ class Application < TSC::Application
         when ''
           cc_header name, namespace, 'h'
           cc_body name, namespace, 'cc'
+
         when 'h'
           cc_header name, namespace, extention
+
         when 'cc'
           cc_body name, namespace, extention
+
         when 'c'
           c name, namespace, extention
+
         when 'rb'
           ruby name, namespace, extention
+
+        when 'sh'
+          shell name, namespace, extention
+
         else
           raise "Unsupported type #{extention.inspect} for #{name.inspect}"
       end
@@ -178,6 +187,63 @@ class Application < TSC::Application
       save "#{name}.#{extention}", name, namespace, [
         make_c_comments(make_copyright_notice),
         prepend_newline_if(make_namespace(namespace))
+      ]
+    end
+
+    def shell(name, namespace, extention)
+      save "#{name}.#{extention}", name, namespace, [
+        make_pound_comments(make_copyright_notice),
+        prepend_newline_if(
+          serialize(
+            'TRACE=no',
+            '',
+            'main()',
+            '{',
+            indent(
+              'trap "cleanup" EXIT HUP INT QUIT TERM',
+              'unset OPTION ARGUMENT',
+              '',
+              'while getopts ":oa:" option; do',
+              indent(
+                'case "${option}" in',
+                indent(
+                  'o)',
+                   indent('OPTION=yes'),
+                  ';;',
+                  'a)',
+                  indent('ARGUMENT="${OPTARG}"'),
+                  ';;',
+                  'v)',
+                  indent('TRACE=yes'),
+                  ';;',
+                  '*)',
+                  indent('WRONG_USAGE=yes'),
+                  ';;'
+                ),
+                'esac'
+              ),
+              'done',
+              '',
+              'shift `expr "${OPTIND}" - 1`',
+              'start "${@}"'
+            ),
+            '}',
+            '',
+            'start()',
+            '{',
+            indent('true'),
+            '}',
+            '',
+            'cleanup()',
+            '{',
+            indent('true'),
+            '}',
+            '',
+            'exec 3>&1 4>&2',
+            'main "${@}"',
+            'exit "${?}"'
+          )
+        )
       ]
     end
 
@@ -294,6 +360,10 @@ class Application < TSC::Application
       ]
     end
 
+    def serialize(*content)
+      content.flatten.compact
+    end
+
     def prepend_newline_if(content)
       content.empty? ? content : [ '', content ]
     end
@@ -342,14 +412,17 @@ class Application < TSC::Application
     end
 
     def make_copyright_notice
-      @notice ||= begin
-        result = config.copyright_holders.map { |_holder|
+      @notice ||= [
+        config.copyright_holders.map { |_holder|
           "Copyright (c) #{Time.now.year}, #{_holder}"
-        }
-        license = config.license
-        return result if license.empty? or result.empty?
-        result + [''] + license
-      end
+        },
+        prepend_newline_if(config.license),
+        prepend_newline_if(
+          config.authors.map { |_author|
+            'Author: ' + _author
+          }
+        )
+      ].flatten.compact
     end
 
     def make_method_definition(methods)
@@ -385,9 +458,9 @@ class Application < TSC::Application
       ]
     end
 
-    def make_ruby_comments(lines)
+    def make_pound_comments(lines)
       lines.map { |_line|
-        '# ' + _line
+        '#  ' + _line
       }
     end
 
@@ -440,6 +513,10 @@ class Application < TSC::Application
 
     def copyright_holders
       lines(@config['copyright_holders'] || user_credentials.gecos)
+    end
+
+    def authors
+      lines(@config['authors'] || user_credentials.gecos)
     end
 
     def license
