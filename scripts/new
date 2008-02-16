@@ -1004,33 +1004,20 @@ sh: |
 
   suppress_output()
   {
-    eval "${@}" >/dev/null 2>&1
+    "${@}" >/dev/null 2>&1
   }
 
   suppress_error_output()
   {
-    eval "${@}" 2>/dev/null
+    "${@}" 2>/dev/null
   }
 
   trace_and_run()
   {
-    commands=
-    while [ ${#} -gt 0 ]; do
-      case "${1}" in
-        suppress_output|trace_and_run)
-          commands="${commands}${1} "
-          shift
-        ;;
-        *)
-          break
-        ;;
-      esac
-    done
-
     [ "${TRACE}" = yes ] && {
       print_error "=> ${@}"
     }
-    ${commands} "${@}"
+    "${@}"
   }
 
   cleanup_list=
