@@ -391,12 +391,12 @@ class Application < TSC::Application
       }
     end
 
+    def indent_prefix
+      @indent_prefix ||= (' ' * config.indent)
+    end
+
     def indent(*content)
-      @indent_prefix ||= begin
-        indent = options['indent'].to_i
-        ' ' * (indent.zero? ? 2 : indent)
-      end
-      content.flatten.map { |_line| (@indent_prefix) + _line } 
+      content.flatten.map { |_line| indent_prefix + _line } 
     end
      
     def make_initialization_list(content)
@@ -467,6 +467,10 @@ class Application < TSC::Application
     def check_config(config, message)
       raise message unless Hash === config
       config
+    end
+
+    def indent
+      @indent ||= (@options['indent'] || @config['indent']).to_i
     end
 
     def copyright_holders
@@ -746,6 +750,8 @@ class ApplicationTest < Test::Unit::TestCase
 end
 
 __END__
+indent: 2
+
 copyright_holders: |
 
 authors: |
