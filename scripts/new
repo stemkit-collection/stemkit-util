@@ -40,6 +40,7 @@ class Application < TSC::Application
       [ '--indent', 'Use so many spaces for indent (2 by default)', 'number', '-i' ],
       [ '--print', 'Print out instead of creating files', nil, '-p' ],
       [ '--mode', 'Set generation mode (e.g. test)', 'mode', '-m' ],
+      [ '--force', 'Force file override', nil, '-f' ],
       [ '--test', 'Run internal tests', nil ]
     )
   end
@@ -194,57 +195,7 @@ class Application < TSC::Application
       save "#{name}.#{extension}", name, namespace, [
         '#!/bin/sh',
         make_pound_comments(make_copyright_notice),
-        prepend_newline_if(
-          serialize(
-            'TRACE=no',
-            '',
-            'main()',
-            '{',
-            indent(
-              'trap "cleanup" EXIT HUP INT QUIT TERM',
-              'unset WRONG_USAGE OPTION ARGUMENT',
-              '',
-              'while getopts ":oa:" option; do',
-              indent(
-                'case "${option}" in',
-                indent(
-                  'o)',
-                   indent('OPTION=yes'),
-                  ';;',
-                  'a)',
-                  indent('ARGUMENT="${OPTARG}"'),
-                  ';;',
-                  'v)',
-                  indent('TRACE=yes'),
-                  ';;',
-                  '*)',
-                  indent('WRONG_USAGE=yes'),
-                  ';;'
-                ),
-                'esac'
-              ),
-              'done',
-              '',
-              'shift `expr "${OPTIND}" - 1`',
-              'start "${@}"'
-            ),
-            '}',
-            '',
-            'start()',
-            '{',
-            indent('true'),
-            '}',
-            '',
-            'cleanup()',
-            '{',
-            indent('true'),
-            '}',
-            '',
-            'exec 3>&1 4>&2',
-            'main "${@}"',
-            'exit ${?}'
-          )
-        )
+        prepend_newline_if(config.sh)
       ]
     end
 
@@ -378,8 +329,7 @@ class Application < TSC::Application
         $stderr.puts "=== #{file}"
         output name, namespace, content, $stdout
       else
-        
-        File.open(file, File::CREAT | File::EXCL | File::WRONLY) do |_io|
+        File.open(file, file_write_flags) do |_io|
           @undo_stack.add {
             File.unlink(file)
             $stderr.puts "Removed: #{file}"
@@ -388,6 +338,10 @@ class Application < TSC::Application
         end
         $stderr.puts "Created: #{file}"
       end
+    end
+
+    def file_write_flags
+      File::CREAT | File::WRONLY | (options['force'] ? 0 : File::EXCL)
     end
 
     def output(name, namespace, content, stream)
@@ -493,12 +447,14 @@ class Application < TSC::Application
           result = YAML.parse(_io)
           result.transform if result
         }
+        config = check_config parser.call(DATA), 'Bad default config'
+
         file = find_config_file
         if File.exist?(file)
-          check_config File.open(file, &parser), "Bad config in #{file.inspect}"
-        else
-          check_config parser.call(DATA), 'Bad default config'
+          config.update check_config(File.open(file, &parser), "Bad config in #{file.inspect}")
         end
+
+        config
       end
 
       return unless @options.has_key? 'mode'
@@ -522,6 +478,10 @@ class Application < TSC::Application
 
     def license
       lines @config['license']
+    end
+
+    def sh
+      lines @config['sh']
     end
 
     def header_includes
@@ -840,3 +800,46 @@ test:
   data: |
 
   factory:
+
+sh: |
+  TRACE=no
+
+  main()
+  {
+    trap "cleanup" EXIT HUP INT QUIT TERM
+    unset WRONG_USAGE OPTION ARGUMENT
+    
+    while getopts ":oa:" option; do
+      case "${option}" in
+        o)
+          OPTION=yes
+        ;;
+        a)
+          ARGUMENT="${OPTARG}"
+        ;;
+        v)
+          TRACE=yes
+        ;;
+        *)
+          WRONG_USAGE=yes
+        ;;
+      esac
+    done
+    
+    shift `expr "${OPTIND}" - 1`
+    start "${@}"
+  }
+
+  start()
+  {
+    true
+  }
+
+  cleanup()
+  {
+    true
+  }
+
+  exec 3>&1 4>&2
+  main "${@}"
+  exit ${?}
