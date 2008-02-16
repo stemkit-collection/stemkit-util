@@ -374,12 +374,10 @@ class Application < TSC::Application
         config.copyright_holders.map { |_holder|
           "Copyright (c) #{Time.now.year}, #{_holder}"
         },
-        prepend_newline_if(config.license),
-        prepend_newline_if(
-          config.authors.map { |_author|
-            'Author: ' + _author
-          }
-        )
+        append_newline_if(prepend_newline_if(config.license)),
+        config.authors.map { |_author|
+          'Author: ' + _author
+        }
       ].flatten.compact
     end
 
@@ -472,7 +470,10 @@ class Application < TSC::Application
     end
 
     def copyright_holders
-      lines(@config['copyright_holders'] || user_credentials.gecos)
+      holders = Array(@config['copyright_holders'])
+      holders.push user_credentials.gecos if holders.empty?
+
+      lines(holders)
     end
 
     def authors
@@ -855,7 +856,7 @@ sh: |
     register_for_cleanup() - Add entries to be cleaned up. Variables OK.
     suppress_error_output() - Redirect stderr to /dev/null for cmdline.
     suppress_output() - Redirect stdout and stderr to /dev/null for cmdline.
-    trace_and_run() - Print the command line if TRACE set, then eval cmdline.
+    trace_and_run() - Print cmdline if TRACE is yes, then execute.
 
     figure_full_program_path()
     figure_full_path()
