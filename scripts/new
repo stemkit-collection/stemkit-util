@@ -473,11 +473,14 @@ class Application < TSC::Application
       holders = Array(@config['copyright_holders'])
       holders.push user_credentials.gecos if holders.empty?
 
-      lines(holders)
+      lines holders
     end
 
     def authors
-      lines(@config['authors'] || user_credentials.gecos)
+      authors = Array(@config['authors'])
+      authors.push user_credentials.gecos if authors.empty?
+
+      lines authors
     end
 
     def license
@@ -744,6 +747,8 @@ end
 
 __END__
 copyright_holders: |
+
+authors: |
 
 license: |
 
