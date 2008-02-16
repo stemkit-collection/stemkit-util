@@ -50,6 +50,7 @@ class Application < TSC::Application
       process_command_line
       require 'etc'
       require 'yaml'
+      require 'fileutils'
 
       throw :TEST if options.has_key?('test')
       raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
@@ -192,11 +193,13 @@ class Application < TSC::Application
     end
 
     def sh(name, namespace, extension)
-      save "#{name}.#{extension}", name, namespace, [
+      filename = "#{name}.#{extension}"
+      save filename, name, namespace, [
         '#!/bin/sh',
         make_pound_comments(make_copyright_notice),
         prepend_newline_if(config.sh)
       ]
+      FileUtils.chmod 0755, filename
     end
 
     def ruby(name, namespace, extension)
