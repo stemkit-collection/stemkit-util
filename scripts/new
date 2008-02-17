@@ -556,8 +556,16 @@ class Application < TSC::Application
     private
     #######
     def lines(content)
+      unit = nil
       content.to_s.map { |_line| 
-        _line.chomp 
+        # Here line gets re-indented to the indent value specified 
+        # either in the config file or on the command line (-i).
+        #
+        spaces, line = _line.chomp.scan(%r{^(\s*)(.*)$}).first
+        offset = spaces.count(" ") + spaces.count("\t") * 8
+        unit ||= (offset unless offset.zero?)
+
+        (unit ? ' ' * ((offset/unit)*indent) : '') + line
       }
     end
 
