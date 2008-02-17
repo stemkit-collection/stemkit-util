@@ -1,31 +1,16 @@
 #!/usr/bin/env ruby
 # Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
-# Author: Gennady Bystritsky
 # 
 # Distributed under the MIT Licence.
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
+#
+# Author: Gennady Bystritsky
 
-if defined? Installation::Generator
-  class Generator < Installation::Generator
-    def create(io)
-      bindir = File.join(self.class.installation_tools, 'bin')
-      [
-        '#!' + File.join(bindir, 'ruby'),
-        "ENV['PATH'] = [ #{bindir.inspect}, *ENV.to_hash['PATH'].split(':') ].join(':')"
-      ] + IO::readlines(__FILE__).slice(1..-1)
-    end
-  end
+$:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
 
-  throw :generator, Generator
-end
-
-$VERBOSE = nil
-
-[ 'tsc/application.rb' ].each do |a|
-  $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
-  require a
-end
+require 'tsc/application.rb'
+require 'tsc/path.rb'
 
 # This script performs code generation for c/c++ and ruby classes according
 # to specification provided in a configuration file (src/config/new.yaml or
@@ -45,6 +30,13 @@ class Application < TSC::Application
     )
   end
 
+  in_generator_context do |_content|
+    _content << '#!' + figure_ruby_path
+    _content << '$VERBOSE = nil'
+    _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
+    _content << IO.readlines(__FILE__).slice(1..-1)
+  end
+  
   def start
     handle_errors {
       process_command_line
