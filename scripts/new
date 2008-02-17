@@ -344,7 +344,7 @@ class Application < TSC::Application
     end
 
     def file_write_flags
-      File::CREAT | File::WRONLY | (options['force'] ? 0 : File::EXCL)
+      File::CREAT | File::WRONLY | (options['force'] ? File::TRUNC : File::EXCL)
     end
 
     def output(name, namespace, content, stream)
