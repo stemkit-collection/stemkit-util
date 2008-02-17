@@ -190,8 +190,7 @@ class Application < TSC::Application
         '#!/bin/sh',
         make_pound_comments(make_copyright_notice),
         prepend_newline_if(config.sh)
-      ]
-      FileUtils.chmod 0755, filename
+      ] and FileUtils.chmod 0755, filename
     end
 
     def ruby(name, namespace, extension)
@@ -323,6 +322,8 @@ class Application < TSC::Application
       if options.has_key?('print')
         $stderr.puts "=== #{file}"
         output name, namespace, content, $stdout
+
+        false
       else
         File.open(file, file_write_flags) do |_io|
           @undo_stack.add {
@@ -332,6 +333,8 @@ class Application < TSC::Application
           output name, namespace, content, _io
         end
         $stderr.puts "Created: #{file}"
+
+        true
       end
     end
 
@@ -572,7 +575,6 @@ class Application < TSC::Application
         block.call returns, name, parameters, body, comments
       }
     end
-    
 
     def map_methods(methods)
       klass = Struct.new(:returns, :signature, :body, :comments)
