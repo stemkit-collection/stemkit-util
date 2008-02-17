@@ -826,7 +826,9 @@ sh: |
 
   main()
   {
-    trap "cleanup" EXIT HUP INT QUIT TERM
+    trap "cleanup_and_exit 5" HUP INT QUIT TERM
+    trap "cleanup" EXIT 
+
     unset OPTION ARGUMENT
 
     while getopts ":hvoa:" option; do
@@ -861,6 +863,8 @@ sh: |
     progname - Name of this script file
 
   Functions:
+    _echo() - Most suitable echo command (echo or echo -e).
+    _awk() - Most suitable awk command (awk or nawk)
     print_message() - Echo parameters to the original stdout (| for start line)
     print_error() - print_message() to the original stderr
     print_usage_and_exit() - Print usage and exit with argument or 2
@@ -1059,6 +1063,12 @@ sh: |
     done
 
     cleanup_list=
+  }
+
+  cleanup_and_exit()
+  {
+    cleanup
+    exit "${1:-1}"
   }
 
   if [ "`echo -e`" = "-e" ]; then
