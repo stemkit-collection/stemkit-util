@@ -8,6 +8,8 @@
   Author: Gennady Bystritsky
 =end
 
+require 'fileutils'
+
 module SK
   module Lingo
     class Baker

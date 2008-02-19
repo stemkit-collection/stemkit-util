@@ -8,9 +8,13 @@
   Author: Gennady Bystritsky
 =end
 
+require 'sk/lingo/baker.rb'
+
 module SK
   module Lingo
-    class ShBaker
+    module Sh
+      class Baker < SK::Lingo::Baker
+      end
     end
   end
 end
@@ -22,11 +26,13 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   
   module SK
     module Lingo
-      class ShBakerTest < Test::Unit::TestCase
-        def setup
-        end
-        
-        def teardown
+      module Sh
+        class ShBakerTest < Test::Unit::TestCase
+          def setup
+          end
+          
+          def teardown
+          end
         end
       end
     end

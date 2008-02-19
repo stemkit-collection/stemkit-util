@@ -40,12 +40,10 @@ class Application < TSC::Application
   def start
     handle_errors {
       process_command_line
-      require 'fileutils'
       require 'sk/lingo/config.rb'
-      require 'sk/lingo/locator.rb'
-      require 'sk/lingo/cpp-baker.rb'
-      require 'sk/lingo/ruby-baker.rb'
-      require 'sk/lingo/sh-baker.rb'
+      require 'sk/lingo/cpp/baker.rb'
+      require 'sk/lingo/ruby/baker.rb'
+      require 'sk/lingo/sh/baker.rb'
 
       throw :TEST if options.has_key?('test')
       raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
@@ -238,7 +236,7 @@ class Application < TSC::Application
     end
 
     def locator
-      @locator ||= SK::Lingo::Locator.new(options, Dir.pwd)
+      @locator ||= SK::Lingo::Cpp::Locator.new(options, Dir.pwd)
     end
 
     def ruby_module_name(name)
