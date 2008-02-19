@@ -19,12 +19,13 @@ require 'tsc/path.rb'
 class Application < TSC::Application
   def initialize
     super('<class_name> ...',
-      [ '--config', 'Use config file', 'yaml_file', '-c' ],
-      [ '--namespace', 'Use namespace', 'string', '-n' ],
+      [ '--target', 'Specify language to bake', 'language', '-t' ],
+      [ '--config', 'Use config file', 'yaml file', '-c' ],
+      [ '--namespace', "Use namespace ('.' or '::' for hierarchy)", 'string', '-n' ],
       [ '--local', 'Enforce file creation in the current directory', nil, '-l' ],
       [ '--indent', 'Use so many spaces for indent (2 by default)', 'number', '-i' ],
       [ '--print', 'Print out instead of creating files', nil, '-p' ],
-      [ '--mode', 'Set generation mode (e.g. test)', 'mode', '-m' ],
+      [ '--mode', 'Set generation mode (e.g. test, app, etc.)', 'mode', '-m' ],
       [ '--force', 'Force file override', nil, '-f' ],
       [ '--test', 'Run internal tests', nil ]
     )
