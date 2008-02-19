@@ -8,11 +8,9 @@
   Author: Gennady Bystritsky
 =end
 
-require 'sk/lingo/generator.rb'
-
 module SK
   module Lingo
-    class RubyGenerator < Generator
+    class ShBaker
     end
   end
 end
@@ -24,7 +22,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   
   module SK
     module Lingo
-      class RubyGeneratorTest < Test::Unit::TestCase
+      class ShBakerTest < Test::Unit::TestCase
         def setup
         end
         

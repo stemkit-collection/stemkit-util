@@ -8,11 +8,11 @@
   Author: Gennady Bystritsky
 =end
 
-require 'sk/lingo/generator.rb'
+require 'sk/lingo/baker.rb'
 
 module SK
   module Lingo
-    class CppGenerator < Generator
+    class CppBaker < Baker
     end
   end
 end
@@ -24,7 +24,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   
   module SK
     module Lingo
-      class CppGeneratorTest < Test::Unit::TestCase
+      class CppBakerTest < Test::Unit::TestCase
         def setup
         end
         

@@ -10,7 +10,7 @@
 
 module SK
   module Lingo
-    class Generator
+    class Baker
     end
   end
 end
@@ -22,7 +22,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   
   module SK
     module Lingo
-      class GeneratorTest < Test::Unit::TestCase
+      class BakerTest < Test::Unit::TestCase
         def setup
         end
         
