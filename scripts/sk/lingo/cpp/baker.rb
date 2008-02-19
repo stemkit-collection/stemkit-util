@@ -28,7 +28,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Lingo
       module Cpp
-        class CppBakerTest < Test::Unit::TestCase
+        class BakerTest < Test::Unit::TestCase
           def setup
           end
           
