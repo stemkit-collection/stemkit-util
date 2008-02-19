@@ -12,35 +12,33 @@ $:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
 require 'tsc/application.rb'
 require 'tsc/path.rb'
 
-# This script performs code generation for c/c++ and ruby classes according
-# to specification provided in a configuration file (src/config/new.yaml or
-# ~/.new.yaml).
-#
 class Application < TSC::Application
   def initialize
-    super('<class_name> ...',
-      [ '--target', 'Specify language to bake', 'language', '-t' ],
-      [ '--config', 'Use config file', 'yaml file', '-c' ],
-      [ '--namespace', "Use namespace ('.' or '::' for hierarchy)", 'string', '-n' ],
-      [ '--local', 'Enforce file creation in the current directory', nil, '-l' ],
-      [ '--indent', 'Use so many spaces for indent (2 by default)', 'number', '-i' ],
-      [ '--print', 'Print out instead of creating files', nil, '-p' ],
-      [ '--mode', 'Set generation mode (e.g. test, app, etc.)', 'mode', '-m' ],
-      [ '--force', 'Force file override', nil, '-f' ],
-      [ '--test', 'Run internal tests', nil ]
-    )
+    super { |_config|
+      _config.arguments = '<class_name> ...'
+      _config.options = [
+        [ '--target', 'Specify language to bake', 'language', '-t' ],
+        [ '--config', 'Use config file', 'yaml file', '-c' ],
+        [ '--namespace', "Use namespace ('.' or '::' for hierarchy)", 'string', '-n' ],
+        [ '--local', 'Enforce file creation in the current directory', nil, '-l' ],
+        [ '--indent', 'Use so many spaces for indent (2 by default)', 'number', '-i' ],
+        [ '--print', 'Print out instead of creating files', nil, '-p' ],
+        [ '--mode', 'Set generation mode (e.g. test, app, etc.)', 'mode', '-m' ],
+        [ '--force', 'Force file override', nil, '-f' ],
+        [ '--test', 'Run internal tests', nil ]
+      ]
+      _config.description = [
+        "This utility performs code generation for c/c++ and ruby classes according",
+        "to specification provided in a configuration file (src/config/new.yaml or",
+        "~/.new.yaml)."
+      ]
+    }
   end
 
-  in_generator_context do |_content|
-    _content << '#!' + figure_ruby_path
-    _content << '$VERBOSE = nil'
-    _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
-    _content << IO.readlines(__FILE__).slice(1..-1)
-  end
-  
   def start
     handle_errors {
       process_command_line
+
       require 'sk/lingo/config.rb'
       require 'sk/lingo/cpp/baker.rb'
       require 'sk/lingo/ruby/baker.rb'
@@ -64,6 +62,7 @@ class Application < TSC::Application
 
   private
   #######
+
   def generate(filename, baker)
     basename, extension = filename.scan(%r{^(.+?)(?:[.](.+))?$}).first
     namespace = split_namespace(basename)
@@ -78,6 +77,13 @@ class Application < TSC::Application
 
   def split_namespace(namespace)
     namespace.to_s.split(%r{(?::+)|(?:[.])})
+  end
+
+  in_generator_context do |_content|
+    _content << '#!' + figure_ruby_path
+    _content << '$VERBOSE = nil'
+    _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
+    _content << IO.readlines(__FILE__).slice(1..-1)
   end
 end
 
