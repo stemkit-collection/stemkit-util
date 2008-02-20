@@ -32,6 +32,8 @@ module SK
           targets.each do |_file, _lingo|
             return load_lingo(_file, _lingo) if _lingo == target
           end
+
+          raise "Unsupported target language #{target.inspect} (use option --list to see supported)"
         end
 
         def targets
