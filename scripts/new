@@ -13,6 +13,9 @@ require 'tsc/application.rb'
 require 'tsc/path.rb'
 
 class Application < TSC::Application
+  solitary_option :target, :config, :indent, :mode
+  predicate_option :local, :print, :force
+
   def initialize
     super { |_config|
       _config.arguments = '<class_name> ...'
