@@ -10,11 +10,13 @@
 
 require 'sk/lingo/baker.rb'
 require 'sk/lingo/cpp/locator.rb'
+require 'tsc/after-end-reader.rb'
 
 module SK
   module Lingo
     module Cpp
-      class CppBaker < SK::Lingo::Baker
+      class Baker < SK::Lingo::Baker
+        include AfterEndReader
       end
     end
   end
@@ -39,3 +41,64 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     end
   end
 end
+
+__END__
+
+cpp:
+  header_includes: |
+
+  body_includes: |
+    <iostream>
+    <iomanip>
+
+  extends: |
+
+  initializes: |
+
+  public_methods:
+
+  protected_methods:
+
+  private_methods:
+
+  data: |
+
+  factory:
+    constructor(): |
+    destructor(): |
+
+  test:
+    class_init: |
+      CPPUNIT_TEST_SUITE(#{FULL_CLASS_NAME});
+        CPPUNIT_TEST(testSimple);
+      CPPUNIT_TEST_SUITE_END();
+
+    header_includes: |
+      <cppunit/TestFixture.h>
+      <cppunit/extensions/HelperMacros.h>
+
+    body_top: |
+      CPPUNIT_TEST_SUITE_REGISTRATION(#{FULL_CLASS_NAME});
+
+    header_bottom: |
+
+    body_includes: |
+
+    extends: |
+      public CppUnit::TestFixture
+
+    initializes: |
+
+    public_methods:
+      void setUp(): |
+      void tearDown(): |
+      void testSimple(): |
+        CPPUNIT_ASSERT_EQUAL(true, false);
+
+    protected_methods:
+
+    private_methods:
+
+    data: |
+
+    factory:

@@ -15,6 +15,12 @@ module SK
     class Baker
       attr_reader :options, :undo_stack
 
+      class << self
+        def process(item, app, undo)
+          [ item.name, item.namespace, item.extension ]
+        end
+      end
+
       def initialize(options, *args)
         @options = options
         @undo_stack = args.first
@@ -379,12 +385,23 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Lingo
       class BakerTest < Test::Unit::TestCase
-        def setup
+        def test_nothing
         end
-        
-        def teardown
+
+        def setup
         end
       end
     end
   end
 end
+
+__END__
+
+indent: 2
+
+copyright_holders: |
+
+authors: |
+
+license: |
+
