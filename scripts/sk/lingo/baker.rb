@@ -22,6 +22,12 @@ module SK
       include TSC::AfterEndReader
 
       class << self
+        def list
+          targets.map { |_file, _lingo|
+            _lingo
+          }
+        end
+
         def find(target)
           targets.each do |_file, _lingo|
             return load_lingo(_file, _lingo) if _lingo == target

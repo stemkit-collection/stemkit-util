@@ -14,7 +14,7 @@ require 'tsc/path.rb'
 
 class Application < TSC::Application
   solitary_option :target, :config, :indent, :mode
-  predicate_option :local, :print, :force
+  predicate_option :local, :print, :force, :list
 
   def initialize
     super { |_config|
@@ -28,6 +28,7 @@ class Application < TSC::Application
         [ '--print', 'Print out instead of creating files', nil, '-p' ],
         [ '--mode', 'Set generation mode (e.g. test, app, etc.)', 'mode', '-m' ],
         [ '--force', 'Force file override', nil, '-f' ],
+        [ '--list', 'List supported languages', nil, ],
         [ '--test', 'Run internal tests', nil ]
       ]
       _config.description = [
@@ -44,9 +45,14 @@ class Application < TSC::Application
       require 'tsc/dataset.rb'
 
       throw :TEST if options.has_key?('test')
-      raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
-
       require 'sk/lingo/bakery.rb'
+
+      if list?
+        puts "Supported languages: #{SK::Lingo::Baker.list.join(', ')}"
+        exit
+      end
+
+      raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
 
       TSC::Error.undo(Exception) do |_stack|
         bakery = SK::Lingo::Bakery.new self, _stack
