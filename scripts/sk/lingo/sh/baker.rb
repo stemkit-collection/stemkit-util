@@ -9,13 +9,31 @@
 =end
 
 require 'sk/lingo/baker.rb'
-require 'tsc/after-end-reader.rb'
 
 module SK
   module Lingo
     module Sh
       class Baker < SK::Lingo::Baker
-        include TSC::AfterEndReader
+        def accept(item)
+          case item.extension
+            when 'sh'
+              sh name, namespace, extension
+
+            else
+              return false
+          end
+
+          true
+        end
+
+        def sh(name, namespace, extension)
+          filename = "#{name}.#{extension}"
+          save filename, name, namespace, [
+            '#!/bin/sh',
+            make_pound_comments(make_copyright_notice),
+            prepend_newline_if(config.sh)
+          ] and FileUtils.chmod 0755, filename
+        end
       end
     end
   end
@@ -30,10 +48,10 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     module Lingo
       module Sh
         class BakerTest < Test::Unit::TestCase
-          def setup
+          def test_nothing
           end
-          
-          def teardown
+
+          def setup
           end
         end
       end

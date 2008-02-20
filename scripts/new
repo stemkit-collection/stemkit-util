@@ -46,11 +46,12 @@ class Application < TSC::Application
       throw :TEST if options.has_key?('test')
       raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
 
-      require 'sk/lingo/baker.rb'
+      require 'sk/lingo/bakery.rb'
 
       TSC::Error.undo(Exception) do |_stack|
+        bakery = SK::Lingo::Bakery.new self, _stack
         ARGV.each do |_item|
-          SK::Lingo::Baker.process normalize(_item), self, _stack
+          bakery.make normalize(_item)
         end
       end
     }
@@ -63,7 +64,7 @@ class Application < TSC::Application
     TSC::Dataset[ 
       :name => namespace.pop, 
       :namespace => global_namespace + namespace,
-      :extension => extension.to_s
+      :extension => extension
     ]
   end
 
@@ -101,7 +102,7 @@ require 'test/unit'
 require 'mocha'
 require 'stubba'
 
-require 'sk/lingo/baker.rb'
+require 'sk/lingo/bakery.rb'
 
 class ApplicationTest < Test::Unit::TestCase
   attr_reader :app
@@ -114,8 +115,8 @@ class ApplicationTest < Test::Unit::TestCase
     assert_equal 'aaa', app.normalize('aaa').name
 
     assert_equal 'cc', app.normalize('aaa.cc').extension
-    assert_equal '', app.normalize('aaa.').extension
-    assert_equal '', app.normalize('aaa').extension
+    assert_equal nil, app.normalize('aaa.').extension
+    assert_equal nil, app.normalize('aaa').extension
 
     assert_equal [ 'uuu', 'zzz' ], app.normalize('aaa.cc').namespace
     assert_equal [ 'uuu', 'zzz' ], app.normalize('aaa').namespace

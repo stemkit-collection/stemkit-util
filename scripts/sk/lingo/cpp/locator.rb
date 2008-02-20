@@ -57,10 +57,10 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     module Lingo
       module Cpp
         class LocatorTest < Test::Unit::TestCase
-          def setup
+          def test_nothing
           end
-          
-          def teardown
+
+          def setup
           end
         end
       end

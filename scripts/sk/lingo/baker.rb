@@ -8,242 +8,67 @@
   Author: Gennady Bystritsky
 =end
 
+require 'tsc/errors.rb'
+require 'tsc/after-end-reader.rb'
+require 'sk/lingo/config.rb'
+
 require 'fileutils'
 
 module SK
   module Lingo
     class Baker
-      attr_reader :options, :undo_stack
+      attr_reader :bakery
+
+      include TSC::AfterEndReader
 
       class << self
-        def process(item, app, undo)
-          [ item.name, item.namespace, item.extension ]
+        def find(target)
+          targets.each do |_file, _lingo|
+            return load_lingo(_file, _lingo) if _lingo == target
+          end
+        end
+
+        def targets
+          Dir[ File.join(File.dirname(__FILE__), '*', 'baker.rb') ].map { |_item|
+            [ _item, _item.scan(%r{^.*/(.*?)/baker.rb$}).flatten.compact.first ]
+          }
+        end
+
+        def each(&block)
+          return unless block_given?
+
+          targets.each do |_file, _lingo|
+            yield load_lingo(_file, _lingo)
+          end
+        end
+
+        def load_lingo(file, lingo)
+          require file
+
+          [ 'SK', 'Lingo', lingo.capitalize, 'Baker' ].inject(Module) { |_module, _item|
+            _module.const_get(_item)
+          }
         end
       end
 
-      def initialize(options, *args)
-        @options = options
-        @undo_stack = args.first
+      def initialize(bakery)
+        @bakery = bakery
       end
 
-      def guess(name, namespace, extension)
-        case extension
-          when ''
-            cc_header name, namespace, 'h'
-            cc_body name, namespace, 'cc'
-
-          when 'h', 'hpp', 'hxx', 'cxx'
-            cc_header name, namespace, extension
-
-          when 'cc', 'cpp'
-            cc_body name, namespace, extension
-
-          when 'c'
-            c name, namespace, extension
-
-          when 'rb'
-            ruby name, namespace, extension
-
-          when 'sh'
-            sh name, namespace, extension
-
-          else
-            raise "Unsupported type #{extension.inspect} for #{name.inspect}"
-        end
+      def accept(item)
+        raise TSC::NotImplementedError, :accept
       end
 
-      def cc_header(name, namespace, extension)
-        filename = locator.figure_for 'include', name, extension
-        namespace = locator.namespace(namespace)
-
-        save filename, name, namespace, [
-          append_newline_if(make_c_comments(make_copyright_notice)),
-          make_h_guard(namespace, name, extension) {
-            [
-              '',
-              append_newline_if(make_includes(config.header_includes)),
-              make_namespace(namespace) {
-                make_class_definition(name)
-              },
-              '',
-              append_newline_if(config.header_bottom)
-            ]
-          }
-        ]
+      def process(item)
+        raise TSC::NotImplementedError, :process
       end
-
-      def cc_body(name, namespace, extension)
-        filename = locator.figure_for 'lib', name, extension
-        namespace = locator.namespace(namespace)
-        scope = (namespace + [ name, '' ]).join('::')
-
-        save filename, name, namespace, [
-          make_c_comments(make_copyright_notice),
-          prepend_newline_if(make_includes(config.body_includes)),
-          prepend_newline_if(make_includes([ locator.header_specification(name, extension) ])),
-          prepend_newline_if(config.body_top),
-          config.constructors.map { |_constructor|
-            [
-              '',
-              scope,
-              "#{name}#{_constructor.parameters}",
-              indent(make_initialization_list(config.initializes)),
-              '{',
-               indent(_constructor.body),
-              '}'
-            ]
-          },
-          config.destructors.map { |_destructor|
-            [
-              '',
-              scope,
-              "~#{name}()",
-              '{',
-              indent(_destructor.body),
-              '}'
-            ]
-          },
-          (config.public_methods + config.protected_methods + config.private_methods).map { |_method|
-            [
-              '',
-              _method.returns,
-              scope,
-              _method.signature,
-              '{',
-              indent(_method.body),
-              '}'
-            ]
-          }
-        ]
-      end
-
-      def c(name, namespace, extension)
-        save "#{name}.#{extension}", name, namespace, [
-          make_c_comments(make_copyright_notice),
-          prepend_newline_if(make_namespace(namespace))
-        ]
-      end
-
-      def sh(name, namespace, extension)
-        filename = "#{name}.#{extension}"
-        save filename, name, namespace, [
-          '#!/bin/sh',
-          make_pound_comments(make_copyright_notice),
-          prepend_newline_if(config.sh)
-        ] and FileUtils.chmod 0755, filename
-      end
-
-      def ruby(name, namespace, extension)
-        save "#{name}.#{extension}", name, namespace, [
-          append_newline_if(make_ruby_block_comments(make_copyright_notice)),
-          make_ruby_modules(namespace) {
-            [
-              "class #{ruby_module_name(name)}",
-              'end'
-            ]
-          },
-          '',
-          'if $0 == __FILE__ or defined?(Test::Unit::TestCase)',
-          indent(
-            "require 'test/unit'",
-            "require 'mocha'",
-            "require 'stubba'",
-            '',
-            make_ruby_modules(namespace) {
-              [
-                "class #{ruby_module_name(name)}Test < Test::Unit::TestCase",
-                indent(
-                  'def setup',
-                  'end',
-                  '',
-                  'def teardown',
-                  'end'
-                ),
-                'end'
-              ]
-            }
-          ),
-          'end'
-        ]
-      end
-
-      private
-      #######
 
       def config
         @config ||= SK::Lingo::Config.new(options)
       end
 
-      def locator
-        @locator ||= SK::Lingo::Cpp::Locator.new(options, Dir.pwd)
-      end
-
-      def ruby_module_name(name)
-        File.basename(name).split(%r{[_-]}).map { |_part| _part[0,1].upcase + _part[1..-1] }.join
-      end
-
-      def make_ruby_modules(namespace, &block)
-        return block.call if namespace.empty?
-        [
-          "module #{ruby_module_name(namespace.first)}",
-          indent(
-            make_ruby_modules(namespace[1..-1], &block)
-          ),
-          'end'
-        ]
-      end
-
-      def make_namespace(namespace, &block)
-        block ||= proc {
-          []
-        }
-        return block.call if namespace.empty?
-        [
-          "namespace #{namespace.first} {",
-          indent(
-            make_namespace(namespace[1..-1], &block)
-          ),
-          '}'
-        ]
-      end
-
       def decorate(content, &block)
         (block.nil? or content.empty?) ? content : block.call(content)
-      end
-
-      def make_class_definition(name)
-        [ 
-          "class #{name}",
-          indent(make_initialization_list(config.extends)),
-          '{',
-          indent(
-            append_newline_if(config.class_init),
-            decorate(
-              append_newline_if(
-                config.constructors.map { |_constructor|
-                  "#{name}#{_constructor.parameters};"
-                } + 
-                config.destructors.map { |_destructor|
-                  "#{_destructor.type} ~#{name}();".strip
-                }
-              ) +
-              append_newline_if(make_method_definition(config.public_methods))
-            ) { |_out|
-              [ 'public:', indent(_out) ]
-            },
-            decorate(make_method_definition(config.protected_methods)) { |_out| 
-              [ 'protected:', indent(_out), '' ]
-            },
-            'private:',
-            indent(
-              "#{name}(const #{name}& other);",
-              "#{name}& operator = (const #{name}& other);",
-              prepend_newline_if(make_method_definition(config.private_methods)),
-              prepend_newline_if(config.data)
-            )
-          ),
-          '};'
-        ]
       end
 
       def serialize(*content)
@@ -282,6 +107,18 @@ module SK
         File::CREAT | File::WRONLY | (options['force'] ? File::TRUNC : File::EXCL)
       end
 
+      def make_copyright_notice
+        @notice ||= [
+          config.copyright_holders.map { |_holder|
+            "Copyright (c) #{Time.now.year}, #{_holder}"
+          },
+          append_newline_if(prepend_newline_if(config.license)),
+          config.authors.map { |_author|
+            'Author: ' + _author
+          }
+        ].flatten.compact
+      end
+
       def output(name, namespace, content, stream)
         substitutions = Hash[
           'FULL_CLASS_NAME' => (namespace + [name]).join('::'),
@@ -296,57 +133,13 @@ module SK
           substitutions[_match[2...-1]]
         }
       end
-
-      def make_includes(includes)
-        return includes if includes.empty?
-        includes.map { |_include|
-          "#include #{_include}"
-        }
-      end
-
-      def make_copyright_notice
-        @notice ||= [
-          config.copyright_holders.map { |_holder|
-            "Copyright (c) #{Time.now.year}, #{_holder}"
-          },
-          append_newline_if(prepend_newline_if(config.license)),
-          config.authors.map { |_author|
-            'Author: ' + _author
-          }
-        ].flatten.compact
-      end
-
-      def make_method_definition(methods)
-        return methods if methods.empty?
-        methods.map { |_method|
-          [
-            _method.comments,
-            "#{_method.returns} #{_method.signature};"
-          ]
-        }
-      end
-
+      
       def indent_prefix
         @indent_prefix ||= (' ' * config.indent)
       end
 
       def indent(*content)
         content.flatten.map { |_line| indent_prefix + _line } 
-      end
-       
-      def make_initialization_list(content)
-        return content if content.empty?
-        [ ': ' + content.first, *content[1..-1].map { |_line| '  ' + _line } ]
-      end
-
-      def make_h_guard(*args)
-        tag = "_#{args.flatten.join('_').upcase}_"
-        [
-          "#ifndef #{tag}",
-          "#define #{tag}",
-          yield,
-          "#endif /* #{tag} */"
-        ]
       end
 
       def make_pound_comments(lines)
@@ -355,24 +148,6 @@ module SK
         }
       end
 
-      def make_ruby_block_comments(lines)
-        [
-          '=begin',
-          lines.map { |_line|
-            '  ' + _line
-          },
-          '=end'
-        ]
-      end
-
-      def make_c_comments(lines)
-        return lines if lines.empty?
-
-        first, *rest = lines
-        return [ "// #{first}" ] if rest.empty?
-
-        [ "/*  #{first}" ] + rest.map { |_line| " *  #{_line}" } + [ '*/' ]
-      end
     end
   end
 end
