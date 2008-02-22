@@ -54,6 +54,10 @@ module SK
       }
     end
 
+    def lineup
+      @entries.transpose.flatten.map { |_item| Array(_item) }.flatten.uniq
+    end
+
     private
     #######
 
@@ -136,6 +140,16 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         100.times do
           assert_equal [ 16973, 16975, 16976, 16977, 17217], Subordinator.slave_to_master(*randomize(a)).slaves
         end
+      end
+
+      def test_strings
+        h = Hash[
+          :gena => :felix,
+          :dennis => :gena,
+          :vika => :gena,
+          :felix => :klim
+        ]
+        assert_equal [ :klim, :felix, :gena, :dennis, :vika ], Subordinator.slave_to_master(*h).lineup
       end
 
       def setup
