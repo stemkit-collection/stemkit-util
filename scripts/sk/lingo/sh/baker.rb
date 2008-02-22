@@ -36,8 +36,8 @@ module SK
           make_executable item
         end
 
-        def embedded_data
-          [ read_after_end_marker(__FILE__), *super ]
+        def inline_config_locator
+          SK::Config::InlineLocator[ read_after_end_marker(__FILE__), super ]
         end
       end
     end

@@ -12,6 +12,10 @@ require 'tsc/errors.rb'
 require 'tsc/after-end-reader.rb'
 require 'tsc/config.rb'
 require 'sk/lingo/config.rb'
+require 'sk/config/inline-locator.rb'
+require 'sk/config/uproot-locator.rb'
+require 'sk/config/home-locator.rb'
+require 'sk/yaml-config.rb'
 
 require 'fileutils'
 
@@ -74,12 +78,16 @@ module SK
 
       def config
         @config ||= begin
-          SK::Lingo::Config.new(bakery.options, *embedded_data.reverse).update_from_file
+          SK::Lingo::Config.new bakery.options, SK::YamlConfig.new(config_locator).data
         end
       end
 
-      def embedded_data
-        read_after_end_marker(__FILE__)
+      def config_locator
+        SK::Config::UprootLocator[ 'config/new.yaml', SK::Config::HomeLocator[ '.new.yaml', inline_config_locator ] ]
+      end
+
+      def inline_config_locator
+        SK::Config::InlineLocator[ read_after_end_marker(__FILE__) ]
       end
 
       def decorate(content, &block)

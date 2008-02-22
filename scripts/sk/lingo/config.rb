@@ -9,24 +9,15 @@
 =end
 
 require 'etc'
-require 'tsc/config.rb'
 
 module SK
   module Lingo
     class Config
       attr_reader :options, :hash
 
-      def initialize(options, *args)
+      def initialize(options, hash)
         @options = options
-        @hash = args.inject({}) do |_hash, _item|
-          _hash.merge TSC::Config.convert(_item)
-        end
-      end
-
-      def update_from_file
-        hash.update TSC::Config.parse(config_file).hash if File.exist?(config_file)
-
-        self
+        @hash = hash
       end
 
       def indent
@@ -63,25 +54,6 @@ module SK
 
           (unit ? ' ' * ((offset/unit)*indent) : '') + line
         }
-      end
-
-      def config_file
-        @config_file ||= options.config? ? options.config : begin
-          file = 'new.yaml'
-          src_from_current = Dir.pwd.scan(%r{^(.+/src)(/.*)*$}).first
-
-          src_from_current && [ [], ['*'], ['*','*'] ].map { |_components|
-            Dir[ File.join(*([src_from_current.first] + _components + ['config', file])) ]
-          }.flatten.first
-        end || File.join(user_credentials.dir, ".#{file}")
-      end
-
-      def user_credentials
-        @credentials ||= Etc.getpwuid
-      end
-
-      def find_src_from_current
-        @src = Dir.pwd.gsub(%r{^(.+/src)(/.*)$}, '\1')
       end
     end
   end
