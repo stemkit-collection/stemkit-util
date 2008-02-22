@@ -15,6 +15,9 @@ module SK
         @options = args.inject({}) { |_hash, _item|
           _hash.update Hash[_item]
         }
+        @options.delete_if { |_key, _value|
+          _value.nil?
+        }
       end
 
       def invoke(processor)
@@ -28,16 +31,12 @@ module SK
         @options
       end
 
-      def spot
-        options[:spot] || '.'
-      end
-
       def locator?
-        options.has_key :locator
+        options.has_key? :locator
       end
 
       def locator
-        option[:locator] || raise 'No locator'
+        options[:locator] or raise 'No locator'
       end
 
     end
@@ -52,10 +51,26 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Config
       class LocatorTest < Test::Unit::TestCase
-        def setup
+        attr_reader :processor, :mock_locator
+
+        def test_standalone
+          locator = Locator.new 
+          processor.expects(:process).never
+
+          locator.invoke(processor)
         end
-        
-        def teardown
+
+        def test_cascading
+          locator = Locator.new :locator => Locator.new(:locator => mock_locator)
+          processor.expects(:process).never
+          mock_locator.expects(:invoke).with(processor)
+
+          locator.invoke(processor)
+        end
+
+        def setup
+          @processor = mock('processor')
+          @mock_locator = mock('locator')
         end
       end
     end

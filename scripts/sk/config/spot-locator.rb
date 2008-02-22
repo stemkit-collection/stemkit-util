@@ -33,7 +33,7 @@ module SK
       end
 
       def spot
-        @spot ||= File.expand_path(super)
+        @spot ||= File.expand_path(options[:spot] || '.')
       end
 
       def item

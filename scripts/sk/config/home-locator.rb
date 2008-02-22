@@ -12,19 +12,14 @@ require 'sk/config/spot-locator.rb'
 
 module SK
   module Config
-    class UprootLocator < SpotLocator
+    class HomeLocator < SpotLocator
       def initialize(*args)
-        super(*args) { |_item, _spot, _locator|
-          parent = File.dirname(_spot)
-          parent == '/' ? {} : {
-            :locator => self.class.new(:item => _item, :spot => parent, :locator => _locator)
-          }
-        }
+        super *arg.push(:spot => '~')
       end
 
       class << self
         def [](item, locator = nil)
-          new :item => item, :spot => '.', :locator => locator
+          new :item => item, :locator => locator
         end
       end
     end
@@ -40,9 +35,6 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     module Config
       class UprootLocatorTest < Test::Unit::TestCase
         def setup
-        end
-        
-        def teardown
         end
       end
     end

@@ -15,11 +15,18 @@ module SK
     class InlineLocator < Locator
       def invoke(processor)
         super
-        processor.process(content, spot)
+
+        processor.process(content, nil)
       end
 
       def content
-        options[:content] || raise 'No content'
+        options[:content] or raise 'No content'
+      end
+
+      class << self
+        def [](content, locator = nil)
+          new :content => content, :locator => locator
+        end
       end
     end
   end
@@ -33,10 +40,26 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Config
       class InlineLocatorTest < Test::Unit::TestCase
-        def setup
+        attr_reader :processor
+
+        def test_stanalone
+          locator = InlineLocator.new :content => "abcdefg"
+          processor.expects(:process).with('abcdefg', nil)
+
+          locator.invoke(processor)
         end
-        
-        def teardown
+
+        def test_cascading
+          locator = InlineLocator.new :content => 'aaa', :locator => InlineLocator['bbb', InlineLocator['ccc'] ]
+          processor.expects(:process).with('ccc', nil)
+          processor.expects(:process).with('bbb', nil)
+          processor.expects(:process).with('aaa', nil)
+
+          locator.invoke(processor)
+        end
+
+        def setup
+          @processor = mock('processor')
         end
       end
     end

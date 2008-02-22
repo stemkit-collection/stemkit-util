@@ -9,9 +9,17 @@
 =end
 
 require 'yaml'
+require 'tsc/errors.rb'
 
 module SK
   class YamlConfig
+    class ParseError < TSC::Error
+      def initilize(*args)
+        error, location = *args.flatten.compact
+        super locaiton ? "Error parsing #{location.inspect}" : "Parse error", error
+      end
+    end
+
     attr_reader :data
 
     def initialize(locator)
@@ -19,7 +27,11 @@ module SK
     end
 
     def process(data, location)
-      @data = Hash[ (YAML.parse(data) || self).transform ]
+      begin
+        @data = Hash[ (YAML.parse(data) || self).transform ]
+      rescue => original
+        raise ParseError, [ original, location ]
+      end
     end
 
     def transform
