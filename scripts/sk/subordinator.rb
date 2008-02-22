@@ -12,50 +12,75 @@ require 'set'
 
 module SK
   class Subordinator
-    def initialize(*entries)
-      @hash = Hash.new { |_h, _k|
-        _h[_k] = Set.new
-      }
-      entries.each do |_entry|
-        Hash[*_entry.flatten].each do |_master, _slave|
-          @hash[_master] << _slave
-        end
+    attr_reader :entries
+
+    class CycleError < RuntimeError
+      def initialize(entry)
+        super "Cyclic dependency detected (#{entry.inspect})"
       end
     end
 
+    def initialize(*items)
+      @entries = []
+
+      normalize_and_order items, Hash.new { |_h, _k|
+        _h[_k] = Set.new
+      }
+    end
+
     class << self
-      def master_to_slave(*entries)
-        new(*entries)
+      def master_to_slave(*items)
+        new(*items)
       end
 
-      def slave_to_master(*entries)
-        master_to_slave *entries.map { |_entry|
-          Array(Hash[*_entry]).map { |_item|
-            _item.reverse
+      def slave_to_master(*items)
+        master_to_slave *items.map { |_item|
+          Array(Hash[*_item]).map { |_entry|
+            _entry.reverse
           }
         }
       end
     end
 
-    def dependents
-      order.map { |_entry|
+    def slaves
+      @entries.map { |_entry|
         Array(_entry.last).sort
       }.flatten
     end
 
-    def order
-      r = []
-      a = Array(@hash)
+    def masters
+      @entries.map { |_entry|
+        _entry.first
+      }
+    end
 
-      while item = a.shift
-        if a.detect { |_entry| _entry.last.include? item.first }
-          a << item
-        else
-          r << item
+    private
+    #######
+
+    def normalize_and_order items, hash
+      items.each do |_item|
+        Hash[*_item.flatten].each do |_master, _slave|
+          hash[_master] << _slave
         end
       end
 
-      r
+      @hash = hash
+      order Array(hash)
+    end
+
+    def order(array)
+      temp = array.dup
+      while entry = array.shift
+        if array.detect { |_item| _item.last.include? entry.first }
+          array << entry
+          raise CycleError, entry if array.all? { |_item|
+            _item.frozen?
+          }
+          entry.freeze
+        else
+          @entries << entry
+        end
+      end
     end
   end
 end
@@ -65,13 +90,21 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'mocha'
   require 'stubba'
   
+  require 'timeout'
+
   module SK
     class SubordinatorTest < Test::Unit::TestCase
       attr_reader :array
 
-      def test_dependents
+      def test_slaves
         100.times do
-          assert_equal [3, 4, 5, 6, 7, 8, 9, 17, 18, 19], Subordinator.slave_to_master(*randomize(array)).dependents
+          assert_equal [3, 4, 5, 6, 7, 8, 9, 17, 18, 19], Subordinator.slave_to_master(*randomize(array)).slaves
+        end
+      end
+
+      def test_masters
+        100.times do
+          assert_equal [ 1, 3, 5, 6 ], Subordinator.slave_to_master(*randomize(array)).masters
         end
       end
 
@@ -79,6 +112,18 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         array.sort_by {
           rand
         }
+      end
+
+      def test_cycle_detection
+        a = [ 
+          [ 1, 2 ],
+          [ 2, 1 ]
+        ]
+        timeout 3 do 
+          assert_raises Subordinator::CycleError do 
+            Subordinator.slave_to_master(*a).masters
+          end
+        end
       end
 
       def test_other
@@ -91,7 +136,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         ]
 
         100.times do
-          assert_equal [ 16973, 16975, 16976, 16977, 17217], Subordinator.slave_to_master(*randomize(a)).dependents
+          assert_equal [ 16973, 16975, 16976, 16977, 17217], Subordinator.slave_to_master(*randomize(a)).slaves
         end
       end
 
@@ -115,5 +160,3 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     end
   end
 end
-
-__END__
