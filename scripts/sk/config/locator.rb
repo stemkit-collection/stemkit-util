@@ -24,13 +24,6 @@ module SK
         locator.invoke(processor) if locator?
       end
 
-      protected
-      #########
-
-      def options
-        @options
-      end
-
       def locator?
         options.has_key? :locator
       end
@@ -39,6 +32,12 @@ module SK
         options[:locator] or raise 'No locator'
       end
 
+      protected
+      #########
+
+      def options
+        @options
+      end
     end
   end
 end
