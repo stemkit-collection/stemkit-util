@@ -41,9 +41,6 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       class UprootLocatorTest < Test::Unit::TestCase
         def setup
         end
-        
-        def teardown
-        end
       end
     end
   end

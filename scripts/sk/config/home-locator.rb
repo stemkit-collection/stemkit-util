@@ -14,7 +14,7 @@ module SK
   module Config
     class HomeLocator < SpotLocator
       def initialize(*args)
-        super *arg.push(:spot => '~')
+        super *args.push(:spot => '~')
       end
 
       class << self
@@ -34,6 +34,14 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Config
       class UprootLocatorTest < Test::Unit::TestCase
+        def test_standalone
+          locator = HomeLocator[ 'aaa' ]
+          HomeLocator.expects(:expand_path).with('~').returns('/home/user')
+
+          assert_equal 'aaa', locator.item
+          assert_equal '/home/user', locator.spot
+        end
+
         def setup
         end
       end

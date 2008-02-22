@@ -18,7 +18,7 @@ module SK
         super
 
         if block_given?
-          options.update Hash[ yield options[:item], spot, options[:locator] ]
+          options.update Hash[ yield(options[:item], spot, options[:locator]) ]
         end
       end
 
@@ -26,18 +26,28 @@ module SK
         super
 
         TSC::Error.ignore Errno::ENOENT do
-          File.open File.join(spot, item) do |_io|
+          self.class.open File.join(spot, item) do |_io|
             processor.process(_io, spot)
           end
         end
       end
 
       def spot
-        @spot ||= File.expand_path(options[:spot] || '.')
+        @spot ||= self.class.expand_path(options[:spot] || '.')
       end
 
       def item
         options[:item] || locator.item
+      end
+
+      class << self
+        def expand_path(*args)
+          File.expand_path(*args)
+        end
+
+        def open(*args, &block)
+          File.open(*args, &block)
+        end
       end
     end
   end
@@ -51,10 +61,41 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Config
       class SpotLocatorTest < Test::Unit::TestCase
-        def setup
+        attr_reader :processor
+
+        def test_standalone_no_item_default_spot
+          locator = SpotLocator.new
+          File.expects(:expand_path).with('.').returns('/a/b/c')
+          processor.expects(:process).never
+
+          assert_raises RuntimeError do
+            locator.item
+          end
+          assert_equal '/a/b/c', locator.spot
         end
-        
-        def teardown
+
+        def test_cascading_with_tailing_item
+          locator = SpotLocator.new :locator => SpotLocator.new(:item => 'zzz')
+          processor.expects(:process).never
+
+          assert_equal 'zzz', locator.item
+        end
+
+        def test_cascading_invoke
+          locator = SpotLocator.new :locator => SpotLocator.new(:item => 'zzz', :spot => '/tmp')
+          SpotLocator.expects(:expand_path).with('.').returns('/a/b')
+          SpotLocator.expects(:expand_path).with('/tmp').returns('/tmp')
+          SpotLocator.expects(:open).with('/a/b/zzz').yields('aaa')
+          SpotLocator.expects(:open).with('/tmp/zzz').yields('bbb')
+
+          processor.expects(:process).with('aaa', '/a/b')
+          processor.expects(:process).with('bbb', '/tmp')
+
+          locator.invoke(processor)
+        end
+
+        def setup
+          @processor = mock('processor')
         end
       end
     end
