@@ -44,9 +44,18 @@ module SK
     end
 
     def order
-      @hash.sort { |_e1, _e2|
-        _e1[1].member?(_e2[0]) ? -1 : 1
-      }
+      r = []
+      a = Array(@hash)
+
+      while item = a.shift
+        if a.detect { |_entry| _entry.last.include? item.first }
+          a << item
+        else
+          r << item
+        end
+      end
+
+      r
     end
   end
 end
@@ -61,37 +70,50 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       attr_reader :array
 
       def test_dependents
-        assert_equal [3, 4, 5, 6, 7, 8, 9, 17, 18, 19], Subordinator.slave_to_master(*array).dependents
-      end
-
-      def test_different_source_order_equal
         100.times do
-          assert_equal Subordinator.slave_to_master(*randomized_array).dependents, Subordinator.slave_to_master(*randomized_array).dependents
+          assert_equal [3, 4, 5, 6, 7, 8, 9, 17, 18, 19], Subordinator.slave_to_master(*randomize(array)).dependents
         end
       end
 
-      def randomized_array
+      def randomize(array)
         array.sort_by {
           rand
         }
       end
 
+      def test_other
+        a = [
+          [ 16973,     1 ],
+          [ 16975,     1 ],
+          [ 16976, 16973 ],
+          [ 16977, 16973 ],
+          [ 17217, 16977 ],
+        ]
+
+        100.times do
+          assert_equal [ 16973, 16975, 16976, 16977, 17217], Subordinator.slave_to_master(*randomize(a)).dependents
+        end
+      end
+
       def setup
         @array = [
+          [ 3, 1 ],
+          [ 4, 1 ],
+
+          [ 6, 3 ],
+          [ 5, 3 ],
+
           [ 7, 5 ],
           [ 8, 5 ],
-          [ 5, 3 ],
           [ 9, 5 ],
 
           [ 17, 6 ],
           [ 18, 6 ],
           [ 19, 6 ],
-          [ 3, 1 ],
-          [ 4, 1 ],
-          [ 6, 3 ],
         ]
-
       end
     end
   end
 end
+
+__END__
