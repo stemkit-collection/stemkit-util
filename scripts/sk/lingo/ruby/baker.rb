@@ -17,7 +17,7 @@ module SK
         def accept(item)
           case item.extension
             when 'rb'
-              ruby name, namespace, extension
+              process(item)
 
             else
               return false
@@ -26,12 +26,12 @@ module SK
           true
         end
 
-        def ruby(name, namespace, extension)
-          save "#{name}.#{extension}", name, namespace, [
+        def process(item)
+          save item, [
             append_newline_if(make_ruby_block_comments(make_copyright_notice)),
-            make_ruby_modules(namespace) {
+            make_ruby_modules(item.namespace) {
               [
-                "class #{ruby_module_name(name)}",
+                "class #{ruby_module_name(item.name)}",
                 'end'
               ]
             },
@@ -42,9 +42,9 @@ module SK
               "require 'mocha'",
               "require 'stubba'",
               '',
-              make_ruby_modules(namespace) {
+              make_ruby_modules(item.namespace) {
                 [
-                  "class #{ruby_module_name(name)}Test < Test::Unit::TestCase",
+                  "class #{ruby_module_name(item.name)}Test < Test::Unit::TestCase",
                   indent(
                     'def setup',
                     'end',
@@ -58,6 +58,12 @@ module SK
             ),
             'end'
           ]
+          
+          make_executable item unless item.extension
+        end
+
+        def embedded_data
+          [ read_after_end_marker(__FILE__), *super ]
         end
 
         def ruby_module_name(name)
@@ -108,3 +114,6 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     end
   end
 end
+
+__END__
+ruby:

@@ -10,6 +10,7 @@
 
 require 'tsc/errors.rb'
 require 'tsc/after-end-reader.rb'
+require 'tsc/config.rb'
 require 'sk/lingo/config.rb'
 
 require 'fileutils'
@@ -72,7 +73,13 @@ module SK
       end
 
       def config
-        @config ||= SK::Lingo::Config.new(options)
+        @config ||= begin
+          SK::Lingo::Config.new(bakery.options, *embedded_data.reverse).update_from_file
+        end
+      end
+
+      def embedded_data
+        read_after_end_marker(__FILE__)
       end
 
       def decorate(content, &block)
@@ -91,19 +98,20 @@ module SK
         content.empty? ? content : [ content, '' ]
       end
 
-      def save(file, name, namespace, *content)
-        if options.has_key?('print')
+      def save(item, *content)
+        if bakery.options.print?
           $stderr.puts "=== #{file}"
-          output name, namespace, content, $stdout
+          output item.name, item.namespace, content, $stdout
 
           false
         else
+          file = make_filename(item)
           File.open(file, file_write_flags) do |_io|
-            @undo_stack.add {
+            bakery.undo.add {
               File.unlink(file)
               $stderr.puts "Removed: #{file}"
             }
-            output name, namespace, content, _io
+            output item.name, item.namespace, content, _io
           end
           $stderr.puts "Created: #{file}"
 
@@ -112,7 +120,7 @@ module SK
       end
 
       def file_write_flags
-        File::CREAT | File::WRONLY | (options['force'] ? File::TRUNC : File::EXCL)
+        File::CREAT | File::WRONLY | (bakery.options.force? ? File::TRUNC : File::EXCL)
       end
 
       def make_copyright_notice
@@ -156,6 +164,13 @@ module SK
         }
       end
 
+      def make_filename(item)
+        [ item.name, item.extension ].compact.join('.')
+      end
+
+      def make_executable(item)
+        FileUtils.chmod 0755, make_filename(item)
+      end
     end
   end
 end
