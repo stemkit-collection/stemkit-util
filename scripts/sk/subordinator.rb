@@ -44,7 +44,7 @@ module SK
 
     def slaves
       @entries.map { |_entry|
-        Array(_entry.last).sort
+        Array(_entry.last)
       }.flatten
     end
 
@@ -64,12 +64,10 @@ module SK
         end
       end
 
-      @hash = hash
       order Array(hash)
     end
 
     def order(array)
-      temp = array.dup
       while entry = array.shift
         if array.detect { |_item| _item.last.include? entry.first }
           array << entry
