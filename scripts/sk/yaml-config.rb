@@ -8,8 +8,23 @@
   Author: Gennady Bystritsky
 =end
 
+require 'yaml'
+
 module SK
   class YamlConfig
+    attr_reader :data
+
+    def initialize(locator)
+      locator.invoke(self)
+    end
+
+    def process(data, location)
+      @data = Hash[ (YAML.parse(data) || self).transform ]
+    end
+
+    def transform
+      Hash[]
+    end
   end
 end
 
