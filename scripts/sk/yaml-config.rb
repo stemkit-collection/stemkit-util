@@ -54,10 +54,29 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   
   module SK
     class YamlConfigTest < Test::Unit::TestCase
-      def setup
+      attr_reader :locator
+
+      def test_valid
+        locator.expects(:invoke).with { |_processor|
+          _processor.process("abc: zzz", "/tmp")
+          true
+        }
+        config = SK::YamlConfig.new locator
+        assert_equal Hash[ 'abc' => 'zzz' ], config.data
       end
-      
-      def teardown
+
+      def test_parse_error
+        locator.stubs(:invoke).with { |_processor|
+          _processor.process("abc", "/tmp")
+          true
+        }
+        assert_raises SK::YamlConfig::ParseError do
+          config = SK::YamlConfig.new locator
+        end
+      end
+
+      def setup
+        @locator = mock('locator')
       end
     end
   end
