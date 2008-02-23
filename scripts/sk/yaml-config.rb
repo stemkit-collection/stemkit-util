@@ -38,6 +38,12 @@ module SK
     def transform
       Hash[]
     end
+
+    class << self
+      def [](locator)
+        new locator
+      end
+    end
   end
 end
 

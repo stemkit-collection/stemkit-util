@@ -78,12 +78,18 @@ module SK
 
       def config
         @config ||= begin
-          SK::Lingo::Config.new bakery.options, SK::YamlConfig.new(config_locator).data
+          SK::Lingo::Config.new bakery.options, SK::YamlConfig[config_locator].data
         end
       end
 
       def config_locator
-        SK::Config::UprootLocator[ 'config/new.yaml', SK::Config::HomeLocator[ '.new.yaml', inline_config_locator ] ]
+        SK::Config::UprootLocator[ 
+          'config/new.yaml', 
+          SK::Config::HomeLocator[ 
+            '.new.yaml', 
+            inline_config_locator 
+          ] 
+        ]
       end
 
       def inline_config_locator
