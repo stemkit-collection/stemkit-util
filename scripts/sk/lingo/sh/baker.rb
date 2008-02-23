@@ -9,11 +9,14 @@
 =end
 
 require 'sk/lingo/baker.rb'
+require 'sk/lingo/recipes.rb'
 
 module SK
   module Lingo
     module Sh
       class Baker < SK::Lingo::Baker
+        include SK::Lingo::Recipes
+
         def accept(item)
           case item.extension
             when 'sh'

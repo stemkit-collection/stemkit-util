@@ -171,12 +171,6 @@ module SK
         content.flatten.map { |_line| indent_prefix + _line } 
       end
 
-      def make_pound_comments(lines)
-        lines.map { |_line|
-          '#  ' + _line
-        }
-      end
-
       def make_filename(item)
         [ item.name, item.extension ].compact.join('.')
       end
