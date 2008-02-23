@@ -31,7 +31,7 @@ module SK
 
         def process(item)
           save item, [
-            append_newline_if(make_ruby_block_comments(make_copyright_notice)),
+            append_newline_if(make_block_comments(make_copyright_notice)),
             make_ruby_modules(item.namespace) {
               [
                 "class #{ruby_module_name(item.name)}",
@@ -84,7 +84,7 @@ module SK
           ]
         end
 
-        def make_ruby_block_comments(lines)
+        def make_block_comments(lines)
           [
             '=begin',
             lines.map { |_line|

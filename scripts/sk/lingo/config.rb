@@ -9,10 +9,13 @@
 =end
 
 require 'etc'
+require 'sk/lingo/ingredients.rb'
 
 module SK
   module Lingo
     class Config
+      include Ingredients
+
       attr_reader :options, :hash
 
       def initialize(options, hash)
@@ -22,24 +25,6 @@ module SK
 
       def indent
         @indent ||= (options.indent || hash['indent']).to_i
-      end
-
-      def copyright_holders
-        holders = Array(hash['copyright_holders'])
-        holders.push user.gecos if holders.empty?
-
-        lines holders
-      end
-
-      def authors
-        authors = Array(hash['authors'])
-        authors.push user.gecos if authors.empty?
-
-        lines authors
-      end
-
-      def license
-        lines hash['license']
       end
 
       def lines(content)
