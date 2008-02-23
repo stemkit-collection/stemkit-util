@@ -10,11 +10,14 @@
 
 require 'sk/lingo/baker.rb'
 require 'sk/lingo/cpp/locator.rb'
+require 'sk/lingo/cpp/recipes.rb'
 
 module SK
   module Lingo
     module Cpp
       class Baker < SK::Lingo::Baker
+        include SK::Lingo::Cpp::Recipes
+
         def accept(item)
           case item.extension
             when 'h', 'hpp', 'hxx', 'cxx'
@@ -164,25 +167,6 @@ module SK
         def make_initialization_list(content)
           return content if content.empty?
           [ ': ' + content.first, *content[1..-1].map { |_line| '  ' + _line } ]
-        end
-
-        def make_h_guard(*args)
-          tag = "_#{args.flatten.join('_').upcase}_"
-          [
-            "#ifndef #{tag}",
-            "#define #{tag}",
-            yield,
-            "#endif /* #{tag} */"
-          ]
-        end
-
-        def make_c_comments(lines)
-          return lines if lines.empty?
-
-          first, *rest = lines
-          return [ "// #{first}" ] if rest.empty?
-
-          [ "/*  #{first}" ] + rest.map { |_line| " *  #{_line}" } + [ '*/' ]
         end
 
         def locator

@@ -10,7 +10,6 @@
 
 require 'tsc/errors.rb'
 require 'tsc/after-end-reader.rb'
-require 'tsc/config.rb'
 require 'sk/lingo/config.rb'
 require 'sk/config/inline-locator.rb'
 require 'sk/config/uproot-locator.rb'

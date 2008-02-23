@@ -9,11 +9,14 @@
 =end
 
 require 'sk/lingo/baker.rb'
+require 'sk/lingo/c/recipes.rb'
 
 module SK
   module Lingo
     module C
       class Baker < SK::Lingo::Baker
+        include Recipes
+
         def accept(item)
           case item.extension
             when 'c'
@@ -28,8 +31,8 @@ module SK
 
         def process(item)
           save item, [
-            make_c_comments(make_copyright_notice),
-            prepend_newline_if(make_namespace(item.namespace))
+            make_comments(make_copyright_notice),
+            ''
           ]
         end
 

@@ -26,14 +26,14 @@ module SK
 
       def copyright_holders
         holders = Array(hash['copyright_holders'])
-        holders.push user_credentials.gecos if holders.empty?
+        holders.push user.gecos if holders.empty?
 
         lines holders
       end
 
       def authors
         authors = Array(hash['authors'])
-        authors.push user_credentials.gecos if authors.empty?
+        authors.push user.gecos if authors.empty?
 
         lines authors
       end
@@ -54,6 +54,10 @@ module SK
 
           (unit ? ' ' * ((offset/unit)*indent) : '') + line
         }
+      end
+
+      def user
+        @user ||= Etc.getpwuid
       end
     end
   end
