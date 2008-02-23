@@ -21,19 +21,26 @@ module SK
         def accept(item)
           case item.extension
             when 'h', 'hpp', 'hxx', 'cxx'
-              cc_header name, namespace, extension
+              proc {
+                header item
+              }
 
             when 'cc', 'cpp'
-              cc_body name, namespace, extension
+              proc {
+                body item
+              }
 
             else
-              return false
+              if item.extension.nil? or enforced?
+                proc {
+                  header item, 'h'
+                  body item, 'cc'
+                }
+              end
           end
-
-          true
         end
 
-        def cc_header(name, namespace, extension)
+        def header(item, extension = nil)
           filename = locator.figure_for 'include', name, extension
           namespace = locator.namespace(namespace)
 
@@ -53,7 +60,7 @@ module SK
           ]
         end
 
-        def cc_body(name, namespace, extension)
+        def body(name, namespace, extension)
           filename = locator.figure_for 'lib', name, extension
           namespace = locator.namespace(namespace)
           scope = (namespace + [ name, '' ]).join('::')

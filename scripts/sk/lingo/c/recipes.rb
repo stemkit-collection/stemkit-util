@@ -13,12 +13,24 @@ module SK
     module C
       module Recipes
         def make_h_guard(*args)
-          tag = "_#{args.flatten.join('_').upcase}_"
+          tag = "_#{args.flatten.compact.join('_').upcase}_"
           [
             "#ifndef #{tag}",
             "#define #{tag}",
             yield,
             "#endif /* #{tag} */"
+          ]
+        end
+
+        def make_cpp_guard
+          [
+            '#if defined(__cplusplus)',
+            'extern "C" {',
+            '#endif',
+            yield,
+            '#if defined(__cplusplus)',
+            '}',
+            '#endif'
           ]
         end
 

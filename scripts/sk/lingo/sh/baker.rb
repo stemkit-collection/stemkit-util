@@ -18,15 +18,11 @@ module SK
         include SK::Lingo::Recipes
 
         def accept(item)
-          case item.extension
-            when 'sh'
+          if enforced? or [ 'sh', nil ].include? item.extension
+            proc {
               process(item)
-
-            else
-              return false
+            }
           end
-
-          true
         end
 
         def process(item)

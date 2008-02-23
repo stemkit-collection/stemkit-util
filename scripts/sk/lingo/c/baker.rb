@@ -19,23 +19,47 @@ module SK
 
         def accept(item)
           case item.extension
+            when 'h'
+              proc {
+                header item
+              }
+
             when 'c'
-              process(item)
+              proc {
+                body item
+              }
 
             else
-              return false
+              if item.extension.nil? or enforced?
+                proc {
+                  header item, 'h'
+                  body item, 'c'
+                }
+              end
           end
-
-          true
         end
 
-        def process(item)
+        def body(item, extension = nil)
           save item, [
             make_comments(make_copyright_notice),
             ''
           ]
         end
 
+        def header(item, extension = nil)
+          save item, [
+            append_newline_if(make_comments(make_copyright_notice)),
+            make_h_guard(item.namespace, item.name, item.extension) {
+              [
+                '',
+                make_cpp_guard {
+                  ''
+                },
+                ''
+              ]
+            }
+          ]
+        end
         def inline_config_locator
           SK::Config::InlineLocator[ read_after_end_marker(__FILE__), super ]
         end

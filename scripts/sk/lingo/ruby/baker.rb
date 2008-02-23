@@ -18,15 +18,11 @@ module SK
         include SK::Lingo::Recipes
 
         def accept(item)
-          case item.extension
-            when 'rb'
+          if enforced? or [ 'rb', nil ].include? item.extension
+            proc {
               process(item)
-
-            else
-              return false
+            }
           end
-
-          true
         end
 
         def process(item)
@@ -107,10 +103,16 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     module Lingo
       module Ruby
         class BakerTest < Test::Unit::TestCase
-          def test_nothing
+          attr_reader :bakery
+
+          def test_enforced
+            baker = Baker.new bakery
+            bakery.expects(:options).returns mock('options', :target => 'ruby')
+            assert_equal true, baker.enforced? 
           end
 
           def setup
+            @bakery = mock('backery')
           end
         end
       end

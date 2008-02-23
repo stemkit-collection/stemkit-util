@@ -25,14 +25,15 @@ module SK
       end
 
       def make(item)
-        return Baker.find(options.target).new(self).process(item) if options.target?
-        raise 'Unspecified target language, use option --target' unless item.extension
+        return Baker.find(options.target).new(self).accept(item).call if options.target?
     
-        Baker.each do |_baker|
-          return if _baker.new(self).accept(item)
-        end
+        processors = Baker.map { |_baker|
+          _baker.new(self).accept(item)
+        }.compact
 
-        raise "Unsupported type #{item.extension.inspect} for #{item.name.inspect}"
+        raise 'Unspecified target language, use option --target' unless processors.size == 1
+        
+        processors.first.call
       end
     end
   end

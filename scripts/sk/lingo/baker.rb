@@ -26,6 +26,8 @@ module SK
       include TSC::AfterEndReader
 
       class << self
+        include Enumerable
+
         def list
           targets.map { |_file, _lingo|
             _lingo
@@ -69,10 +71,6 @@ module SK
 
       def accept(item)
         raise TSC::NotImplementedError, :accept
-      end
-
-      def process(item)
-        raise TSC::NotImplementedError, :process
       end
 
       def config
@@ -130,6 +128,10 @@ module SK
 
           true
         end
+      end
+
+      def enforced?
+        bakery.options.target == self.class.name.split('::').slice(-2).downcase
       end
 
       def file_write_flags
