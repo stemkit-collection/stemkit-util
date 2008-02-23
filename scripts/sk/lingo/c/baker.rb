@@ -17,7 +17,7 @@ module SK
         def accept(item)
           case item.extension
             when 'c'
-              c name, namespace, extension
+              process(item)
 
             else
               return false
@@ -26,13 +26,16 @@ module SK
           true
         end
 
-        def c(name, namespace, extension)
-          save "#{name}.#{extension}", name, namespace, [
+        def process(item)
+          save item, [
             make_c_comments(make_copyright_notice),
-            prepend_newline_if(make_namespace(namespace))
+            prepend_newline_if(make_namespace(item.namespace))
           ]
         end
 
+        def inline_config_locator
+          SK::Config::InlineLocator[ read_after_end_marker(__FILE__), super ]
+        end
       end
     end
   end
@@ -58,3 +61,5 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   end
 end
 
+__END__
+c:
