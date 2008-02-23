@@ -75,8 +75,12 @@ module SK
 
       def config
         @config ||= begin
-          SK::Lingo::Config.new bakery.options, SK::YamlConfig[config_locator].data
+          make_config bakery.options, SK::YamlConfig[config_locator].data
         end
+      end
+
+      def make_config(options, data)
+        SK::Lingo::Config.new nil, options, data
       end
 
       def config_locator

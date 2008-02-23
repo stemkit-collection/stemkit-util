@@ -10,6 +10,7 @@
 
 require 'sk/lingo/baker.rb'
 require 'sk/lingo/recipes.rb'
+require 'sk/lingo/sh/config.rb'
 
 module SK
   module Lingo
@@ -29,7 +30,7 @@ module SK
           save item, [
             '#!/bin/sh',
             make_pound_comments(make_copyright_notice),
-            prepend_newline_if(config.sh)
+            prepend_newline_if(config.body)
           ] 
 
           make_executable item
@@ -37,6 +38,10 @@ module SK
 
         def inline_config_locator
           SK::Config::InlineLocator[ read_after_end_marker(__FILE__), super ]
+        end
+
+        def make_config(options, data)
+          SK::Lingo::Sh::Config.new options, data
         end
       end
     end
@@ -66,7 +71,7 @@ end
 __END__
 
 sh: 
-  default: |
+  body: |
     TRACE=no
 
     print_usage()

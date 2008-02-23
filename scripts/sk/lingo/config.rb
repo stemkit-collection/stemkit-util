@@ -16,15 +16,28 @@ module SK
     class Config
       include Ingredients
 
-      attr_reader :options, :hash
+      attr_reader :options, :data
 
-      def initialize(options, hash)
+      def initialize(tag, options, data)
         @options = options
-        @hash = hash
+        @data = data
+
+        return unless tag
+
+        tag = tag.to_s
+        tagged_data = data[tag] || {}
+
+        if options.mode?
+          tagged_data = tagged_data[options.mode] || {}
+        end
+
+        self.class.send(:define_method, tag) {
+          tagged_data
+        }
       end
 
       def indent
-        @indent ||= (options.indent || hash['indent']).to_i
+        @indent ||= (options.indent || data['indent']).to_i
       end
 
       def lines(content)
