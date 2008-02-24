@@ -10,7 +10,7 @@ all::
 	@ puts "Use 'make tests' or 'make specs' for unit tests or specs."
 
 test tests spec specs:: 
-	@ Dir['*/makefile'].map { |item| system "$(MAKE) -C #{File.dirname(item)} $(@)" }
+	@ Dir['*/makefile'].map { |item| system "$(MAKE) -C #{File.dirname(item)} $(@)" or exit(2) }
 
 test tests:: 
 	@ require 'test/unit' and Dir['*.rb'].map { |item| require item }
