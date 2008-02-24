@@ -72,13 +72,13 @@ module SK
     end
 
     def order(array)
+      processed = {}
       while entry = array.shift
         if array.detect { |_item| _item.last.include? entry.first }
+          raise CycleError, entry if processed[entry] 
+          processed[entry] = true
+
           array << entry
-          raise CycleError, entry if array.all? { |_item|
-            _item.frozen?
-          }
-          entry.freeze
         else
           @entries << entry
         end
