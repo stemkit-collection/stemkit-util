@@ -153,15 +153,10 @@ end
 require 'test/unit'
 
 class ApplicationTest < Test::Unit::TestCase
-  def test_something
-    flunk 'Not implemented'
+  def test_nothing
   end
 
   def setup
     @app = Application.new
-  end
-
-  def teardown
-    @app = nil
   end
 end
