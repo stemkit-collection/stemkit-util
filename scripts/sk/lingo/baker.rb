@@ -116,7 +116,7 @@ module SK
       def save(item, *content)
         if bakery.options.print?
           $stderr.puts "=== #{file}"
-          output item.name, item.namespace, content, $stdout
+          output item, content, $stdout
 
           false
         else
@@ -126,7 +126,7 @@ module SK
               File.unlink(file)
               $stderr.puts "Removed: #{file}"
             }
-            output item.name, item.namespace, content, _io
+            output item, content, _io
           end
           $stderr.puts "Created: #{file}"
 
@@ -154,11 +154,11 @@ module SK
         ].flatten.compact
       end
 
-      def output(name, namespace, content, stream)
+      def output(item, content, stream)
         substitutions = Hash[
-          'FULL_CLASS_NAME' => (namespace + [name]).join('::'),
-          'CLASS_NAME' => name,
-          'NAMESPACE' => namespace.join('::')
+          'FULL_CLASS_NAME' => make_qualified_name(item.namespace, item.name),
+          'CLASS_NAME' => make_qualified_name(item.name),
+          'NAMESPACE' => make_qualified_name(item.namespace)
         ]
         pattern = Regexp.new substitutions.keys.map { |_variable|
           Regexp.quote('#{' + _variable + '}')
@@ -167,6 +167,10 @@ module SK
         stream.puts content.flatten.join("\n").gsub(pattern) { |_match|
           substitutions[_match[2...-1]]
         }
+      end
+
+      def make_qualified_name(*args)
+        args.flatten.compact.map { |_item| _item.capitalize }.join('::')
       end
       
       def indent_prefix
