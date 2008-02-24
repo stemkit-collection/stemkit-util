@@ -12,8 +12,8 @@ module SK
   module Lingo
     module Ruby
       module Ingredients
-        def body
-          lines ruby['body']
+        def config
+          lines ruby['config']
         end
       end
     end

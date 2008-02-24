@@ -9,6 +9,7 @@
 =end
 
 require 'etc'
+require 'pp'
 require 'sk/lingo/ingredients.rb'
 
 module SK

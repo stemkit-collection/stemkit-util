@@ -12,8 +12,8 @@ module SK
   module Lingo
     module Sh
       module Ingredients
-        def body
-          lines sh['body']
+        def content
+          lines sh['content']
         end
       end
     end

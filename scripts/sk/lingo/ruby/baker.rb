@@ -117,7 +117,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           end
 
           def setup
-            @bakery = mock('backery')
+            @bakery = mock('bakery')
           end
         end
       end
@@ -127,3 +127,41 @@ end
 
 __END__
 ruby:
+  indent: 0
+  namespace: false
+  content: 
+    -
+      indent: 0
+      namespace: true
+      content: |
+        class #{CLASSNAME}
+        end
+    -
+      indent: 0
+      namespace: false
+      content: |
+        if $0 == __FILE__ or defined?(Test::Unit::TestCase)
+          require 'test/unit'
+          require 'mocha'
+          require 'stubba'
+    - 
+      indent: 1
+      namespace: true
+      content: |
+        class #{CLASSNAME}Test < Test::Unit::TestCase
+          def setup
+          end
+        end
+    - 
+      indent: 0
+      namespace: true
+      content: |
+        end
+
+  app:
+    indent: 0
+    namespace: false
+    content: |
+      class Application < TSC::Application
+      end
+

@@ -30,7 +30,7 @@ module SK
           save item, [
             '#!/bin/sh',
             make_pound_comments(make_copyright_notice),
-            prepend_newline_if(config.body)
+            prepend_newline_if(config.content)
           ] 
 
           make_executable item
@@ -71,7 +71,7 @@ end
 __END__
 
 sh: 
-  body: |
+  content: |
     TRACE=no
 
     print_usage()
