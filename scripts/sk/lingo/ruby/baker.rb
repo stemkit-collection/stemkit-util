@@ -10,6 +10,7 @@
 
 require 'sk/lingo/baker.rb'
 require 'sk/lingo/recipes.rb'
+require 'sk/lingo/ruby/config.rb'
 
 module SK
   module Lingo
@@ -88,6 +89,10 @@ module SK
             },
             '=end'
           ]
+        end
+
+        def make_config(options, data)
+          SK::Lingo::Ruby::Config.new options, data
         end
       end
     end
