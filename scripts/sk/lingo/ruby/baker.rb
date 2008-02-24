@@ -29,36 +29,22 @@ module SK
         def process(item)
           save item, [
             append_newline_if(make_block_comments(make_copyright_notice)),
-            make_ruby_modules(item.namespace) {
-              [
-                "class #{ruby_module_name(item.name)}",
-                'end'
-              ]
-            },
-            '',
-            'if $0 == __FILE__ or defined?(Test::Unit::TestCase)',
-            indent(
-              "require 'test/unit'",
-              "require 'mocha'",
-              "require 'stubba'",
-              '',
-              make_ruby_modules(item.namespace) {
-                [
-                  "class #{ruby_module_name(item.name)}Test < Test::Unit::TestCase",
-                  indent(
-                    'def setup',
-                    'end',
-                    '',
-                    'def teardown',
-                    'end'
-                  ),
-                  'end'
-                ]
-              }
-            ),
-            'end'
+            config.map_each_chunk { |_chunk|
+              content = _chunk.content
+              if _chunk.namespace
+                content = make_ruby_modules(item.namespace) {
+                  content
+                }
+              end
+
+              _chunk.indent.times do
+                content = indent(content)
+              end
+
+              _chunk.newline ? append_newline_if(content) : content
+            }
           ]
-          
+
           make_executable item unless item.extension
         end
 
@@ -133,12 +119,14 @@ ruby:
     -
       indent: 0
       namespace: true
+      newline: true
       content: |
-        class #{CLASSNAME}
+        class #{CLASS_NAME}
         end
     -
       indent: 0
       namespace: false
+      newline: true
       content: |
         if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           require 'test/unit'
@@ -147,14 +135,16 @@ ruby:
     - 
       indent: 1
       namespace: true
+      newline: false
       content: |
-        class #{CLASSNAME}Test < Test::Unit::TestCase
+        class #{CLASS_NAME}Test < Test::Unit::TestCase
           def setup
           end
         end
     - 
       indent: 0
-      namespace: true
+      namespace: false
+      newline: false
       content: |
         end
 
