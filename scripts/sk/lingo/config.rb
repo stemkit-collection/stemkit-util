@@ -32,9 +32,11 @@ module SK
           tagged_data = tagged_data[options.mode] || {}
         end
 
-        self.class.send(:define_method, tag) {
-          tagged_data
-        }
+        [ tag, 'target' ].each do |_name|
+          self.class.send(:define_method, _name) {
+            tagged_data
+          }
+        end
       end
 
       def indent

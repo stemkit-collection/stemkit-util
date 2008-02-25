@@ -12,12 +12,8 @@ module SK
   module Lingo
     module Ruby
       module Ingredients
-        def content
-          lines ruby['content']
-        end
-
         def shebang
-          lines ruby['shebang']
+          lines target['shebang']
         end
       end
     end

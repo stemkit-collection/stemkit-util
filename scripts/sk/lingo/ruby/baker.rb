@@ -33,7 +33,7 @@ module SK
             config.map_each_chunk { |_chunk|
               content = _chunk.content
               if _chunk.namespace
-                content = make_ruby_modules(item.namespace) {
+                content = make_modules(item.namespace) {
                   content
                 }
               end
@@ -57,12 +57,12 @@ module SK
           File.basename(name).split(%r{[_-]}).map { |_part| _part[0,1].upcase + _part[1..-1] }.join
         end
 
-        def make_ruby_modules(namespace, &block)
+        def make_modules(namespace, &block)
           return block.call if namespace.empty?
           [
             "module #{ruby_module_name(namespace.first)}",
             indent(
-              make_ruby_modules(namespace[1..-1], &block)
+              make_modules(namespace[1..-1], &block)
             ),
             'end'
           ]

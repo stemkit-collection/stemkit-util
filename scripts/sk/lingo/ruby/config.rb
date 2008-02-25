@@ -23,13 +23,13 @@ module SK
         end
 
         def map_each_chunk(&block)
-          case content = ruby['content']
+          case content = target['content']
             when Array
               content.map { |_entry|
                 process_chunk(_entry, &block)
               }
             else
-              process_chunk(ruby, &block)
+              process_chunk(target, &block)
           end
         end
 
