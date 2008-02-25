@@ -15,6 +15,10 @@ module SK
         def content
           lines ruby['content']
         end
+
+        def shebang
+          lines ruby['shebang']
+        end
       end
     end
   end

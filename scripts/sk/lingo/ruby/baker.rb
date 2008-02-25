@@ -28,6 +28,7 @@ module SK
 
         def process(item)
           save item, [
+            config.shebang,
             append_newline_if(make_block_comments(make_copyright_notice)),
             config.map_each_chunk { |_chunk|
               content = _chunk.content
@@ -113,20 +114,13 @@ end
 
 __END__
 ruby:
-  indent: 0
-  namespace: false
   content: 
     -
-      indent: 0
       namespace: true
-      newline: true
       content: |
         class #{CLASS_NAME}
         end
     -
-      indent: 0
-      namespace: false
-      newline: true
       content: |
         if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           require 'test/unit'
@@ -142,16 +136,72 @@ ruby:
           end
         end
     - 
-      indent: 0
-      namespace: false
-      newline: false
       content: |
         end
 
   app:
-    indent: 0
-    namespace: false
+    shebang: "#!/usr/bin/env ruby"
     content: |
+      $:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
+
+      require 'tsc/application.rb'
+      require 'tsc/path.rb'
+
       class Application < TSC::Application
+        def initialize
+          super { |_config|
+            _config.arguments = '<items> ...'
+            _config.options = [
+              [ '--parameter', 'A parameter', 'name', '-p', '-n' ],
+              [ '--test', 'Run internal tests', nil ]
+            ]
+            _config.description = [
+              "It is just a template"
+            ]
+          }
+        end
+
+        def start
+          handle_errors {
+            process_command_line
+
+            throw :TEST if options.test?
+            raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
+
+            puts "P: #{options.parameter.inspect}" if options.parameter?
+            puts "L: #{options.parameter_list.inspect}" if options.parameter_list?
+            puts "I: #{ARGV.inspect}"
+          }
+        end
+
+        in_generator_context do |_content|
+          _content << '#!' + figure_ruby_path
+          _content << '$VERBOSE = nil'
+          _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
+          _content << IO.readlines(__FILE__).slice(1..-1)
+        end
       end
 
+      unless defined? Test::Unit::TestCase
+        catch :TEST do
+          Application.new.start
+          exit 0
+        end
+      end
+
+      require 'rubygems'
+      require 'test/unit'
+
+      require 'mocha'
+      require 'stubba'
+
+      class ApplicationTest < Test::Unit::TestCase
+        attr_reader :app
+
+        def test_nothing
+        end
+
+        def setup
+          @app = Application.new
+        end
+      end

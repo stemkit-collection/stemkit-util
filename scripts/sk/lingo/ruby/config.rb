@@ -29,7 +29,7 @@ module SK
                 process_chunk(_entry, &block)
               }
             else
-              process_chunk(ruby)
+              process_chunk(ruby, &block)
           end
         end
 
