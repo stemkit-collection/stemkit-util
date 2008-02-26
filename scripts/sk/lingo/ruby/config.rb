@@ -21,29 +21,6 @@ module SK
         def initialize(*args)
           super :ruby, *args
         end
-
-        def map_each_chunk(&block)
-          case content = target['content']
-            when Array
-              content.map { |_entry|
-                process_chunk(_entry, &block)
-              }
-            else
-              process_chunk(target, &block)
-          end
-        end
-
-        private
-        #######
-
-        def process_chunk(chunk)
-          yield TSC::Dataset[ 
-            :indent => [ chunk['indent'].to_i, 0 ].max, 
-            :namespace => (chunk['namespace'] || false), 
-            :newline => (chunk.has_key?('newline') ? chunk['newline'] : true),
-            :content => lines(chunk['content'])
-          ]
-        end
       end
     end
   end

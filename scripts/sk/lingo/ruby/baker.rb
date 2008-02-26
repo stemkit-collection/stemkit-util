@@ -30,23 +30,56 @@ module SK
           save item, [
             config.shebang,
             append_newline_if(make_block_comments(make_copyright_notice)),
-            config.map_each_chunk { |_chunk|
-              content = _chunk.content
-              if _chunk.namespace
+
+            map_content(config.target) { |_entry|
+              content = _entry.content
+              if _entry.namespace
                 content = make_modules(item.namespace) {
                   content
                 }
               end
 
-              _chunk.indent.times do
+              _entry.indent.times do
                 content = indent(content)
               end
 
-              _chunk.newline ? append_newline_if(content) : content
+              content
             }
           ]
 
           make_executable item unless item.extension
+        end
+
+        def map_content(config = target, indent = 0, &block)
+          content = config['content']
+          header = config['header']
+          footer = config['footer']
+
+          [
+            yield(TSC::Dataset[
+              :indent => indent,
+              :namespace => false,
+              :content => self.config.lines(header)
+            ]),
+
+            if Array === content
+              content.map { |_content|
+                map_content(_content, indent + (config['indent'] || 1).to_i, &block)
+              }
+            else
+              yield(TSC::Dataset[ 
+                :indent => indent,
+                :namespace => config['namespace'],
+                :content => self.config.lines(content)
+              ])
+            end,
+
+            yield(TSC::Dataset[
+              :indent => indent,
+              :namespace => false,
+              :content => self.config.lines(footer)
+            ])
+          ]
         end
 
         def inline_config_locator
@@ -114,29 +147,32 @@ end
 
 __END__
 ruby:
-  content: 
+  indent: 0
+  content:
     -
       namespace: true
       content: |
         class #{CLASS_NAME}
         end
+
     -
-      content: |
+      header: |+
+
         if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           require 'test/unit'
           require 'mocha'
           require 'stubba'
-    - 
-      indent: 1
-      namespace: true
-      newline: false
-      content: |
-        class #{CLASS_NAME}Test < Test::Unit::TestCase
-          def setup
-          end
-        end
-    - 
-      content: |
+
+      content:
+        -
+          namespace: true
+          content: |
+            class #{CLASS_NAME}Test < Test::Unit::TestCase
+              def setup
+              end
+            end
+
+      footer: |
         end
 
   app:
