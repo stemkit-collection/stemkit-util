@@ -8,18 +8,14 @@
   Author: Gennady Bystritsky
 =end
 
-require 'etc'
-require 'sk/lingo/config.rb'
-require 'sk/lingo/sh/ingredients.rb'
-
 module SK
   module Lingo
-    module Sh
-      class Config < SK::Lingo::Config
-        include Ingredients
-
-        def initialize(*args)
-          super :sh, *args
+    module Recipe
+      module Comments
+        def make_pound_comments(lines)
+          lines.map { |_line|
+            '#  ' + _line
+          }
         end
       end
     end
@@ -30,14 +26,11 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'test/unit'
   require 'mocha'
   require 'stubba'
-  
+
   module SK
     module Lingo
-      module Sh
-        class ConfigTest < Test::Unit::TestCase
-          def test_nothing
-          end
-
+      module Recipe
+        class CommentsTest < Test::Unit::TestCase
           def setup
           end
         end

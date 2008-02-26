@@ -9,14 +9,16 @@
 =end
 
 require 'sk/lingo/baker.rb'
-require 'sk/lingo/recipes.rb'
-require 'sk/lingo/sh/config.rb'
+require 'sk/lingo/config.rb'
+require 'sk/lingo/recipe/comments.rb'
+require 'sk/lingo/recipe/content-layout.rb'
 
 module SK
   module Lingo
     module Sh
       class Baker < SK::Lingo::Baker
-        include SK::Lingo::Recipes
+        include SK::Lingo::Recipe::Comments
+        include SK::Lingo::Recipe::ContentLayout
 
         def accept(item)
           if enforced? or [ 'sh', nil ].include? item.extension
@@ -27,12 +29,7 @@ module SK
         end
 
         def process(item)
-          save item, [
-            '#!/bin/sh',
-            make_pound_comments(make_copyright_notice),
-            prepend_newline_if(config.content)
-          ] 
-
+          save item, make_content(item)
           make_executable item
         end
 
@@ -41,7 +38,11 @@ module SK
         end
 
         def make_config(options, data)
-          SK::Lingo::Sh::Config.new options, data
+          SK::Lingo::Config.new 'sh', options, data
+        end
+
+        def make_block_comments(*args)
+          make_pound_comments(*args)
         end
       end
     end

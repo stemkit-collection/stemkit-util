@@ -9,14 +9,13 @@
 =end
 
 require 'sk/lingo/baker.rb'
-require 'sk/lingo/recipes.rb'
-require 'sk/lingo/ruby/config.rb'
+require 'sk/lingo/recipe/content-layout.rb'
 
 module SK
   module Lingo
     module Ruby
       class Baker < SK::Lingo::Baker
-        include SK::Lingo::Recipes
+        include SK::Lingo::Recipe::ContentLayout
 
         def accept(item)
           if enforced? or [ 'rb', nil ].include? item.extension
@@ -27,59 +26,8 @@ module SK
         end
 
         def process(item)
-          save item, [
-            config.shebang,
-            append_newline_if(make_block_comments(make_copyright_notice)),
-
-            map_content(config.target) { |_entry|
-              content = _entry.content
-              if _entry.namespace
-                content = make_modules(item.namespace) {
-                  content
-                }
-              end
-
-              _entry.indent.times do
-                content = indent(content)
-              end
-
-              content
-            }
-          ]
-
+          save item, make_content(item)
           make_executable item unless item.extension
-        end
-
-        def map_content(config = target, indent = 0, &block)
-          content = config['content']
-          header = config['header']
-          footer = config['footer']
-
-          [
-            yield(TSC::Dataset[
-              :indent => indent,
-              :namespace => false,
-              :content => self.config.lines(header)
-            ]),
-
-            if Array === content
-              content.map { |_content|
-                map_content(_content, indent + (config['indent'] || 1).to_i, &block)
-              }
-            else
-              yield(TSC::Dataset[ 
-                :indent => indent,
-                :namespace => config['namespace'],
-                :content => self.config.lines(content)
-              ])
-            end,
-
-            yield(TSC::Dataset[
-              :indent => indent,
-              :namespace => false,
-              :content => self.config.lines(footer)
-            ])
-          ]
         end
 
         def inline_config_locator
@@ -88,6 +36,12 @@ module SK
 
         def ruby_module_name(name)
           File.basename(name).split(%r{[_-]}).map { |_part| _part[0,1].upcase + _part[1..-1] }.join
+        end
+
+        def make_qualified_name(*args)
+          args.flatten.compact.map { |_item| 
+            ruby_module_name(_item.capitalize) 
+          }.join('::')
         end
 
         def make_modules(namespace, &block)
@@ -112,7 +66,7 @@ module SK
         end
 
         def make_config(options, data)
-          SK::Lingo::Ruby::Config.new options, data
+          SK::Lingo::Config.new 'ruby', options, data
         end
       end
     end
