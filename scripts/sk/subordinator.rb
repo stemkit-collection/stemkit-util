@@ -72,11 +72,13 @@ module SK
     end
 
     def order(array)
-      processed = {}
+      processed = Hash.new { |_h, _k|
+        _h[_k] = 0
+      }
       while entry = array.shift
         if array.detect { |_item| _item.last.include? entry.first }
-          raise CycleError, entry if processed[entry] 
-          processed[entry] = true
+          raise CycleError, entry if processed[entry]  > 1
+          processed[entry] += 1
 
           array << entry
         else
