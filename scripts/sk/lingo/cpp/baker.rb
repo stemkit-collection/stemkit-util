@@ -60,7 +60,7 @@ module SK
           ]
         end
 
-        def body(name, namespace, extension)
+        def body(item)
           filename = locator.figure_for 'lib', name, extension
           namespace = locator.namespace(namespace)
           scope = (namespace + [ name, '' ]).join('::')
@@ -177,7 +177,7 @@ module SK
         end
 
         def locator
-          @locator ||= SK::Lingo::Cpp::Locator.new(options, Dir.pwd)
+          @locator ||= SK::Lingo::Cpp::Locator.new(bakery.options, Dir.pwd)
         end
       end
     end
