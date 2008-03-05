@@ -54,6 +54,7 @@ namespace sk
 %include <sk/rt/scope/Controller.h>
 
 %ignore *::Scope::error;
+%ignore *::Scope::stat;
 %ignore *::Scope::warning;
 %ignore *::Scope::notice;
 %ignore *::Scope::info;

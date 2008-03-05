@@ -22,6 +22,10 @@ namespace ruby {
         return (_scope.error() << message).isEnabled();
       }
       
+      bool stat(const sk::util::String& message) const {
+        return (_scope.stat() << message).isEnabled();
+      }
+      
       bool warning(const sk::util::String& message) const {
         return (_scope.warning() << message).isEnabled();
       }
