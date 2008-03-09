@@ -48,7 +48,7 @@ module SK
       @group.list
     end
 
-    def add_thread(thead)
+    def add_thread(thread)
       @group.add thread
     end
 
@@ -140,7 +140,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         assert_equal 0, executor.threads.size
       end
 
-      def test_local_thread
+      def test_internal_threads
         executor.in_a_thread do
           sleep 60
         end
@@ -175,6 +175,15 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       end
 
       def test_timeout
+      end
+
+      def test_external_threads
+        executor.add_thread Thread.new {
+          sleep 10
+        }
+        assert_equal 1, executor.threads.size
+        executor.reset
+        assert_equal 0, executor.threads.size
       end
 
       def setup
