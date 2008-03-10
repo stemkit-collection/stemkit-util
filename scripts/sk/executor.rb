@@ -197,6 +197,15 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         assert_equal "abcd", result
       end
 
+      def test_timeout_enforcement
+        executor.start_timeout_enforcer(1)
+        assert_raises Timeout::Error do
+          executor.timeout 1 do
+            sleep 3
+          end
+        end
+      end
+
       def test_external_threads
         executor.add_thread Thread.new {
           sleep 10
