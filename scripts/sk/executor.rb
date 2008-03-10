@@ -30,6 +30,7 @@ module SK
 
     def in_a_thread(&block)
       @group.add Thread.new(Thread.current) { |_parent|
+        localstore[:internal] = true
         TSC::Error.on_error(block, [ _parent ], Exception) do |_exception|
           case _exception
             when Exit
@@ -64,7 +65,7 @@ module SK
 
     def terminate_threads
       while thread = @group.list.first
-        thread.raise Exit
+        localstore(thread)[:internal] ? thread.raise(Exit) : thread.exit
       end
     end
 
@@ -106,8 +107,10 @@ module SK
       in_a_thread do 
         localstore[:enforcer] = true
 
-        sleep(interval)
-        enforce_timeouts
+        loop do
+          sleep(interval)
+          enforce_timeouts
+        end
       end
     end
 
@@ -131,6 +134,8 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'test/unit'
   require 'mocha'
   require 'stubba'
+
+  Thread.abort_on_exception = true
 
   module SK
     class ExecutorTest < Test::Unit::TestCase
@@ -174,7 +179,22 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         assert_equal 0, executor.threads.size
       end
 
-      def test_timeout
+      def test_timeout_enforcer_start_stop
+        assert_equal 0, executor.threads.size
+        executor.start_timeout_enforcer(1)
+        assert_equal 1, executor.threads.size
+        sleep 2
+        assert_equal 1, executor.threads.size
+        executor.stop_timeout_enforcer
+        assert_equal 0, executor.threads.size
+      end
+
+      def test_timeout_returns_block_value
+        result = executor.timeout 2 do 
+           "abcd"
+        end
+
+        assert_equal "abcd", result
       end
 
       def test_external_threads
