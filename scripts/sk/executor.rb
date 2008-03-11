@@ -10,6 +10,7 @@
 
 require 'timeout'
 require 'tsc/errors.rb'
+require 'tsc/launch.rb'
 
 module SK
   class Executor
@@ -29,7 +30,7 @@ module SK
     end
 
     def in_a_thread(&block)
-      @group.add Thread.new(Thread.current) { |_parent|
+      add_thread Thread.new(Thread.current) { |_parent|
         localstore[:internal] = true
         TSC::Error.on_error(block, [ _parent ], Exception) do |_exception|
           case _exception
@@ -51,6 +52,7 @@ module SK
 
     def add_thread(thread)
       @group.add thread
+      thread
     end
 
     def join
@@ -61,6 +63,10 @@ module SK
     
     def reset
       terminate_threads
+
+      @transients = nil
+      @lock = nil
+      @group = nil
     end
 
     def terminate_threads
@@ -211,7 +217,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           sleep 10
         }
         assert_equal 1, executor.threads.size
-        executor.reset
+        executor.terminate_threads
         assert_equal 0, executor.threads.size
       end
 
