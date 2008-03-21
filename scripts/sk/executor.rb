@@ -109,12 +109,13 @@ module SK
       end
     end
 
-    def start_timeout_enforcer(interval = 10)
+    def start_timeout_enforcer(interval = 10, &block)
       in_a_thread do 
         localstore[:enforcer] = true
 
         loop do
           sleep(interval)
+          block.call if block
           enforce_timeouts
         end
       end
@@ -126,9 +127,6 @@ module SK
       }
       enforcer.raise Exit
     end
-
-    private
-    #######
 
     def localstore(thread = Thread.current)
       thread[@tag] ||= Hash.new 
