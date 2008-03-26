@@ -34,7 +34,7 @@ module SK
         localstore[:internal] = true
         TSC::Error.on_error(block, [ _parent ], Exception) do |_exception|
           case _exception
-            when Exit
+            when SK::Executor::Exit
             else
               if @relay 
                 _parent.raise TSC::Error.new(_exception)
@@ -62,7 +62,7 @@ module SK
     end
     
     def reset
-      terminate_threads
+      terminate_threads if @group
 
       @transients = nil
       @lock = nil
@@ -100,12 +100,14 @@ module SK
       now = Time.now.to_i
       threads.each do |_thread|
         start, tolerance = localstore(_thread)[:timeout]
-        next if (now - start) < tolerance
+        next unless start
+        delta = now - start
+        next if delta < tolerance
 
         @lock.synchronize {
           @transients.delete _thread
         }
-        _thread.raise Timeout::Error, 'operation timed out'
+        _thread.raise Timeout::Error, "#{delta} exceeds #{tolerance}"
       end
     end
 
