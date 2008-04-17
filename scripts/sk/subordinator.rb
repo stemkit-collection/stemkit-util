@@ -55,7 +55,7 @@ module SK
     end
 
     def lineup
-      @entries.transpose.flatten.map { |_item| Array(_item) }.flatten.uniq
+      @entries.transpose.flatten.map { |_item| Array(_item).sort }.flatten.uniq
     end
 
     private
@@ -95,6 +95,12 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'stubba'
   
   require 'timeout'
+
+  class ::Symbol
+    def <=>(other)
+      self.to_s <=> other.to_s
+    end
+  end
 
   module SK
     class SubordinatorTest < Test::Unit::TestCase

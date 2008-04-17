@@ -39,6 +39,9 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Config
       class UprootLocatorTest < Test::Unit::TestCase
+        def test_nothing
+        end
+
         def setup
         end
       end

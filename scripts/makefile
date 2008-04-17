@@ -4,7 +4,8 @@
 # make a legal expression, while the actual parameter evaluation is done
 # by the second -e.
 #
-SHELL = ruby -r fileutils -rubygems -I$(PATH) -e 'c=0' -e 'eval ARGV.first' -e
+RUBY = ruby -rubygems -I$(PATH) 
+SHELL = $(RUBY) -r fileutils -r sk/file-locator -e 'c=0' -e 'eval ARGV.first' -e
 
 all:: 
 	@ puts "Use 'make tests' or 'make specs' for unit tests or specs."
@@ -13,8 +14,7 @@ test tests spec specs::
 	@ Dir['*/makefile'].map { |item| system "$(MAKE) -C #{File.dirname(item)} $(@)" or exit(2) }
 
 test tests:: 
-	@ require 'test/unit' and Dir['*.rb'].map { |item| require item }
+	@ Dir['*.rb'].each { |item| system "$(RUBY) #{item}" or exit(2) }
 
 spec specs:: 
-	@ Dir['SPECS/*'].map { |item| load item, true }
-	 
+	@ File.directory?("SPECS") and exec %Q[ $(RUBY) -ISPECS -S spec --require sk/spec/config --color -fs #{SK::FileLocator.new("SPECS").find_bottom_up("*[_-]spec.rb").join(' ')} ]

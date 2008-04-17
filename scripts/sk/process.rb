@@ -63,14 +63,3 @@ module SK
   end
 end
 
-if $0 == __FILE__
-  SK::Process.demonize(false) do
-    10.times do 
-      puts "Hello from #{Process.pid}"
-      sleep 3
-    end
-  end
-
-  puts 'Press <Enter> to exit'
-  gets
-end
