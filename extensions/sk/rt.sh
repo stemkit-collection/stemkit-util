@@ -1,6 +1,9 @@
 #!/bin/ksh
 
-[ "${1}" = 'test' ] && {
-  return 0
-}
+case "${1}" in
+  test | specs)
+    return 0
+  ;;
+esac
+
 irb -I ${JAM_SRCDIR}/.. -I .. -r sk/rt/scope.rb

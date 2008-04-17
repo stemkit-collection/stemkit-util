@@ -17,7 +17,7 @@ module SK
 end
 
 $" << 'sk/rt'
-require 'scope.rb'
+require 'sk/rt/scope.rb'
 
 describe SK::Rt::Scope do
   before :each do
