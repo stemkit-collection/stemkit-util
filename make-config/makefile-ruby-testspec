@@ -4,7 +4,10 @@
 # make a legal expression, while the actual parameter evaluation is done
 # by the second -e.
 #
-RUBY = ruby -rubygems -I$(PATH) 
+
+-include makefile.local
+
+RUBY = ruby -rubygems -I$(LOADPATH) -I$(PATH) 
 SHELL = $(RUBY) -r fileutils -r sk/file-locator -e 'c=0' -e 'eval ARGV.first' -e
 
 define invoke_spec
