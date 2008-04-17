@@ -1,1 +1,1 @@
-@ruby -S ensure-unix-eol.rb %*
+@ruby -S ensure-unix-eol.rbx %*

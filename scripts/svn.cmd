@@ -1,1 +1,1 @@
-@ruby -S svn.rb %*
+@ruby -S svn.rbx %*
