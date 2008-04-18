@@ -1,1 +1,1 @@
-../make-config/makefile-ruby-testspec
+../makefile

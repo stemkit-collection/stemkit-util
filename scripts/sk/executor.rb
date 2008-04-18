@@ -11,6 +11,7 @@
 require 'timeout'
 require 'tsc/errors.rb'
 require 'tsc/launch.rb'
+require 'thread'
 
 module SK
   class Executor
