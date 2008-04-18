@@ -7,11 +7,15 @@
 
 -include makefile.local
 
+ifndef SPECDIR
+SPECDIR = SPECS
+endif
+
 RUBY = ruby -rubygems -I$(LOADPATH) -I$(PATH) 
 SHELL = $(RUBY) -r fileutils -r sk/file-locator -e 'c=0' -e 'eval ARGV.first' -e
 
 define invoke_spec
-  File.directory?("SPECS") and exec %Q[ $(RUBY) -ISPECS -S spec --require sk/spec/config $(1) #{SK::FileLocator.new("SPECS").find_bottom_up("*[_-]spec.rb").join(' ')} ]
+  File.directory?("$(SPECDIR)") and exec %Q[ $(RUBY) -I$(SPECDIR) -S spec --require sk/spec/config $(1) #{SK::FileLocator.new("$(SPECDIR)").find_bottom_up("*[_-]spec.rb").join(' ')} ]
 endef
 
 all:: 
