@@ -15,7 +15,14 @@ RUBY = ruby -rubygems -I$(LOADPATH) -I$(PATH)
 SHELL = $(RUBY) -r fileutils -r sk/file-locator -e 'c=0' -e 'eval ARGV.first' -e
 
 define invoke_spec
-  %w[ $(SPECDIR) ].each { |_d| File.directory?(_d) and system("$(RUBY) -I#{_d} -S spec --require sk/spec/config $(1) #{SK::FileLocator.new(_d).find_bottom_up('*[_-]spec.rb').join(' ')}") || exit(2) }
+  %w[ $(SPECDIR) ].each do |_folder| 
+    File.directory? _folder and begin
+      system %Q[ $(RUBY) -I#{_folder} -S spec 
+        --require sk/spec/config $(1)
+	#{SK::FileLocator.new(_folder).find_bottom_up('*[_-]spec.rb').join(' ')}
+      ] or exit 2
+    end
+  end
 endef
 
 all:: 
@@ -32,7 +39,7 @@ localtest localtests::
 	@ Dir['*.rb'].each { |item| system "$(RUBY) #{item}" or exit(2) }
 
 localspec localspecs:: 
-	@ ${call invoke_spec, --color -fs}
+	@ ${strip ${call invoke_spec, --color -fs}}
 
 localtest localtests:: 
-	@ ${call invoke_spec}
+	@ ${strip ${call invoke_spec}}
