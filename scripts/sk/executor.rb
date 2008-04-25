@@ -41,6 +41,7 @@ module SK
                 _parent.raise TSC::Error.new(_exception)
               else
                 puts TSC::Error.textualize(_exception)
+                raise
               end
           end
         end
@@ -71,9 +72,10 @@ module SK
     end
 
     def terminate_threads
-      while thread = @group.list.first
-        localstore(thread)[:internal] ? thread.raise(Exit) : thread.exit
+      @group.list.each do |_thread|
+        localstore(_thread)[:internal] ? _thread.raise(Exit) : _thread.exit
       end
+      Thread.pass
     end
 
     def timeout(seconds)
@@ -128,11 +130,12 @@ module SK
       enforcer = @group.list.find { |_thread|
         localstore(_thread)[:enforcer]
       }
-      enforcer.raise Exit
+      enforcer.raise Exit if enforcer && enforcer.alive?
+      Thread.pass
     end
 
-    def localstore(thread = Thread.current)
-      thread[@tag] ||= Hash.new 
+    def localstore(thread = nil)
+      (thread || Thread.current)[@tag] ||= Hash.new 
     end
   end
 end
