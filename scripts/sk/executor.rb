@@ -72,10 +72,10 @@ module SK
     end
 
     def terminate_threads
-      @group.list.each do |_thread|
+      @group.list.map.each do |_thread|
         localstore(_thread)[:internal] ? _thread.raise(Exit) : _thread.exit
+        Thread.pass
       end
-      Thread.pass
     end
 
     def timeout(seconds)
