@@ -6,9 +6,15 @@
   You must read and accept the license prior to use.
 =end
 
+require 'tsc/string-utils.rb'
+require 'tsc/line-builder.rb'
+
 module SK
   module RPC
     class Builder
+      include TSC::StringUtils
+      include TSC::LineBuilder
+
       attr_reader :wsdl, :namespace
 
       def initialize(wsdl, namespace)
@@ -31,30 +37,12 @@ module SK
         normalized
       end
 
-      def prepend_newline_if(content)
-        (!content || content==true || content.empty?) ? [] : [ '', content ]
-      end
-
-      def append_newline_if(content)
-        (!content || content==true || content.empty?) ? [] : [ content, '' ]
-      end
-
-      def indent(*lines)
-        lines.flatten.compact.map { |_line|
-          '  ' + _line
-        }
-      end
-
       def extract_name_components(name)
         name.split(%r{[_-]}).map { |_partial|
           _partial.split(%r{(?=[A-Z])}).map { |_item| 
             _item.downcase 
           }
         }.flatten
-      end
-
-      def join_capitalized_but_first(first, *components)
-        [ first, components.map { |_item| _item.capitalize } ].join
       end
     end
   end
