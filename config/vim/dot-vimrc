@@ -13,6 +13,8 @@ set nocompatible autowrite background=dark nowrap nohls
 set showmode showmatch autoindent shiftwidth=2 nowrapscan
 
 set expandtab smarttab softtabstop=8
+set tabstop=4
+set shiftwidth=4
 
 set hidden
 set history=50
@@ -124,3 +126,7 @@ nnoremap <F8> :set invlist list?<CR>
 
 " when turning on special chars, tabs are '>---'
 execute 'set listchars+=tab:>-' 
+
+if filereadable(expand("~/.vimrc-local"))
+    so ~/.vimrc-local
+endif
