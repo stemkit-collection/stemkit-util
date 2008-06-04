@@ -10,7 +10,7 @@
 :endif
 
 set nocompatible autowrite background=dark nowrap nohls
-set showmode showmatch autoindent shiftwidth=2 nowrapscan
+set showmode showmatch autoindent shiftwidth=4 nowrapscan
 
 set expandtab smarttab softtabstop=8
 set tabstop=4
