@@ -1,12 +1,18 @@
 #!/bin/sh
 
-unset FOLDER 
 OPTERR=0
+unset selector
 
-while getopts "v" option; do
+while getopts "vcn:" option; do
   case "${option}" in
     v)
       set -xv
+    ;;
+    c)
+      selector="${selector} -name *.[CcHh]*"
+    ;;
+    n)
+      selector="${selector} -name ${OPTARG}"
     ;;
     *)
       echo "USAGE `basename ${0}` [-d<folder>] [<svn command>]" 1>&2
@@ -26,4 +32,4 @@ pattern="${2}"
 [ "${#}" -ne 0 ] && shift
 [ "${#}" -ne 0 ] && shift
 
-exec find "${location:-.}" -name .svn -prune -o -name "*.[CcHh]*" ${pattern:+-exec grep "${pattern}" "{}" \;} "${@:--print}"
+exec find "${location:-.}" -name .svn -prune -o -type f ${selector} ${pattern:+-exec grep "${pattern}" "{}" \;} "${@:--print}"
