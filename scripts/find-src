@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ksh
 
 OPTERR=0
 unset selector
@@ -20,7 +20,7 @@ while getopts "vcn:" option; do
     ;;
   esac
 done
-shift `expr $OPTIND - 1`
+shift $(( ${OPTIND} - 1 ))
 
 [ "${#}" -eq 0 ] && {
   echo "USAGE: `basename ${0}` <location> [ <pattern> [ <extra find options> ...] ]"
