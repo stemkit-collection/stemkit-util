@@ -2,17 +2,23 @@
 
 OPTERR=0
 unset selector
+selector="-name *.[CcHh]*"
 
-while getopts "vcn:" option; do
+set -o noglob
+
+while getopts "van:" option; do
   case "${option}" in
     v)
       set -xv
     ;;
-    c)
-      selector="${selector} -name *.[CcHh]*"
+    a)
+      unset selector
     ;;
     n)
-      selector="${selector} -name ${OPTARG}"
+      [ "${selector:+set}" = set ] && {
+        selector="${selector} -o "
+      }
+      selector="${selector}-name ${OPTARG}"
     ;;
     *)
       echo "USAGE `basename ${0}` [-d<folder>] [<svn command>]" 1>&2
