@@ -58,10 +58,16 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
   module SK
     class SyncMasterTest < Test::Unit::TestCase
-      def test_nothing
+      attr_reader :lock
+
+      def test_synchronize
+        lock.synchronize do
+          assert true
+        end
       end
 
       def setup
+        @lock = SyncMaster.new
       end
     end
   end
