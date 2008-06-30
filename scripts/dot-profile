@@ -21,7 +21,7 @@ eval <<'RUBY'
       #{userinfo.dir}/local/bin
       #{userinfo.dir}/local/#{sysid}/java/jdk-1.5/bin
       #{userinfo.dir}/local/#{sysid}/java/jre-1.5/bin
-      #{userinfo.dir}/local/jruby-1.1.1/bin
+      #{userinfo.dir}/local/jruby/bin
       /sbin 
       /opt/ansic/bin
       /usr/vac/bin
