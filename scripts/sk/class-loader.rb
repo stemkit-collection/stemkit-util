@@ -11,6 +11,12 @@
 
 module SK
   class ClassLoader
+    class << self
+      def [](specification)
+        self.new specification
+      end
+    end
+
     def initialize(specification)
       @specification = specification
     end
@@ -65,7 +71,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       end
 
       def test_figure_path_stringio
-        assert_equal "stringio", ClassLoader.new('StringIO').path
+        assert_equal "stringio", ClassLoader['StringIO'].path
       end
     end
   end
