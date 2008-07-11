@@ -1,9 +1,0 @@
-
-local module = rt ;
-
-use-stemkit $(module) $(module).swig : sk.util sk.rt.bundle ;
-
-make-ruby-extension $(module) ;
-setup-script $(module).sh : $(module) ;
-
-run-ruby-specs $(module) : .. ;
