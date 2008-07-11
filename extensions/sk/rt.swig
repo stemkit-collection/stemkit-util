@@ -15,6 +15,11 @@ using sk::rt::config::StreamProcessor;
 using sk::rt::config::NamedStreamOpener;
 
 #include "LoggerAdaptor.h"
+#include <sk/util/SystemExit.h>
+
+#include <stdlib.h>
+#include <unistd.h>
+#include <iostream>
 
 %}
 
@@ -32,6 +37,10 @@ namespace sk
 %exception {
   try {
     $action
+  }
+  catch(const sk::util::SystemExit& exception) {
+    std::cerr << exception.getMessage() << std::endl;
+    exit(exception.getCode());
   }
   catch(const std::exception& exception) {
     SWIG_exception(SWIG_RuntimeError, exception.what());
