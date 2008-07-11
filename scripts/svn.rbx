@@ -5,7 +5,7 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
-$:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
+$:.concat ENV.to_hash['PATH'].to_s.split(File::PATH_SEPARATOR)
 
 require 'tsc/application.rb'
 require 'tsc/path.rb'
@@ -41,7 +41,6 @@ class Application < TSC::Application
     original = File.join(directory, 'original', file)
 
     _content << '#!' + figure_ruby_path
-    _content << '$VERBOSE = nil'
     _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
     _content << "SVN_ORIGINAL = #{original.inspect}"
     _content << IO.readlines(__FILE__).slice(1..-1)

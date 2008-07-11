@@ -14,10 +14,8 @@ if defined? Installation::Generator
   throw :generator, Generator
 end
 
-$VERBOSE = nil
-
 [ 'tsc/application.rb' ].each do |a|
-  $: << ENV['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
+  $: << ENV.to_hash['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
   require a
 end                                                                                                                      
 
