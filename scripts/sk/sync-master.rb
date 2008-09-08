@@ -52,11 +52,12 @@ module SK
 end
 
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
+  require 'sk/executor.rb'
+
   require 'test/unit'
   require 'mocha'
   require 'stubba'
 
-  require 'sk/executor.rb'
   require 'enumerator'
 
   module SK
@@ -64,28 +65,28 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       attr_reader :lock, :executor, :depot
 
       def test_populate_with_lock_must_succeed
-        assert make_slices(1000, 500).all? { |_item|
+        assert make_slices(5, 1000, 500).all? { |_item|
           _item == 1
         }
       end
 
       def test_populate_no_lock_must_fail
         lock.expects(:synchronize).at_least_once.yields
-        assert make_slices(10, 5).any? { |_item|
+        assert make_slices(2, 10, 5).any? { |_item|
           _item != 1
         }
       end
 
-      def make_slices(runs, amount)
-        populate(runs, amount, 1)
-        populate(runs, amount, 2)
-        populate(runs, amount, 3)
+      def make_slices(threads, runs, amount)
+        threads.times do |_index|
+          populate(runs, amount, _index)
+        end
 
         executor.join
-        assert_equal runs * amount * 3, depot.size
+        assert_equal runs * amount * threads, depot.size
 
         slices = depot.enum_slice(amount).map
-        assert_equal runs * 3, slices.size
+        assert_equal runs * threads, slices.size
 
         slices.map { |_slice|
           _slice.uniq.size
