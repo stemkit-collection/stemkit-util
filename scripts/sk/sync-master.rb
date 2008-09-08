@@ -251,11 +251,16 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         assert_equal 2, depot.size
       end
 
-      def make_waking_thread
-        executor.in_a_thread do
+      def test_capacity
+        lock.capacity = 3
+
+        make_waking_thread
+        make_waking_thread
+        make_waking_thread
+
+        assert_raises SyncMaster::TooManyWaitersError do
           lock.synchronize do |_condition|
-            _condition.ensure depot.empty? == false, 5
-            depot.push Thread.current.object_id
+            _condition.ensure depot.empty? == false
           end
         end
       end
@@ -272,6 +277,15 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
       private
       #######
+
+      def make_waking_thread
+        executor.in_a_thread do
+          lock.synchronize do |_condition|
+            _condition.ensure depot.empty? == false, 5
+            depot.push Thread.current.object_id
+          end
+        end
+      end
 
       def make_slices(threads, runs, amount)
         threads.times do |_index|
