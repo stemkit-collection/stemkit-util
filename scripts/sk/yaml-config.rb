@@ -10,6 +10,7 @@
 
 require 'yaml'
 require 'tsc/errors.rb'
+require 'sk/config/data.rb'
 
 module SK
   class YamlConfig
@@ -23,7 +24,7 @@ module SK
     attr_reader :data
 
     def initialize(locator)
-      @data = {}
+      @data = SK::Config::Data.new
       locator.invoke(self)
     end
 
@@ -33,6 +34,10 @@ module SK
       rescue => original
         raise ParseError, [ original, location ]
       end
+    end
+
+    def method_missing(name, *args)
+      data.send name, *args
     end
 
     def transform
