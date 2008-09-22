@@ -1,0 +1,1102 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
+# 
+# Distributed under the MIT Licence.
+# This is free software. See 'LICENSE' for details.
+# You must read and accept the license prior to use.
+#
+# Author: Gennady Bystritsky
+
+$:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
+
+require 'tsc/application.rb'
+require 'tsc/path.rb'
+
+# This script performs code generation for c/c++ and ruby classes according
+# to specification provided in a configuration file (src/config/new.yaml or
+# ~/.new.yaml).
+#
+class Application < TSC::Application
+  def initialize
+    super('<class_name> ...',
+      [ '--config', 'Use config file', 'yaml_file', '-c' ],
+      [ '--namespace', 'Use namespace', 'string', '-n' ],
+      [ '--local', 'Enforce file creation in the current directory', nil, '-l' ],
+      [ '--indent', 'Use so many spaces for indent (2 by default)', 'number', '-i' ],
+      [ '--print', 'Print out instead of creating files', nil, '-p' ],
+      [ '--mode', 'Set generation mode (e.g. test)', 'mode', '-m' ],
+      [ '--force', 'Force file override', nil, '-f' ],
+      [ '--test', 'Run internal tests', nil ]
+    )
+  end
+
+  in_generator_context do |_content|
+    _content << '#!' + figure_ruby_path
+    _content << '$VERBOSE = nil'
+    _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
+    _content << IO.readlines(__FILE__).slice(1..-1)
+  end
+  
+  def start
+    handle_errors {
+      process_command_line
+      require 'etc'
+      require 'yaml'
+      require 'fileutils'
+
+      throw :TEST if options.has_key?('test')
+      raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
+
+      TSC::Error.undo(Exception) do |_stack|
+        generator = Generator.new(options, _stack)
+        ARGV.each do |_name|
+          generate _name, generator
+        end
+      end
+    }
+  end
+
+  def global_namespace=(namespace)
+    @global_namespace = split_namespace namespace
+  end
+
+  private
+  #######
+  def generate(filename, generator)
+    basename, extension = filename.scan(%r{^(.+?)(?:[.](.+))?$}).first
+    namespace = split_namespace(basename)
+    name = namespace.pop
+
+    generator.guess(name, global_namespace + namespace, extension.to_s)
+  end
+
+  def global_namespace
+    @global_namespace ||= split_namespace options['namespace']
+  end
+
+  def split_namespace(namespace)
+    namespace.to_s.split(%r{(?::+)|(?:[.])})
+  end
+
+  class Generator
+    attr_reader :options, :undo_stack
+
+    def initialize(options, *args)
+      @options = options
+      @undo_stack = args.first
+    end
+
+    def guess(name, namespace, extension)
+      case extension
+        when ''
+          cc_header name, namespace, 'h'
+          cc_body name, namespace, 'cc'
+
+        when 'h', 'hpp', 'hxx', 'cxx'
+          cc_header name, namespace, extension
+
+        when 'cc', 'cpp'
+          cc_body name, namespace, extension
+
+        when 'c'
+          c name, namespace, extension
+
+        when 'rb'
+          ruby name, namespace, extension
+
+        when 'sh'
+          sh name, namespace, extension
+
+        else
+          raise "Unsupported type #{extension.inspect} for #{name.inspect}"
+      end
+    end
+
+    def cc_header(name, namespace, extension)
+      filename = locator.figure_for 'include', name, extension
+      namespace = locator.namespace(namespace)
+
+      save filename, name, namespace, [
+        append_newline_if(make_c_comments(make_copyright_notice)),
+        make_h_guard(namespace, name, extension) {
+          [
+            '',
+            append_newline_if(make_includes(config.header_includes)),
+            make_namespace(namespace) {
+              make_class_definition(name)
+            },
+            '',
+            append_newline_if(config.header_bottom)
+          ]
+        }
+      ]
+    end
+
+    def cc_body(name, namespace, extension)
+      filename = locator.figure_for 'lib', name, extension
+      namespace = locator.namespace(namespace)
+      scope = (namespace + [ name, '' ]).join('::')
+
+      save filename, name, namespace, [
+        make_c_comments(make_copyright_notice),
+        prepend_newline_if(make_includes(config.body_includes)),
+        prepend_newline_if(make_includes([ locator.header_specification(name, extension) ])),
+        prepend_newline_if(config.body_top),
+        config.constructors.map { |_constructor|
+          [
+            '',
+            scope,
+            "#{name}#{_constructor.parameters}",
+            indent(make_initialization_list(config.initializes)),
+            '{',
+             indent(_constructor.body),
+            '}'
+          ]
+        },
+        config.destructors.map { |_destructor|
+          [
+            '',
+            scope,
+            "~#{name}()",
+            '{',
+            indent(_destructor.body),
+            '}'
+          ]
+        },
+        (config.public_methods + config.protected_methods + config.private_methods).map { |_method|
+          [
+            '',
+            _method.returns,
+            scope,
+            _method.signature,
+            '{',
+            indent(_method.body),
+            '}'
+          ]
+        }
+      ]
+    end
+
+    def c(name, namespace, extension)
+      save "#{name}.#{extension}", name, namespace, [
+        make_c_comments(make_copyright_notice),
+        prepend_newline_if(make_namespace(namespace))
+      ]
+    end
+
+    def sh(name, namespace, extension)
+      filename = "#{name}.#{extension}"
+      save filename, name, namespace, [
+        '#!/bin/sh',
+        make_pound_comments(make_copyright_notice),
+        prepend_newline_if(config.sh)
+      ] and FileUtils.chmod 0755, filename
+    end
+
+    def ruby(name, namespace, extension)
+      save "#{name}.#{extension}", name, namespace, [
+        append_newline_if(make_ruby_block_comments(make_copyright_notice)),
+        make_ruby_modules(namespace) {
+          [
+            "class #{ruby_module_name(name)}",
+            'end'
+          ]
+        },
+        '',
+        'if $0 == __FILE__ or defined?(Test::Unit::TestCase)',
+        indent(
+          "require 'test/unit'",
+          "require 'mocha'",
+          "require 'stubba'",
+          '',
+          make_ruby_modules(namespace) {
+            [
+              "class #{ruby_module_name(name)}Test < Test::Unit::TestCase",
+              indent(
+                'def setup',
+                'end',
+                '',
+                'def teardown',
+                'end'
+              ),
+              'end'
+            ]
+          }
+        ),
+        'end'
+      ]
+    end
+
+    private
+    #######
+
+    def config
+      @config ||= Config.new(options)
+    end
+
+    def locator
+      @locator ||= Locator.new(options, Dir.pwd)
+    end
+
+    def ruby_module_name(name)
+      File.basename(name).split(%r{[_-]}).map { |_part| _part[0,1].upcase + _part[1..-1] }.join
+    end
+
+    def make_ruby_modules(namespace, &block)
+      return block.call if namespace.empty?
+      [
+        "module #{ruby_module_name(namespace.first)}",
+        indent(
+          make_ruby_modules(namespace[1..-1], &block)
+        ),
+        'end'
+      ]
+    end
+
+    def make_namespace(namespace, &block)
+      block ||= proc {
+        []
+      }
+      return block.call if namespace.empty?
+      [
+        "namespace #{namespace.first} {",
+        indent(
+          make_namespace(namespace[1..-1], &block)
+        ),
+        '}'
+      ]
+    end
+
+    def decorate(content, &block)
+      (block.nil? or content.empty?) ? content : block.call(content)
+    end
+
+    def make_class_definition(name)
+      [ 
+        "class #{name}",
+        indent(make_initialization_list(config.extends)),
+        '{',
+        indent(
+          append_newline_if(config.class_init),
+          decorate(
+            append_newline_if(
+              config.constructors.map { |_constructor|
+                "#{name}#{_constructor.parameters};"
+              } + 
+              config.destructors.map { |_destructor|
+                "#{_destructor.type} ~#{name}();".strip
+              }
+            ) +
+            append_newline_if(make_method_definition(config.public_methods))
+          ) { |_out|
+            [ 'public:', indent(_out) ]
+          },
+          decorate(make_method_definition(config.protected_methods)) { |_out| 
+            [ 'protected:', indent(_out), '' ]
+          },
+          'private:',
+          indent(
+            "#{name}(const #{name}& other);",
+            "#{name}& operator = (const #{name}& other);",
+            prepend_newline_if(make_method_definition(config.private_methods)),
+            prepend_newline_if(config.data)
+          )
+        ),
+        '};'
+      ]
+    end
+
+    def serialize(*content)
+      content.flatten.compact
+    end
+
+    def prepend_newline_if(content)
+      content.empty? ? content : [ '', content ]
+    end
+
+    def append_newline_if(content)
+      content.empty? ? content : [ content, '' ]
+    end
+
+    def save(file, name, namespace, *content)
+      if options.has_key?('print')
+        $stderr.puts "=== #{file}"
+        output name, namespace, content, $stdout
+
+        false
+      else
+        File.open(file, file_write_flags) do |_io|
+          @undo_stack.add {
+            File.unlink(file)
+            $stderr.puts "Removed: #{file}"
+          }
+          output name, namespace, content, _io
+        end
+        $stderr.puts "Created: #{file}"
+
+        true
+      end
+    end
+
+    def file_write_flags
+      File::CREAT | File::WRONLY | (options['force'] ? File::TRUNC : File::EXCL)
+    end
+
+    def output(name, namespace, content, stream)
+      substitutions = Hash[
+        'FULL_CLASS_NAME' => (namespace + [name]).join('::'),
+        'CLASS_NAME' => name,
+        'NAMESPACE' => namespace.join('::')
+      ]
+      pattern = Regexp.new substitutions.keys.map { |_variable|
+        Regexp.quote('#{' + _variable + '}')
+      }.join('|')
+
+      stream.puts content.flatten.join("\n").gsub(pattern) { |_match|
+        substitutions[_match[2...-1]]
+      }
+    end
+
+    def make_includes(includes)
+      return includes if includes.empty?
+      includes.map { |_include|
+        "#include #{_include}"
+      }
+    end
+
+    def make_copyright_notice
+      @notice ||= [
+        config.copyright_holders.map { |_holder|
+          "Copyright (c) #{Time.now.year}, #{_holder}"
+        },
+        append_newline_if(prepend_newline_if(config.license)),
+        config.authors.map { |_author|
+          'Author: ' + _author
+        }
+      ].flatten.compact
+    end
+
+    def make_method_definition(methods)
+      return methods if methods.empty?
+      methods.map { |_method|
+        [
+          _method.comments,
+          "#{_method.returns} #{_method.signature};"
+        ]
+      }
+    end
+
+    def indent_prefix
+      @indent_prefix ||= (' ' * config.indent)
+    end
+
+    def indent(*content)
+      content.flatten.map { |_line| indent_prefix + _line } 
+    end
+     
+    def make_initialization_list(content)
+      return content if content.empty?
+      [ ': ' + content.first, *content[1..-1].map { |_line| '  ' + _line } ]
+    end
+
+    def make_h_guard(*args)
+      tag = "_#{args.flatten.join('_').upcase}_"
+      [
+        "#ifndef #{tag}",
+        "#define #{tag}",
+        yield,
+        "#endif /* #{tag} */"
+      ]
+    end
+
+    def make_pound_comments(lines)
+      lines.map { |_line|
+        '#  ' + _line
+      }
+    end
+
+    def make_ruby_block_comments(lines)
+      [
+        '=begin',
+        lines.map { |_line|
+          '  ' + _line
+        },
+        '=end'
+      ]
+    end
+
+    def make_c_comments(lines)
+      return lines if lines.empty?
+
+      first, *rest = lines
+      return [ "// #{first}" ] if rest.empty?
+
+      [ "/*  #{first}" ] + rest.map { |_line| " *  #{_line}" } + [ '*/' ]
+    end
+  end
+
+  class Config
+    def initialize(options, hash = nil)
+      @options = options
+      @config = (hash && check_config(hash, 'Bad given config')) || begin
+        parser = proc { |_io|
+          result = YAML.parse(_io)
+          result.transform if result
+        }
+        config = check_config parser.call(DATA), 'Bad default config'
+
+        file = find_config_file
+        if File.exist?(file)
+          config.update check_config(File.open(file, &parser), "Bad config in #{file.inspect}")
+        end
+
+        config
+      end
+
+      return unless @options.has_key? 'mode'
+
+      mode = @config[@options['mode']]
+      @config.update mode if Hash === mode
+    end
+
+    def check_config(config, message)
+      raise message unless Hash === config
+      config
+    end
+
+    def indent
+      @indent ||= (@options['indent'] || @config['indent']).to_i
+    end
+
+    def copyright_holders
+      holders = Array(@config['copyright_holders'])
+      holders.push user_credentials.gecos if holders.empty?
+
+      lines holders
+    end
+
+    def authors
+      authors = Array(@config['authors'])
+      authors.push user_credentials.gecos if authors.empty?
+
+      lines authors
+    end
+
+    def license
+      lines @config['license']
+    end
+
+    def sh
+      lines @config['sh']
+    end
+
+    def header_includes
+      lines @config['header_includes']
+    end
+
+    def header_bottom
+      lines @config['header_bottom']
+    end
+
+    def body_top
+      lines @config['body_top']
+    end
+
+    def body_includes
+      lines @config['body_includes']
+    end
+
+    def extends
+      lines @config['extends']
+    end
+
+    def initializes
+      lines @config['initializes']
+    end
+
+    def data
+      lines @config['data']
+    end
+    
+    def constructors
+      klass = Struct.new(:parameters, :body, :comments)
+      process_methods(@config['factory']) { |_returns, _name, _parameters, _body, _comments|
+        klass.new(_parameters, _body, _comments) if _name == 'constructor'
+      }.compact
+    end
+
+    def destructors
+      klass = Struct.new(:type, :body, :comments)
+      process_methods(@config['factory']) { |_returns, _name, _parameters, _body, _comments|
+        klass.new(_returns, _body, _comments) if _name == 'destructor'
+      }.compact
+    end
+
+    def class_init
+      lines @config['class_init']
+    end
+
+    def public_methods
+      @public_methods ||= map_methods(@config['public_methods'])
+    end
+
+    def protected_methods
+      @protected_methods ||= map_methods(@config['protected_methods'])
+    end
+
+    def private_methods
+      @private_methods ||= map_methods(@config['private_methods'])
+    end
+    
+    private
+    #######
+    def lines(content)
+      unit = nil
+      content.to_s.map { |_line| 
+        # Here the line gets re-indented to the value specified 
+        # either in the config file or on the command line (-i).
+        #
+        spaces, line = _line.chomp.scan(%r{^(\s*)(.*)$}).first
+        offset = spaces.count(" ") + spaces.count("\t") * 8
+        unit ||= (offset unless offset.zero?)
+
+        (unit ? ' ' * ((offset/unit)*indent) : '') + line
+      }
+    end
+
+    def process_methods(methods, &block)
+      return [] unless block and Hash === methods
+
+      methods.map { |_declaration, _body|
+        returns, name, parameters = _declaration.scan(%r{^(.*?)\s*(\w+)\s*([(][^)]*[)].*)$}).first
+        comments, body = lines(_body).partition { |_line|
+          _line.match %r{^\s*//}
+        }
+        block.call returns, name, parameters, body, comments
+      }
+    end
+
+    def map_methods(methods)
+      klass = Struct.new(:returns, :signature, :body, :comments)
+      process_methods(methods) { |_returns, _name, _parameters, _body, _comments|
+        klass.new _returns, "#{_name}#{_parameters}", _body, _comments
+      }
+    end
+
+    def find_config_file
+      config = 'config'
+      @config_file ||= @options.has_key?(config) ? @options[config] : begin
+        file = 'new.yaml'
+        src_from_current = Dir.pwd.scan(%r{^(.+/src)(/.*)*$}).first
+
+        src_from_current && [ [], ['*'], ['*','*'] ].map { |_components|
+          Dir[ File.join(*([src_from_current.first] + _components + [config, file])) ]
+        }.flatten.first
+      end || File.join(user_credentials.dir, ".#{file}")
+    end
+
+    def user_credentials
+      @credentials ||= Etc.getpwuid
+    end
+
+    def find_src_from_current
+      @src = Dir.pwd.gsub(%r{^(.+/src)(/.*)$}, '\1')
+    end
+  end
+
+  class Locator
+    def initialize(options, cwd)
+      @options, @cwd = options, cwd
+
+      @top, @kind, rest = @cwd.scan(%r{^(.+)/(lib|include)/(.*)*$}).first
+      @components = rest ? rest.split('/') : []
+    end
+
+    def namespace(namespace)
+      namespace.empty? ? @components : namespace
+    end
+
+    def figure_for(kind, name, extension)
+      file = name + '.' + extension
+      return file if (local? or @kind == kind)
+
+      directory = [ '..' ] * @components.size.next + [ kind, *@components ]
+      File.join directory, file
+    end
+
+    def header_specification(name, extension)
+      file = name + '.h'
+      return '"' + file + '"' if local?
+
+      '<' + File.join(@components, file) + '>'
+    end
+
+    private
+    #######
+    def local?
+      @is_local ||= (@options.has_key?('local') or @top.nil?)
+    end
+  end
+end
+
+unless defined? Test::Unit::TestCase
+  catch :TEST do
+    Application.new.start
+    exit 0
+  end
+end
+
+$VERBOSE = true
+
+require 'test/unit'
+
+class MockGenerator < Application::Generator
+  attr_reader :trace
+
+  def initialize
+    super []
+  end
+
+  def cc_header(*args)
+    add_trace 'cc_header', *args
+  end
+
+  def cc_body(*args)
+    add_trace 'cc_body', *args
+  end
+
+  def c(*args)
+    add_trace 'c', *args
+  end
+
+  private
+  #######
+
+  def add_trace(*args)
+    (@trace ||= []).push args
+  end
+end
+
+class ApplicationTest < Test::Unit::TestCase
+  def test_split_namespace
+    assert_equal [], @app.send(:split_namespace, '')
+    assert_equal ['aaa'], @app.send(:split_namespace, 'aaa')
+    assert_equal ['aaa', 'bbb'], @app.send(:split_namespace, 'aaa::bbb')
+    assert_equal ['aaa', 'bbb'], @app.send(:split_namespace, 'aaa:bbb::')
+    assert_equal ['aaa', 'bbb'], @app.send(:split_namespace, 'aaa.bbb')
+  end
+
+  def test_generate_raises_for_unsupported_extension
+    assert_raises(RuntimeError) do
+      invoke_generate 'Abc.ccccc'
+    end
+  end
+
+  def test_generate_no_extension
+    invoke_generate 'Abc'
+
+    assert_equal 2, @generator.trace.size
+    assert_equal 'Abc', @generator.trace.first[1]
+    assert_equal [], @generator.trace.first[2]
+
+    setup
+    invoke_generate 'aaa::bbb:Abc'
+
+    assert_equal 2, @generator.trace.size
+    assert_equal 'Abc', @generator.trace.first[1]
+    assert_equal ['aaa', 'bbb'], @generator.trace.first[2]
+  end
+
+  def test_generate_with_extension
+    invoke_generate 'aaa::Abc.cc'
+
+    assert_equal 1, @generator.trace.size
+    assert_equal 'cc_body', @generator.trace.first[0]
+    assert_equal 'Abc', @generator.trace.first[1]
+    assert_equal ['aaa'], @generator.trace.first[2]
+  end
+
+  def test_global_namespace_prepended
+    @app.global_namespace = 'vvv::zzz'
+    invoke_generate 'aaa::Abc.h'
+
+    assert_equal 1, @generator.trace.size
+    assert_equal 'cc_header', @generator.trace.first[0]
+    assert_equal 'Abc', @generator.trace.first[1]
+    assert_equal ['vvv', 'zzz', 'aaa'], @generator.trace.first[2]
+  end
+
+  def test_global_namespace_used
+    @app.global_namespace = 'vvv::zzz'
+    invoke_generate 'Abc.c'
+
+    assert_equal 1, @generator.trace.size
+    assert_equal 'c', @generator.trace.first[0]
+    assert_equal 'Abc', @generator.trace.first[1]
+    assert_equal ['vvv', 'zzz'], @generator.trace.first[2]
+  end
+
+  def invoke_generate(name)
+    @app.send :generate, name, @generator
+  end
+
+  def setup
+    @generator = MockGenerator.new
+    @app = Application.new
+  end
+
+  def teardown
+    @app = nil
+    @generator = nil
+  end
+end
+
+__END__
+indent: 2
+
+copyright_holders: |
+
+authors: |
+
+license: |
+
+header_includes: |
+
+body_includes: |
+  <iostream>
+  <iomanip>
+
+extends: |
+
+initializes: |
+
+public_methods:
+
+protected_methods:
+
+private_methods:
+
+data: |
+
+factory:
+  constructor(): |
+  destructor(): |
+
+test:
+  class_init: |
+    CPPUNIT_TEST_SUITE(#{FULL_CLASS_NAME});
+      CPPUNIT_TEST(testSimple);
+    CPPUNIT_TEST_SUITE_END();
+
+  header_includes: |
+    <cppunit/TestFixture.h>
+    <cppunit/extensions/HelperMacros.h>
+
+  body_top: |
+    CPPUNIT_TEST_SUITE_REGISTRATION(#{FULL_CLASS_NAME});
+
+  header_bottom: |
+
+  body_includes: |
+
+  extends: |
+    public CppUnit::TestFixture
+
+  initializes: |
+
+  public_methods:
+    void setUp(): |
+    void tearDown(): |
+    void testSimple(): |
+      CPPUNIT_ASSERT_EQUAL(true, false);
+
+  protected_methods:
+
+  private_methods:
+
+  data: |
+
+  factory:
+
+sh: |
+  TRACE=no
+
+  print_usage()
+  {
+    print_error "USAGE: ${progname} [-v][-o][-a<argument>]"
+  }
+
+  main()
+  {
+    trap "cleanup_and_exit 5" HUP INT QUIT TERM
+    trap "cleanup" EXIT 
+
+    unset OPTION ARGUMENT
+
+    while getopts ":hvoa:" option; do
+      case "${option}" in
+        o)
+          OPTION=yes
+        ;;
+        a)
+          ARGUMENT="${OPTARG}"
+        ;;
+        v)
+          TRACE=yes
+        ;;
+        h)
+          print_usage_and_exit 0
+        ;;
+        *)
+          print_usage_and_exit
+        ;;
+      esac
+    done
+
+    shift `expr "${OPTIND}" - 1`
+    [ "${#}" -ne 0 ] && print_usage_and_exit
+
+    return 0
+  }
+
+  :<<:
+  Variables:
+    progpath - This script file full path
+    progname - Name of this script file
+
+  Functions:
+    _echo() - Most suitable echo command (echo or echo -e).
+    _awk() - Most suitable awk command (awk or nawk)
+    print_message() - Echo parameters to the original stdout (| for start line)
+    print_error() - print_message() to the original stderr
+    print_usage_and_exit() - Print usage and exit with argument or 2
+    register_for_cleanup() - Add entries to be cleaned up. Variables OK.
+    suppress_error_output() - Redirect stderr to /dev/null for cmdline.
+    suppress_output() - Redirect stdout and stderr to /dev/null for cmdline.
+    trace_and_run() - Print cmdline if TRACE is yes, then execute.
+
+    figure_full_program_path()
+    figure_full_path()
+    find_file_in_path()
+    resolve_symlink()
+    resolve_symlink_chain()
+
+    is_list_member()
+    is_path()
+    is_absolute_path()
+    is_regular_file()
+    is_program()
+  :
+
+  figure_full_program_path()
+  {
+    file="${1}"
+    is_path "${file}" || {
+      file=`find_file_in_path "${file}" "${PATH}"`
+    }
+    figure_full_path "${file}"
+  }
+
+  figure_full_path()
+  {
+    echo `absolute_location "${1}"`/`basename "${1}"`
+  }
+
+  find_file_in_path()
+  {
+    file="${1}"
+    path="${2}"
+
+    ifs="${IFS}"
+    IFS=:
+    set entry ${path}
+    shift
+    IFS="${ifs}"
+
+    for directory in "${@}"; do
+      path="${directory}/${file}"
+      is_regular_file "${path}" && {
+        _echo "${path}"
+        return 0
+      }
+    done
+    return 1
+  }
+
+  resolve_symlink()
+  {
+    set entry `resolve_symlink_chain "${@}"`
+    echo "${2}"
+  }
+
+  resolve_symlink_chain()
+  {
+    file="${1}"
+    set entry `suppress_error_output "ls -ld '${file}'"`
+
+    case "${2}" in
+      l*)
+        shift `expr "${#}" - 1`
+
+        link="${1}"
+        is_absolute_path "${link}" || {
+          link=`dirname "${file}"`/${link}
+        }
+        echo `resolve_symlink_chain "${link}"` "${file}"
+      ;;
+      *)
+        echo "${file}"
+      ;;
+    esac
+  }
+
+  absolute_location()
+  {
+    (cd `dirname "${1}"` && pwd)
+  }
+
+  is_list_member()
+  {
+    item="${1}"
+    shift
+
+    for entry in "${@}"; do
+      [ "${entry}" = "${item}" ] && return 0
+    done
+
+    return 1
+  }
+
+  is_path()
+  {
+    case "${1}" in
+      /* | */* | */ )
+        return 0
+      ;;
+    esac
+
+    return 1
+  }
+
+  is_absolute_path()
+  {
+    case "${1}" in
+      /*)
+        return 0
+      ;;
+    esac
+
+    return 1
+  }
+
+  is_regular_file()
+  {
+    suppress_output "ls -ldL '${1}' | grep '^-'"
+  }
+
+  invoke_file_command()
+  {
+    file `resolve_symlink "${1}"`
+  }
+
+  is_program()
+  {
+    file="${1}"
+    is_regular_file "${file}" && {
+      suppress_output "invoke_file_command '${file}' | grep 'executable'"
+    }
+  }
+
+  print_usage_and_exit()
+  {
+    print_usage
+    exit "${1:-2}"
+  }
+
+  print_message()
+  {
+    _echo "${@}" | sed '/^[ \t]*$/d;s/^[ \t]*|//' 1>&3 
+  }
+
+  print_error()
+  {
+    print_message "${@}" 3>&4
+  }
+
+  suppress_output()
+  {
+    "${@}" >/dev/null 2>&1
+  }
+
+  suppress_error_output()
+  {
+    "${@}" 2>/dev/null
+  }
+
+  trace_and_run()
+  {
+    [ "${TRACE}" = yes ] && {
+      print_error "=> ${@}"
+    }
+    "${@}"
+  }
+
+  cleanup_list=
+  register_for_cleanup()
+  {
+    for item in "${@}"; do
+      cleanup_list="${item}<:>${cleanup_list}"
+    done
+  }
+
+  cleanup()
+  {
+    ifs="${IFS}"
+    IFS="<:>"
+    set entry ${cleanup_list}
+    shift
+    IFS="${ifs}"
+
+    for entry in "${@}"; do
+      eval entry="${entry}"
+      [ "${entry:+set}" = set ] && {
+        trace_and_run rm -rf "${entry}"
+      }
+    done
+
+    cleanup_list=
+  }
+
+  cleanup_and_exit()
+  {
+    cleanup
+    exit "${1:-1}"
+  }
+
+  if [ "`echo -e`" = "-e" ]; then
+    _echo() {
+      echo "${@}"
+    }
+  else
+    _echo() {
+      echo -e "${@}"
+    }
+  fi
+
+  if ( nawk 'BEGIN { exit 0 }' ) >/dev/null 2>&1; then
+    _awk() {
+      nawk "${@}"
+    }
+  else
+    _awk() {
+      awk "${@}"
+    }
+  fi
+
+  progpath=`figure_full_program_path "${0}"`
+  progname=`basename "${progpath}"`
+
+  exec 3>&1 4>&2
+
+  main "${@}"
+  exit ${?}
