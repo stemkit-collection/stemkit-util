@@ -19,8 +19,8 @@ eval <<'RUBY'
       #{userinfo.dir}/bin
       #{userinfo.dir}/local/#{sysid}/bin
       #{userinfo.dir}/local/bin
-      #{userinfo.dir}/local/#{sysid}/java/jdk-1.5/bin
-      #{userinfo.dir}/local/#{sysid}/java/jre-1.5/bin
+      #{userinfo.dir}/local/#{sysid}/java/jdk-1.6/bin
+      #{userinfo.dir}/local/#{sysid}/java/jre-1.6/bin
       #{userinfo.dir}/local/jruby/bin
       /sbin 
       /opt/ansic/bin
