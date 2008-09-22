@@ -26,7 +26,7 @@ module SK
         super
 
         TSC::Error.ignore Errno::ENOENT do
-          self.class.open File.join(spot, item) do |_io|
+          self.class.open File.expand_path(item, spot) do |_io|
             processor.process(_io, spot)
           end
         end
