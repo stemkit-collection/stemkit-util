@@ -37,20 +37,44 @@ module SK
         @hash
       end
 
-      def [](key)
-        @hash[ key.to_s.strip ]
+      def [](path)
+        begin
+          locate(path, false) { |_key, _data|
+            return _data.to_hash[_key]
+          }
+        rescue
+          nil
+        end
       end
 
-      def []=(key, value)
-        @hash[key.to_s.strip] = normalize(value)
+      def fetch(path, fallback = nil)
+        begin
+          locate(path, false) { |_key, _data|
+            return _data.to_hash.fetch(_key)
+          }
+        rescue
+          fallback or raise "#{path.inspect} not found"
+        end
+      end
+
+      def []=(path, value)
+        locate(path, true) { |_key, _data|
+          _data.to_hash[_key] = normalize(value)
+        }
       end
 
       def empty?
         @hash.empty?
       end
 
-      def key?(key)
-        @hash.key?(key.to_s.strip)
+      def key?(path)
+        begin
+          locate(path, false) { |_key, _data|
+            _data.to_hash.key?(_key)
+          }
+        rescue
+          false
+        end
       end
 
       def has_key?(key)
@@ -78,6 +102,28 @@ module SK
 
       private
       #######
+
+      def locate(path, create, &block)
+        keys = normalize_key_path(path)
+        key = keys.pop
+
+        yield key, keys.inject(self) { |_data, _key|
+          raise "Not #{self.class.name.inspect}" unless self.class === _data
+          if _data.to_hash.key?(_key) == false 
+            raise "No path" unless create
+            _data.to_hash[_key] = self.class.new
+          end
+
+          _data.to_hash[_key]
+        }
+      end
+
+      def normalize_key_path(path)
+        path.to_s.split('/').map { |_item|
+          item = _item.strip
+          item unless item.empty?
+        }.compact
+      end
 
       def normalize(value)
         case value
@@ -145,6 +191,18 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           assert_equal 6, hash[1][2]
           assert_equal 5, hash[1][4]
           assert_equal 8, hash[1]["  7  "]
+        end
+
+        def test_path
+          assert_equal false, hash.key?("a/b/c")
+          assert_equal true, hash.empty?
+
+          hash['a/b/c'] = "zzz"
+          assert_equal true, hash.key?("a/b/c")
+          assert_equal "zzz", hash["a/b/c"]
+          assert_equal 1, hash.size
+          assert_equal 1, hash[:a].size
+          assert_equal Hash[ "c" => "zzz" ], hash["a/b"]
         end
 
         def setup
