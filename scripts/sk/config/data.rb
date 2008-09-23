@@ -9,9 +9,17 @@
   Author: Gennady Bystritsky (gennady.bystritsky@quest.com)
 =end
 
+require 'tsc/errors.rb'
+
 module SK
   module Config
     class Data
+      class MissingPathError < TSC::Error
+        def initialize(path)
+          super "Path #{path.inspect} missing"
+        end
+      end
+
       class << self
         def [](*args)
           self.new(*args)
@@ -53,7 +61,7 @@ module SK
             return _data.to_hash.fetch(_key)
           }
         rescue
-          fallback or raise "#{path.inspect} not found"
+          fallback or raise MissingPathError, path
         end
       end
 
@@ -110,7 +118,7 @@ module SK
         yield key, keys.inject(self) { |_data, _key|
           raise "Not #{self.class.name.inspect}" unless self.class === _data
           if _data.to_hash.key?(_key) == false 
-            raise "No path" unless create
+            raise MissingPathError, keys.join('/') unless create
             _data.to_hash[_key] = self.class.new
           end
 
