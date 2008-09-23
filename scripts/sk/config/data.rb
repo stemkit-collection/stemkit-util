@@ -26,6 +26,8 @@ module SK
         end
       end
 
+      include Enumerable
+
       def initialize(*args)
         @hash = {}
 
@@ -35,6 +37,14 @@ module SK
               update _item
           end
         end
+      end
+
+      def each(&block)
+        @hash.each(&block)
+      end
+
+      def each_pair(&block)
+        @hash.each_pair(&block)
       end
 
       def ==(other)
