@@ -65,13 +65,14 @@ module SK
         end
       end
 
-      def fetch(path, fallback = nil)
+      def fetch(path, fallback = self)
         begin
           locate(path, false) { |_key, _data|
             return _data.to_hash.fetch(_key)
           }
         rescue
-          fallback or raise MissingPathError, path
+          raise MissingPathError, path if fallback.object_id == self.object_id
+          fallback 
         end
       end
 
@@ -116,6 +117,8 @@ module SK
 
           self[_key] = _value
         end
+
+        self
       end
 
       private
@@ -221,6 +224,18 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           assert_equal 1, hash.size
           assert_equal 1, hash[:a].size
           assert_equal Hash[ "c" => "zzz" ], hash["a/b"]
+        end
+
+        def test_fetch
+          hash['aaa'] = 'bbb'
+
+          assert_equal 'bbb', hash.fetch('aaa')
+          assert_raises Config::Data::MissingPathError do
+            hash.fetch('bbb')
+          end
+
+          assert_equal 'ccc', hash.fetch('bbb', 'ccc')
+          assert_equal nil, hash.fetch('bbb', nil)
         end
 
         def setup
