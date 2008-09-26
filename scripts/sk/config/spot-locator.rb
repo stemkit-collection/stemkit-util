@@ -1,3 +1,4 @@
+# vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
@@ -25,10 +26,12 @@ module SK
       def invoke(processor)
         super
 
-        TSC::Error.ignore Errno::ENOENT do
-          self.class.open File.expand_path(item, spot) do |_io|
+        begin
+          self.class.open self.class.expand_path(item, spot) do |_io|
             processor.process(_io, spot)
           end
+        rescue Errno::ENOENT
+          raise if options[:required]
         end
       end
 
