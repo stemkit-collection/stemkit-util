@@ -411,10 +411,10 @@ act_as_profile()
   P4PORT=localhost:1 export P4PORT
   P4CONFIG=.p4rc export P4CONFIG
   PAGER=less export PAGER
-  LESS=-XMFe export LESS
+  LESS=-XMFRe export LESS
   HISTSIZE=1000 export HISTSIZE
   export HISTFILE
-  RI=-fbs export RI
+  RI=-fansi export RI
   PATH_WINDOWS=/dev/fs/C/WINDOWS/system32/.com,.exe,.ksh,.bat,.cmd,:/dev/fs/C/SFU-ROOT/common/.com,.exe,.ksh,.bat,.cmd,
   export PATH_WINDOWS
 
