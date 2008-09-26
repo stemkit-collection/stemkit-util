@@ -68,7 +68,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
         def test_standalone_no_item_default_spot
           locator = SpotLocator.new
-          File.expects(:expand_path).with('.').returns('/a/b/c')
+          SpotLocator.expects(:expand_path).with('.').returns('/a/b/c')
           processor.expects(:process).never
 
           assert_raises RuntimeError do
@@ -90,6 +90,8 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           SpotLocator.expects(:expand_path).with('/tmp').returns('/tmp')
           SpotLocator.expects(:open).with('/a/b/zzz').yields('aaa')
           SpotLocator.expects(:open).with('/tmp/zzz').yields('bbb')
+          SpotLocator.expects(:expand_path).with('zzz', '/tmp').returns('/tmp/zzz')
+          SpotLocator.expects(:expand_path).with('zzz', '/a/b').returns('/a/b/zzz')
 
           processor.expects(:process).with('aaa', '/a/b')
           processor.expects(:process).with('bbb', '/tmp')
