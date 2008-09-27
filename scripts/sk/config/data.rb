@@ -31,10 +31,12 @@ module SK
       def initialize(*args)
         @hash = {}
 
-        args.each do |_item|
+        args.flatten.compact.each do |_item|
           case _item
             when Hash, self.class
               update _item
+            else
+              update _item => self.class.new unless key?(_item)
           end
         end
       end
@@ -236,6 +238,14 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
           assert_equal 'ccc', hash.fetch('bbb', 'ccc')
           assert_equal nil, hash.fetch('bbb', nil)
+        end
+
+        def test_create_with_mixed_types
+          hash = SK::Config::Data.new 'aaa', { 'bbb' => 'ccc', 1 => 2 }, 'bbb'
+          assert_equal 3, hash.size
+          assert_equal true, hash['aaa'].empty?
+          assert_equal 2, hash['1']
+          assert_equal 'ccc', hash['bbb']
         end
 
         def setup
