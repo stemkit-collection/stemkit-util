@@ -109,12 +109,24 @@ module SK
       def update(hash)
         hash.each_pair do |_key, _value|
           value = self[_key]
-          if self.class === value
-            case _value
-              when Hash, self.class
-                value.update(_value)
-                next
-            end
+          case value 
+            when self.class
+              case _value
+                when Hash, self.class
+                  value.update(_value)
+                  next
+              end
+
+            when Array 
+              case _value
+                when Hash, self.class
+                  data = self.class.new _value
+                  self[_key] = value.map { |_item|
+                    next _item unless data.key?(_item)
+                    self.class.new(_item => data[_item])
+                  }
+                  next
+              end
           end
 
           self[_key] = _value
@@ -246,6 +258,38 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           assert_equal true, hash['aaa'].empty?
           assert_equal 2, hash['1']
           assert_equal 'ccc', hash['bbb']
+        end
+
+        def test_update_simple_type_with_hash
+          hash['a'] = 'zzz'
+          assert_equal 'zzz', hash['a']
+
+          hash.update 'a' => Hash[ :zzz => 'bbb' ]
+          assert_equal Hash[ 'zzz' => 'bbb' ],  hash[:a]
+        end
+
+        def test_update_array_type_with_hash
+          hash['a'] = [ 'z', 'b', 'u' ]
+          assert_equal [ 'z', 'b', 'u' ], hash['a']
+
+          hash.update 'a' => Data[ :z => 'bbb', :u => 'ccc' ]
+          assert_equal [ Hash[ 'z' => 'bbb' ], 'b', Hash[ 'u' => 'ccc' ] ],  hash[:a]
+        end
+
+        def test_deep_update
+          d1 = Data[
+            :system => {
+              :s1 => [ :h1, :h2 ],
+              :s2 => [ :h1 ]
+            }
+          ]
+
+          d2 = Data[
+            :system => [ :s4, :s1 ]
+          ]
+          d2.update(d1)
+
+          assert_equal [ :s4, Hash[ "s1" => [ :h1, :h2 ] ] ], d2[:system]
         end
 
         def setup
