@@ -12,6 +12,16 @@
 require 'sk/config/data.rb'
 
 describe SK::Config::Data do
+  it "should merge strings as hashes in contructor" do
+    d = SK::Config::Data.new 'aaa', { 'bbb' => 'ccc', 1 => 2 }, 'bbb'
+
+    d.should == Hash[
+      'aaa' => {},
+      'bbb' => 'ccc',
+      '1' => 2
+    ]
+  end
+
   describe "class method merge()" do
     describe "for its own instances" do
       it "should merge hashes" do
@@ -54,6 +64,14 @@ describe SK::Config::Data do
           's1' => Hash[ 'h1' => 'z', 'h2' => 'bbb', 'h3' => 'b' ],
           's2' => 'u'
         ]
+      end
+    end
+
+    describe "for arrays" do
+      it "should not modify receiver if not present in other" do
+        d = SK::Config::Data.merge [ 1, 2 ], {}
+
+        d.should == [ 1, 2 ]
       end
     end
   end

@@ -112,40 +112,37 @@ module SK
 
       class << self
         def merge(receiver, item)
-          case receiver
-            when self
-            when Hash
-              receiver = self.new receiver
-            else
-              raise TSC::NotImplementedError, "receiver not #{self.name}"
-          end
+          loop do
+            case receiver 
+              when Hash
+                receiver = self.new receiver
+                next
 
-          item.each_pair do |_key, _value|
-            value = receiver[_key]
-            case value 
               when self
-                case _value
+                case item
                   when Hash, self
-                    value.update(_value)
-                    next
+                    item.each_pair do |_key, _value|
+                      receiver[_key] = merge(receiver[_key], _value)
+                    end
+
+                    return receiver
                 end
 
               when Array 
-                case _value
+                case item
                   when Hash, self, Array
-                    data = self.new _value
-                    receiver[_key] = value.map { |_item|
+                    data = self.new item
+                    return receiver.map { |_item|
                       next _item unless data.key?(_item)
                       self.new(_item => data[_item])
                     }
-                    next
                 end
             end
 
-            receiver[_key] = _value
+            break
           end
 
-          receiver
+          item
         end
       end
 
