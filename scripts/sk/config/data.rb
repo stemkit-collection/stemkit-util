@@ -31,7 +31,7 @@ module SK
       def initialize(*args)
         @hash = {}
 
-        args.flatten.compact.each do |_item|
+        args.each do |_item|
           case _item
             when Hash, self.class
               self.class.merge self, _item
@@ -131,7 +131,8 @@ module SK
               when Array 
                 case item
                   when Hash, self, Array
-                    data = self.new item
+                    data = (Array === item ? self.new(*item) : self.new(item))
+
                     return receiver.map { |_item|
                       next _item unless data.key?(_item)
                       self.new(_item => data[_item])
