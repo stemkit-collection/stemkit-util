@@ -37,13 +37,12 @@ describe SK::Config::Data do
     ]
   end
 
-  it "should mege arrays" do
+  it "should merge arrays" do
     d = SK::Config::Data[ :a, { :c => { 1 => 2, 3 => 4 } } ]
     SK::Config::Data.merge d, [ :a, :b, { :c => { 1 => 'a', 2 => 'b' } } ]
 
     d.should == Hash[
       'a' => {},
-      'b' => {},
       'c' => {
         '1' => 'a',
         '2' => 'b',
@@ -118,6 +117,11 @@ describe SK::Config::Data do
       it "should expand elements if presend in hash" do
         d = SK::Config::Data.merge [ :a, :b ], Hash[ :a => { 1 => 2 }, :c => 'u' ]
         d.should == [ Hash[ 'a' => { '1' => 2 } ], :b ]
+      end
+
+      it "should expand elements if presend in array" do
+        d = SK::Config::Data.merge [ :a, :b ], [ { :a => { 1 => 2 } }, :b, { :c => 'u' } ]
+        d.should == [ { 'a' => { '1' => 2 } }, :b ]
       end
     end
   end

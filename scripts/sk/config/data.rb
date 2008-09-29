@@ -32,7 +32,7 @@ module SK
       def initialize(*args)
         @hash = {}
 
-        args.each do |_item|
+        args.flatten.compact.each do |_item|
           self.class.merge self, _item
         end
       end
@@ -126,7 +126,7 @@ module SK
                     return receiver
 
                   when Array
-                    return merge(receiver, self.new(*item), options)
+                    return merge(receiver, consolidate_array(item), options)
 
                   else
                     return merge(receiver, { item => self.new }, options) unless receiver.key?(item)
@@ -135,7 +135,7 @@ module SK
               when Array 
                 case item
                   when Hash, self, Array
-                    data = (Array === item ? self.new(*item) : self.new(item))
+                    data = (Array === item ? consolidate_array(item) : self.new(item))
 
                     return receiver.map { |_item|
                       next _item unless data.key?(_item)
@@ -148,6 +148,20 @@ module SK
           end
 
           control.override == true || receiver.nil? ? item : receiver
+        end
+
+        private
+        #######
+
+        def consolidate_array(item)
+          self.new *item.select { |_item|
+            case _item
+              when Hash, self
+                true
+              else
+                false
+            end
+          }
         end
       end
 
