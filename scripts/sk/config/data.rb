@@ -119,7 +119,7 @@ module SK
 
             when Array 
               case _value
-                when Hash, self.class
+                when Hash, self.class, Array
                   data = self.class.new _value
                   self[_key] = value.map { |_item|
                     next _item unless data.key?(_item)
@@ -282,6 +282,22 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
               :s1 => [ :h1, :h2 ],
               :s2 => [ :h1 ]
             }
+          ]
+
+          d2 = Data[
+            :system => [ :s4, :s1 ]
+          ]
+          d2.update(d1)
+
+          assert_equal [ :s4, Hash[ "s1" => [ :h1, :h2 ] ] ], d2[:system]
+        end
+
+        def test_deep_update_with_arrays
+          d1 = Data[
+            :system => [
+              { :s1 => [ :h1, :h2 ] },
+              { :s2 => [ :h1 ] }
+            ]
           ]
 
           d2 = Data[
