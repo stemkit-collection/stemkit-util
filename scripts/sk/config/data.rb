@@ -10,6 +10,7 @@
 =end
 
 require 'tsc/errors.rb'
+require 'tsc/dataset.rb'
 
 module SK
   module Config
@@ -106,7 +107,10 @@ module SK
       end
 
       class << self
-        def merge(receiver, item)
+        def merge(receiver, item, options = {})
+          control = TSC::Dataset[ :override => true ]
+          control.update(options)
+
           loop do
             case receiver 
               when Hash
@@ -117,16 +121,15 @@ module SK
                 case item
                   when Hash, self
                     item.each_pair do |_key, _value|
-                      receiver[_key] = merge(receiver[_key], _value)
+                      receiver[_key] = merge(receiver[_key], _value, options)
                     end
                     return receiver
 
                   when Array
-                    return merge(receiver, self.new(*item))
+                    return merge(receiver, self.new(*item), options)
 
                   else
-                    return merge(receiver, item => self.new) unless receiver.key?(item)
-
+                    return merge(receiver, { item => self.new }, options) unless receiver.key?(item)
                 end
 
               when Array 
@@ -144,7 +147,7 @@ module SK
             break
           end
 
-          item
+          control.override == true || receiver.nil? ? item : receiver
         end
       end
 

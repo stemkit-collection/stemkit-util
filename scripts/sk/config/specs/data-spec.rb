@@ -53,6 +53,17 @@ describe SK::Config::Data do
   end
 
   describe "class method merge()" do
+    it "should not override if option is given" do
+      d = Hash[ :s1 => "a", :s2 => "b" ]
+      r = SK::Config::Data.merge d, { :s1 => "c", :s2 => [ 1, 3 ], :s3 => 'u' }, :override => false
+
+      r.should == Hash[
+        's1' => 'a',
+        's2' => 'b',
+        's3' => 'u'
+      ]
+    end
+
     describe "for its own instances" do
       it "should merge hashes" do
         d = SK::Config::Data[
