@@ -34,9 +34,9 @@ module SK
         args.flatten.compact.each do |_item|
           case _item
             when Hash, self.class
-              update _item
+              self.class.merge self, _item
             else
-              update _item => self.class.new unless key?(_item)
+              self.class.merge self, _item => self.class.new unless key?(_item)
           end
         end
       end
@@ -106,33 +106,41 @@ module SK
         @hash.size
       end
 
-      def update(hash)
-        hash.each_pair do |_key, _value|
-          value = self[_key]
-          case value 
-            when self.class
-              case _value
-                when Hash, self.class
-                  value.update(_value)
-                  next
-              end
+      def update(item)
+        self.class.merge(self, item)
+      end
 
-            when Array 
-              case _value
-                when Hash, self.class, Array
-                  data = self.class.new _value
-                  self[_key] = value.map { |_item|
-                    next _item unless data.key?(_item)
-                    self.class.new(_item => data[_item])
-                  }
-                  next
-              end
+      class << self
+        def merge(receiver, item)
+          raise TSC::NotImpmelentedError, "receiver not #{self.name}" unless self === receiver
+
+          item.each_pair do |_key, _value|
+            value = receiver[_key]
+            case value 
+              when self
+                case _value
+                  when Hash, self
+                    value.update(_value)
+                    next
+                end
+
+              when Array 
+                case _value
+                  when Hash, self, Array
+                    data = self.new _value
+                    receiver[_key] = value.map { |_item|
+                      next _item unless data.key?(_item)
+                      self.new(_item => data[_item])
+                    }
+                    next
+                end
+            end
+
+            receiver[_key] = _value
           end
 
-          self[_key] = _value
+          receiver
         end
-
-        self
       end
 
       private
