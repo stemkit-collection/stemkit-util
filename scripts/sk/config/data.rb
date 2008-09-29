@@ -32,12 +32,7 @@ module SK
         @hash = {}
 
         args.each do |_item|
-          case _item
-            when Hash, self.class
-              self.class.merge self, _item
-            else
-              self.class.merge self, _item => self.class.new unless key?(_item)
-          end
+          self.class.merge self, _item
         end
       end
 
@@ -124,8 +119,11 @@ module SK
                     item.each_pair do |_key, _value|
                       receiver[_key] = merge(receiver[_key], _value)
                     end
-
                     return receiver
+
+                  else
+                    return merge(receiver, item => self.new) unless receiver.key?(item)
+
                 end
 
               when Array 
