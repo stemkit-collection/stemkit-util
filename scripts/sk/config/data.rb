@@ -112,7 +112,13 @@ module SK
 
       class << self
         def merge(receiver, item)
-          raise TSC::NotImpmelentedError, "receiver not #{self.name}" unless self === receiver
+          case receiver
+            when self
+            when Hash
+              receiver = self.new receiver
+            else
+              raise TSC::NotImplementedError, "receiver not #{self.name}"
+          end
 
           item.each_pair do |_key, _value|
             value = receiver[_key]
