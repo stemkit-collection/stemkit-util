@@ -121,6 +121,9 @@ module SK
                     end
                     return receiver
 
+                  when Array
+                    return merge(receiver, self.new(*item))
+
                   else
                     return merge(receiver, item => self.new) unless receiver.key?(item)
 

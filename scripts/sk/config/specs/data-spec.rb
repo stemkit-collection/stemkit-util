@@ -22,6 +22,36 @@ describe SK::Config::Data do
     ]
   end
 
+  it "should merge strings as hashes when merging" do
+    d = SK::Config::Data.new :c => 12
+    
+    SK::Config::Data.merge d, 'aaa'
+    SK::Config::Data.merge d, { 'bbb' => 'ccc', 1 => 2 }
+    SK::Config::Data.merge d, 'bbb'
+
+    d.should == Hash[
+      'aaa' => {},
+      'bbb' => 'ccc',
+      '1' => 2,
+      'c' => 12
+    ]
+  end
+
+  it "should mege arrays" do
+    d = SK::Config::Data[ :a, { :c => { 1 => 2, 3 => 4 } } ]
+    SK::Config::Data.merge d, [ :a, :b, { :c => { 1 => 'a', 2 => 'b' } } ]
+
+    d.should == Hash[
+      'a' => {},
+      'b' => {},
+      'c' => {
+        '1' => 'a',
+        '2' => 'b',
+        '3' => 4
+      }
+    ]
+  end
+
   describe "class method merge()" do
     describe "for its own instances" do
       it "should merge hashes" do
