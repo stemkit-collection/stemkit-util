@@ -73,6 +73,11 @@ describe SK::Config::Data do
 
         d.should == [ 1, 2 ]
       end
+
+      it "should expand elements if presend in hash" do
+        d = SK::Config::Data.merge [ :a, :b ], Hash[ :a => { 1 => 2 }, :c => 'u' ]
+        d.should == [ Hash[ 'a' => { '1' => 2 } ], :b ]
+      end
     end
   end
 end
