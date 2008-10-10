@@ -135,7 +135,7 @@ module SK
               when Array 
                 case item
                   when Hash, self, Array
-                    data = (Array === item ? consolidate_array(item) : self.new(item))
+                    data = consolidate_array(item)
 
                     return receiver.map { |_item|
                       next _item unless data.key?(_item)
@@ -150,10 +150,9 @@ module SK
           control.override == true || receiver.nil? ? item : receiver
         end
 
-        private
-        #######
-
         def consolidate_array(item)
+          return self.new(item) unless Array === item
+
           self.new *item.select { |_item|
             case _item
               when Hash, self
@@ -161,6 +160,21 @@ module SK
               else
                 false
             end
+          }
+        end
+
+        def mesh_array(item)
+          return self.new(item) unless Array === item
+
+          item.map { |_item|
+            case _item
+              when Hash, self
+                _item
+              else
+                Hash[ _item => Hash[] ]
+            end
+          }.inject(self.new) { |_result, _entry|
+            _result.update(_entry)
           }
         end
       end
@@ -336,6 +350,26 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           d2.update(d1)
 
           assert_equal [ :s4, Hash[ "s1" => [ :h1, :h2 ] ] ], d2[:system]
+        end
+
+        def test_mesh_array
+          a = Data.mesh_array [ 1, 2, 3 ]
+          assert_equal Hash[ "1"=>{}, "2"=>{}, "3"=>{} ], a 
+        end
+
+        def test_mesh_array_with_hash_inside
+          a = Data.mesh_array [ 1, 2, Hash[ 7=>8 ], 3 ]
+          assert_equal Hash[ "7"=>8, "1"=>{}, "2"=>{}, "3"=>{} ], a 
+        end
+
+        def test_mesh_array_with_hash_inside_override
+          a = Data.mesh_array [ 1, 2, Hash[ 7=>8, 1 => { :a => { :b => :c } }, 3 => { 9 => "uu" } ], 3 ]
+          assert_equal Hash[ "7"=>8, "1"=>{ "a" => { "b" => :c } }, "2"=>{}, "3" => { "9" => "uu" } ], a 
+        end
+
+        def test_fetch_on_meshed
+          a = Data.mesh_array [ 1, 2, Hash[ 7=>8, 1 => { :a => { :b => :c } }, 3 => { 9 => "uu" } ], 3 ]
+          assert_equal :c, a.fetch("1/a/b")
         end
 
         def setup
