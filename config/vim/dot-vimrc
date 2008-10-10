@@ -88,11 +88,19 @@ map <F1><F5> :Open<CR>
 
 set tw=78
 
+set foldmethod=syntax
+set foldtext=getline(v:foldstart)
+set foldlevel=10
+set fillchars=fold:\ " note the whitespace after   
+" not neccessary but useful (so you can use the TAB key to fold/unfold):
+map <TAB> za
+
 if has("autocmd")
  augroup cprog
   au!
-  autocmd FileType *      set formatoptions=tcql nocindent comments&
-  autocmd FileType c,cpp  set formatoptions=croql cindent comments=fl:/**/,sl1:/**,mb:*,ex:*/,://,sl:/*,mb:**,ex:*/
+  autocmd FileType *        setlocal formatoptions=tcql nocindent comments&
+  autocmd FileType c,cpp    setlocal formatoptions=croql cindent comments=fl:/**/,sl1:/**,mb:*,ex:*/,://,sl:/*,mb:**,ex:*/
+  autocmd FileType yaml,xml setlocal foldmethod=indent
  augroup END
 endif
 
@@ -102,13 +110,6 @@ set tags=tags;~/products/*/*/src
 filetype on           " Enable fieltype detection
 filetype indent on    " Enable filetype-specific indenting
 filetype plugin on    " Enable filetype-specific plugins
-
-set foldmethod=syntax
-set foldtext=getline(v:foldstart)
-set foldlevel=10
-set fillchars=fold:\ " note the whitespace after   
-" not neccessary but useful (so you can use the TAB key to fold/unfold):
-map <TAB> za
 
 set cedit=<Esc>
 set cmdwinheight=1
