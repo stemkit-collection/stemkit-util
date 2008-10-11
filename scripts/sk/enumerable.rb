@@ -29,25 +29,30 @@ module SK
 
         result
       end
+
+      def transform_with(item, action, &block)
+        if Hash === action
+          action.map { |_action, _cascade|
+            method, *args = Array(_action)
+
+            Hash[ 
+              method.to_s.intern => item.send(method, *args).extend(SK::Enumerable).map_with(*Array(*_cascade), &block) 
+            ]
+          }.first
+        else
+          value = item.send *Array(action)
+          block_given? ? yield(value) : value
+        end
+      end
     end
 
     def map_with(*args, &block) 
       actions = SK::Enumerable.flatten_hash_entries(*args)
       result = actions.empty? ? map(&block) : begin
         map { |_item|
-          processor = proc { |_action|
-            if Hash === _action
-              entry = Array(_action).first
-              action = Array(entry.first)
-              Hash[ 
-                action.first.to_s.intern => _item.send(*action).extend(SK::Enumerable).map_with(*Array(entry.last), &block) 
-              ]
-            else
-              value = _item.send *Array(_action)
-              block_given? ? yield(value) : value
-            end
+          actions.size == 1 ? SK::Enumerable.transform_with(_item, *actions, &block) : actions.map { |_action|
+            SK::Enumerable.transform_with(_item, _action, &block)
           }
-          actions.size == 1 ? processor.call(actions.first) : actions.map(&processor)
         }
       end
       result.extend SK::Enumerable
