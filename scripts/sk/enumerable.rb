@@ -57,6 +57,8 @@ module SK
       end
       result.extend SK::Enumerable
     end
+
+    alias_method :collect_with, :map_with
   end
 end
 
@@ -97,7 +99,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         ]
 
         expected = [[:s1, {:hosts=>[:h1, :h2]}], [:s2, {:hosts=>[:h3, :h4]}]]
-        assert_equal expected, array(*systems).map_with(:name, :hosts => :name)
+        assert_equal expected, array(*systems).collect_with(:name, :hosts => :name)
       end
 
       def setup
