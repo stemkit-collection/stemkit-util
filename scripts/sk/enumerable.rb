@@ -14,20 +14,8 @@ module SK
         super
       end
 
-      def flatten_hash_entries(*args)
-        result = []
-
-        args.each do |_action|
-          if Hash === _action
-            _action.each_pair do |_key, _value|
-              result << Hash[ _key => _value ]
-            end
-          else
-            result << _action
-          end
-        end
-
-        result
+      def make(args)
+        args.extend self
       end
 
       def transform_with(item, action, &block)
@@ -36,7 +24,7 @@ module SK
             method, *args = Array(_action)
 
             Hash[ 
-              method.to_s.intern => item.send(method, *args).extend(SK::Enumerable).map_with(*Array(*_cascade), &block) 
+              method.to_s.intern => SK::Enumerable.make(item.send(method, *args)).map_with(*Array(*_cascade), &block) 
             ]
           }.first
         else
@@ -46,16 +34,31 @@ module SK
       end
     end
 
+    def unbox(*args)
+      result = []
+
+      each do |_item|
+        if Hash === _item
+          _item.each_pair do |_key, _value|
+            result << Hash[ _key => _value ]
+          end
+        else
+          result << _item
+        end
+      end
+
+      result
+    end
+
     def map_with(*args, &block) 
-      actions = SK::Enumerable.flatten_hash_entries(*args)
-      result = actions.empty? ? map(&block) : begin
+      actions = SK::Enumerable.make(args).unbox(Hash)
+      SK::Enumerable.make actions.empty? ? map(&block) : begin
         map { |_item|
           actions.size == 1 ? SK::Enumerable.transform_with(_item, *actions, &block) : actions.map { |_action|
             SK::Enumerable.transform_with(_item, _action, &block)
           }
         }
       end
-      result.extend SK::Enumerable
     end
 
     alias_method :collect_with, :map_with
@@ -109,7 +112,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       #######
 
       def array(*args)
-        [ *args ].extend SK::Enumerable
+        SK::Enumerable.make args
       end
     end
   end
