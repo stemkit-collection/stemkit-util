@@ -17,7 +17,7 @@ module SK
       result = actions.empty? ? map(&block) : begin
         map { |_item|
           processor = proc { |_action|
-            value = _item.send _action
+            value = _item.send *Array(_action)
             block_given? ? yield(value) : value
           }
           actions.size == 1 ? processor.call(actions.first) : actions.map(&processor)
@@ -38,6 +38,10 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       def test_simple
         assert_equal [ "1", "2", "3" ], array(1, 2, 3).map_with(:to_s)
         assert_equal [ "AAA", "BBB" ], array("  aaa   ", "bbb").map_with(:upcase).map_with(:strip)
+      end
+
+      def test_with_parameters
+        assert_equal [ 'aDc', 'zcD' ], array('abc', 'zcb').map_with([ :tr, 'b', 'D' ])
       end
 
       def test_sequence
