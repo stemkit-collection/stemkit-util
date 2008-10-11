@@ -4,21 +4,48 @@ module SK
   module Enumerable
     include ::Enumerable
 
-    def self.append_features(other)
-      instance_methods(false).each do |_method|
-        next unless other.instance_methods.include?(_method)
-        raise "#{self.name}: method #{_method.inspect} already defined for #{other.name}" 
+    class << self
+      def append_features(other)
+        instance_methods(false).each do |_method|
+          next unless other.instance_methods.include?(_method)
+          raise "#{self.name}: method #{_method.inspect} already defined for #{other.name}" 
+        end
+
+        super
       end
 
-      super
+      def flatten_hash_entries(*args)
+        result = []
+
+        args.each do |_action|
+          if Hash === _action
+            _action.each_pair do |_key, _value|
+              result << Hash[ _key => _value ]
+            end
+          else
+            result << _action
+          end
+        end
+
+        result
+      end
     end
 
-    def map_with(*actions, &block) 
+    def map_with(*args, &block) 
+      actions = SK::Enumerable.flatten_hash_entries(*args)
       result = actions.empty? ? map(&block) : begin
         map { |_item|
           processor = proc { |_action|
-            value = _item.send *Array(_action)
-            block_given? ? yield(value) : value
+            if Hash === _action
+              entry = Array(_action).first
+              action = Array(entry.first)
+              Hash[ 
+                action.first.to_s.intern => _item.send(*action).extend(SK::Enumerable).map_with(*Array(entry.last), &block) 
+              ]
+            else
+              value = _item.send *Array(_action)
+              block_given? ? yield(value) : value
+            end
           }
           actions.size == 1 ? processor.call(actions.first) : actions.map(&processor)
         }
@@ -29,6 +56,8 @@ module SK
 end
 
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
+  require 'tsc/dataset.rb'
+
   require 'test/unit'
   require 'mocha'
   require 'stubba'
@@ -49,6 +78,21 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       end
 
       def test_cascading
+        systems = [
+          TSC::Dataset[ 
+            :name => :s1, :hosts => [
+              TSC::Dataset[ :name => :h1 ], TSC::Dataset[ :name => :h2 ]
+            ]
+          ], 
+          TSC::Dataset[ 
+            :name => :s2, :hosts => [
+              TSC::Dataset[ :name => :h3 ], TSC::Dataset[ :name => :h4 ]
+            ]
+          ]
+        ]
+
+        expected = [[:s1, {:hosts=>[:h1, :h2]}], [:s2, {:hosts=>[:h3, :h4]}]]
+        assert_equal expected, array(*systems).map_with(:name, :hosts => :name)
       end
 
       def setup
