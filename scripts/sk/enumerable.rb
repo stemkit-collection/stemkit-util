@@ -35,15 +35,16 @@ module SK
     end
 
     def unbox(*args)
+      args = [ Array ] if args.empty?
       result = []
 
       each do |_item|
-        if Hash === _item
-          _item.each_pair do |_key, _value|
-            result << Hash[ _key => _value ]
-          end
-        else
-          result << _item
+        case _item
+          when *args
+            result.concat _item.map { |_entries|
+              Array(_entries).size == 2 ? Hash[ _entries.first => _entries.last ] : _entries
+            }
+          else result.push _item
         end
       end
 
@@ -103,6 +104,10 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
         expected = [[:s1, {:hosts=>[:h1, :h2]}], [:s2, {:hosts=>[:h3, :h4]}]]
         assert_equal expected, array(*systems).collect_with(:name, :hosts => :name)
+      end
+
+      def test_unbox
+        assert_equal [ 1, 2, 3, 4, :a, [:b, :c] ], array([ [1, 2], [3, 4], :a, [[:b,:c]] ]).unbox
       end
 
       def setup
