@@ -1,3 +1,4 @@
+# vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
@@ -9,6 +10,11 @@
 =end
 
 require 'spec'
+require 'sk/enumerable.rb'
+
+class Array
+  include SK::Enumerable
+end
 
 Spec::Runner.configure do |config|
   # == Mock Framework

@@ -37,6 +37,10 @@ module SK
         end
       end
 
+      def clone
+        self.class.new @hash.clone
+      end
+
       def each(&block)
         @hash.each(&block)
       end
