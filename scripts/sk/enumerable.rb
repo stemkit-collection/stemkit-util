@@ -32,6 +32,18 @@ module SK
           block_given? ? yield(value) : value
         end
       end
+
+      def hash_aware_map(item)
+        if Hash === item
+          item.map { |_key, _value|
+            yield [ _key, _value ]
+          }
+        else
+          item.map { |_item|
+            yield [ _item ]
+          }
+        end
+      end
     end
 
     def unbox(*args)
@@ -41,8 +53,8 @@ module SK
       each do |_item|
         case _item
           when *args
-            result.concat _item.map { |_entries|
-              Array(_entries).size == 2 ? Hash[ _entries.first => _entries.last ] : _entries
+            result.concat SK::Enumerable.hash_aware_map(_item) { |_entries|
+              _entries.size == 2 ? Hash[ _entries.first => _entries.last ] : _entries.first
             }
           else result.push _item
         end
@@ -107,7 +119,15 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       end
 
       def test_unbox
-        assert_equal [ 1, 2, 3, 4, :a, [:b, :c] ], array([ [1, 2], [3, 4], :a, [[:b,:c]] ]).unbox
+        assert_equal [ 1, 2, 3, 4, :a, [:b, :c] ], array([1, 2], [3, 4], :a, [[:b,:c]]).unbox
+      end
+
+      def test_unbox_keep_hashes
+        assert_equal [ 1, 2, { 2=>3, 4=>5 }, "aa" ], array([1, 2], { 2=>3, 4=>5 }, "aa").unbox
+      end
+
+      def test_unbox_hash_only
+        assert_equal [ [ 1, 2 ], { 2=>3 }, { 4=>5 }, "aa" ], array([1, 2], { 2=>3, 4=>5 }, "aa").unbox(Hash)
       end
 
       def setup
