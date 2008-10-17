@@ -27,9 +27,7 @@ module SK
         super
 
         begin
-          self.class.open self.class.expand_path(item, spot) do |_io|
-            processor.process(_io, spot)
-          end
+          processor.process(content(self.class.expand_path(item, spot)).join, spot)
         rescue Errno::ENOENT
           raise if options[:required]
         end
@@ -41,6 +39,28 @@ module SK
 
       def item
         options[:item] || locator.item
+      end
+
+      private
+      #######
+
+      def content(path)
+        self.class.open path do |_io|
+          TSC::Error.wrap_with path do
+            counter = 0
+            _io.readlines.map { |_line|
+              counter += 1
+              tabindex = _line.index("\t")
+
+              raise "Tab char at #{counter}/#{tabindex.next}" if tabindex
+
+              result = _line.scan(%r{^(\s*)@<\s*([^>]+?)\s*>\s*$}).flatten
+              result.size != 2 ? _line : content(self.class.expand_path(result.last, File.dirname(path))).map { |_line|
+                result.first + _line
+              }
+            }.flatten
+          end
+        end
       end
 
       class << self
