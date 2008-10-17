@@ -73,6 +73,11 @@ module SK
 
     def terminate_threads
       @group.list.map.each do |_thread|
+        # It is a quick workaround for JRuby, where Thread#exit does not
+        # invoke ensure blocks. However, it may be good enough as a general
+        # fix, as I cannot see any other good way to terminate properly
+        # external threads (not managed).
+        #
         # localstore(_thread)[:internal] ? _thread.raise(Exit) : _thread.exit
         _thread.raise(Exit)
         Thread.pass
