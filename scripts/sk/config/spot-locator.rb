@@ -27,7 +27,7 @@ module SK
         super
 
         begin
-          processor.process(content(self.class.expand_path(item, spot)).join, spot)
+          processor.process content(self.class.expand_path(item, spot)).join, spot
         rescue Errno::ENOENT
           raise if options[:required]
         end
