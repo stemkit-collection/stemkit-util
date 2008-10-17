@@ -1,3 +1,4 @@
+# vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
@@ -151,8 +152,6 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'mocha'
   require 'stubba'
 
-  Thread.abort_on_exception = true
-
   module SK
     class ExecutorTest < Test::Unit::TestCase
       attr_reader :executor
@@ -223,12 +222,17 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       end
 
       def test_external_threads
+        error = nil
         executor.add_thread Thread.new {
+          begin
           sleep 10
+          rescue Exception => error
+          end
         }
         assert_equal 1, executor.threads.size
         executor.terminate_threads
         assert_equal 0, executor.threads.size
+        assert_instance_of SK::Executor::Exit, error
       end
 
       def setup
