@@ -73,7 +73,8 @@ module SK
 
     def terminate_threads
       @group.list.map.each do |_thread|
-        localstore(_thread)[:internal] ? _thread.raise(Exit) : _thread.exit
+        # localstore(_thread)[:internal] ? _thread.raise(Exit) : _thread.exit
+        _thread.raise(Exit)
         Thread.pass
       end
     end
