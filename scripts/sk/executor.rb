@@ -102,25 +102,6 @@ module SK
       end
     end
 
-    def enforce_timeouts
-      threads = @lock.synchronize {
-        @transients.clone
-      }
-      
-      now = Time.now.to_i
-      threads.each do |_thread|
-        start, tolerance = localstore(_thread)[:timeout]
-        next unless start
-        delta = now - start
-        next if delta < tolerance
-
-        @lock.synchronize {
-          @transients.delete _thread
-        }
-        _thread.raise Timeout::Error, "#{delta} exceeds #{tolerance}"
-      end
-    end
-
     def start_timeout_enforcer(interval = 10, &block)
       in_a_thread do 
         localstore[:enforcer] = true
@@ -141,8 +122,30 @@ module SK
       Thread.pass
     end
 
+    private
+    #######
+
     def localstore(thread = nil)
       (thread || Thread.current)[@tag] ||= Hash.new 
+    end
+
+    def enforce_timeouts
+      threads = @lock.synchronize {
+        @transients.clone
+      }
+      
+      now = Time.now.to_i
+      threads.each do |_thread|
+        start, tolerance = localstore(_thread)[:timeout]
+        next unless start
+        delta = now - start
+        next if delta < tolerance
+
+        @lock.synchronize {
+          @transients.delete _thread
+        }
+        _thread.raise Timeout::Error, "#{delta} exceeds #{tolerance}"
+      end
     end
   end
 end
