@@ -15,6 +15,7 @@ set showmode showmatch autoindent shiftwidth=4 nowrapscan
 set expandtab smarttab softtabstop=8
 set tabstop=4
 set shiftwidth=4
+set ve=all
 
 set hidden
 set history=50
