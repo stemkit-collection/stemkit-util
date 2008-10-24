@@ -45,13 +45,13 @@ module SK
     def slaves
       @entries.map { |_entry|
         Array(_entry.last)
-      }.flatten
+      }.flatten.sort
     end
 
     def masters
       @entries.map { |_entry|
         _entry.first
-      }
+      }.sort
     end
 
     def lineup
