@@ -73,16 +73,7 @@ module SK
     end
 
     def terminate_threads
-      @group.list.map.each do |_thread|
-        # It is a quick workaround for JRuby, where Thread#exit does not
-        # invoke ensure blocks. However, it may be good enough as a general
-        # fix, as I cannot see any other good way to terminate properly
-        # external threads (not managed).
-        #
-        # localstore(_thread)[:internal] ? _thread.raise(Exit) : _thread.exit
-        _thread.raise(Exit)
-        Thread.pass
-      end
+      terminate @group.list.map
     end
 
     def timeout(seconds)
@@ -115,11 +106,9 @@ module SK
     end
 
     def stop_timeout_enforcer
-      enforcer = @group.list.find { |_thread|
+      terminate @group.list.select { |_thread|
         localstore(_thread)[:enforcer]
       }
-      enforcer.raise Exit if enforcer && enforcer.alive?
-      Thread.pass
     end
 
     private
@@ -145,6 +134,19 @@ module SK
           @transients.delete _thread
         }
         _thread.raise Timeout::Error, "#{delta} exceeds #{tolerance}"
+      end
+    end
+
+    def terminate(threads)
+      threads.each do |_thread|
+        # It is a quick workaround for JRuby, where Thread#exit does not
+        # invoke ensure blocks. However, it may be good enough as a general
+        # fix, as I cannot see any other good way to terminate properly
+        # external threads (not managed).
+        #
+        # localstore(_thread)[:internal] ? _thread.raise(Exit) : _thread.exit
+        _thread.raise(Exit) if _thread.alive?
+        Thread.pass
       end
     end
   end
