@@ -11,35 +11,67 @@ ifndef SPECDIR
 SPECDIR = SPECS specs
 endif
 
-RUBY = ruby -rubygems -I$(LOADPATH) -I$(PATH) 
-SHELL = $(RUBY) -r fileutils -r sk/file-locator -e 'c=0' -e 'eval ARGV.first' -e
+RUBY_EXTRA_LOADPATH = $(LOADPATH):$(PATH)
 
+RUBY = ruby -rubygems 
+JRUBY = jruby -rubygems 
+
+RUBY_WITH_PATH = $(RUBY) -I$(RUBY_EXTRA_LOADPATH)
+JRUBY_WITH_PATH = $(JRUBY) -I$(RUBY_EXTRA_LOADPATH)
+
+SHELL = $(RUBY_WITH_PATH) -r fileutils -r sk/file-locator -e 'c=0' -e 'eval ARGV.first' -e
+
+# Here we have to resort to another "trick" to compensate for "slight" JRuby 
+# incompatibility. When -I ${PATH}, load("spec") used inside RSpec launcher 
+# script (also named "spec"), tries to load the laucher script again instead 
+# of loading the gem (as intended). This causes looping in load, eventually 
+# crashing eihter on "Stack level too deep", or "Too many open files".
+#
+# Solution: invoke_spec() takes care of adding extra loadpath info, path
+# components that have a file named like RSpec launcher script are not
+# included.
+#
 define invoke_spec
+  rspec_launcher = 'spec';
+  path = '$(RUBY_EXTRA_LOADPATH)'.split(':').reject { |_path| 
+    _path.strip.empty? or File.exist?(File.join(_path, rspec_launcher));
+  }.join(':');
   %w[ $(SPECDIR) ].each do |_folder| 
     File.directory? _folder and begin
-      system %Q[ $(RUBY) -I#{_folder} -S spec 
-        --require sk/spec/config $(1)
-	#{SK::FileLocator.new(_folder).find_bottom_up('*[_-]spec.rb').join(' ')}
+      system %Q[ $(1) -I#{path} -I#{_folder} -S #{rspec_launcher}
+        --require sk/spec/config $(2)
+        #{SK::FileLocator.new(_folder).find_bottom_up('*[_-]spec.rb').join(' ')}
       ] or exit 2
     end
   end
 endef
 
 all:: 
-	@ puts "Use 'make tests' or 'make specs' for unit tests or specs."
+	@ puts "Use 'make [j]tests' or 'make [j]specs' for unit tests or specs ('j' for JRuby)."
 
-test tests spec specs:: 
+test tests spec specs jtest jtests jspec jspecs:: 
 	@ Dir['*/makefile'].map { |item| system "$(MAKE) -C #{File.dirname(item)} $(@)" or exit(2) }
 
 test tests:: localtests
+jtest jtests:: localjtests
 
 spec specs:: localspecs
+jspec jspecs:: localjspecs
 
 localtest localtests:: 
-	@ Dir['*.rb'].each { |item| system "$(RUBY) #{item}" or exit(2) }
+	@ Dir['*.rb'].each { |item| system "$(RUBY_WITH_PATH) #{item}" or exit(2) }
+
+localjtest localjtests:: 
+	@ Dir['*.rb'].each { |item| system "$(JRUBY_WITH_PATH) #{item}" or exit(2) }
 
 localspec localspecs:: 
-	@ ${strip ${call invoke_spec, --color -fs}}
+	@ ${strip ${call invoke_spec, $(RUBY), --color -fs}}
 
 localtest localtests:: 
-	@ ${strip ${call invoke_spec}}
+	@ ${strip ${call invoke_spec, $(RUBY)}}
+
+localjspec localjspecs:: 
+	@ ${strip ${call invoke_spec, $(JRUBY), --color -fs}}
+
+localjtest localjtests:: 
+	@ ${strip ${call invoke_spec, $(JRUBY)}}
