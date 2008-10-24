@@ -46,7 +46,7 @@ module SK
 
       def content(path)
         self.class.open path do |_io|
-          TSC::Error.wrap_with path do
+          return TSC::Error.wrap_with(path) {
             counter = 0
             _io.readlines.map { |_line|
               counter += 1
@@ -59,7 +59,7 @@ module SK
                 result.first + _line
               }
             }.flatten
-          end
+          }
         end
       end
 
@@ -108,8 +108,8 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           locator = SpotLocator.new :locator => SpotLocator.new(:item => 'zzz', :spot => '/tmp')
           SpotLocator.expects(:expand_path).with('.').returns('/a/b')
           SpotLocator.expects(:expand_path).with('/tmp').returns('/tmp')
-          SpotLocator.expects(:open).with('/a/b/zzz').yields('aaa')
-          SpotLocator.expects(:open).with('/tmp/zzz').yields('bbb')
+          SpotLocator.expects(:open).with('/a/b/zzz').yields StringIO.new('aaa')
+          SpotLocator.expects(:open).with('/tmp/zzz').yields StringIO.new('bbb')
           SpotLocator.expects(:expand_path).with('zzz', '/tmp').returns('/tmp/zzz')
           SpotLocator.expects(:expand_path).with('zzz', '/a/b').returns('/a/b/zzz')
 
