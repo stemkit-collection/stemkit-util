@@ -153,12 +153,6 @@ module SK
 
     def terminate(threads)
       threads.each do |_thread|
-        # It is a quick workaround for JRuby, where Thread#exit does not
-        # invoke ensure blocks. However, it may be good enough as a general
-        # fix, as I cannot see any other good way to terminate properly
-        # external threads (not managed).
-        #
-        # localstore(_thread)[:internal] ? _thread.raise(Exit) : _thread.exit
         _thread.raise(Exit) if _thread.alive?
 
         ready = false
@@ -166,7 +160,7 @@ module SK
           TSC::Error.ignore Exit do
             ready = true
             sleep @terminate_tolerance
-            _master.raise "Cannot terminate thread"
+            _master.raise Timeout::Error, "Terminate tolerance exceeded (#{@terminate_tolerance})"
           end
         end
 
@@ -266,6 +260,25 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         executor.terminate_threads
         assert_equal 0, executor.threads.size
         assert_instance_of SK::Executor::Exit, error
+      end
+      
+      def test_termination_tolerance
+        executor = Executor.new :terminate_tolerance => 2
+        executor.in_a_thread do
+          loop do
+            begin
+              sleep 5
+              break
+            rescue Exception
+            end
+          end
+        end
+
+        sleep 1
+        error = assert_raises Timeout::Error do
+          executor.terminate_threads
+        end
+        assert_equal "Terminate tolerance exceeded (2)", error.message
       end
 
       def setup
