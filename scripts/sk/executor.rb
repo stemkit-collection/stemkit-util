@@ -12,6 +12,7 @@
 require 'timeout'
 require 'tsc/errors.rb'
 require 'tsc/launch.rb'
+require 'tsc/dataset.rb'
 require 'thread'
 
 module SK
@@ -19,12 +20,17 @@ module SK
     class Exit < Exception
     end
 
-    DEFAULTS = { :tag => :sk, :relay => false }
+    DEFAULTS = { 
+      :tag => :sk, 
+      :relay => false, 
+      :terminate_tolerance => 5
+    }
+    def initialize(args = {})
+      params = TSC::Dataset[DEFAULTS].update(args)
 
-    def initialize(params = {})
-      params = DEFAULTS.merge(params)
-      @tag = "#{params[:tag]}-#{object_id}"
-      @relay = params[:relay]
+      @tag = "#{params.tag}-#{object_id}"
+      @relay = params.relay 
+      @terminate_tolerance = params.terminate_tolerance.to_s.to_i
 
       @transients = []
       @lock = Mutex.new
@@ -32,21 +38,29 @@ module SK
     end
 
     def in_a_thread(&block)
-      add_thread Thread.new(Thread.current) { |_parent|
-        localstore[:internal] = true
-        TSC::Error.on_error(block, [ _parent ], Exception) do |_exception|
-          case _exception
+      ready = false
+      thread = Thread.new Thread.current do |_parent|
+        begin
+          localstore[:internal] = true
+          ready = true
+
+          block.call _parent
+        rescue Exception => error
+          case error
             when SK::Executor::Exit
             else
               if @relay 
-                _parent.raise TSC::Error.new(_exception)
+                _parent.raise TSC::Error.new(error)
               else
-                puts TSC::Error.textualize(_exception)
+                $stderr.puts TSC::Error.textualize(error)
                 raise
               end
           end
         end
-      }
+      end
+
+      sleep 0.01 until ready
+      add_thread thread
     end
 
     def threads
@@ -146,7 +160,21 @@ module SK
         #
         # localstore(_thread)[:internal] ? _thread.raise(Exit) : _thread.exit
         _thread.raise(Exit) if _thread.alive?
-        Thread.pass
+
+        ready = false
+        guard = Thread.new Thread.current do |_master|
+          TSC::Error.ignore Exit do
+            ready = true
+            sleep @terminate_tolerance
+            _master.raise "Cannot terminate thread"
+          end
+        end
+
+        _thread.join
+
+        sleep 0.01 until ready
+        guard.raise Exit
+        guard.join
       end
     end
   end
