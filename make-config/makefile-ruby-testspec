@@ -52,26 +52,26 @@ all::
 test tests spec specs jtest jtests jspec jspecs:: 
 	@ Dir['*/makefile'].map { |item| system "$(MAKE) -C #{File.dirname(item)} $(@)" or exit(2) }
 
-test tests:: localtests
-jtest jtests:: localjtests
+test tests:: tests-local
+jtest jtests:: jtests-local
 
-spec specs:: localspecs
-jspec jspecs:: localjspecs
+spec specs:: specs-local
+jspec jspecs:: jspecs-local
 
-localtest localtests:: 
+test-local tests-local:: 
 	@ Dir['*.rb'].each { |item| system "$(RUBY_WITH_PATH) #{item}" or exit(2) }
 
-localjtest localjtests:: 
+jtest-local jtests-local:: 
 	@ Dir['*.rb'].each { |item| system "$(JRUBY_WITH_PATH) #{item}" or exit(2) }
 
-localspec localspecs:: 
+spec-local specs-local:: 
 	@ ${strip ${call invoke_spec, $(RUBY), --color -fs}}
 
-localtest localtests:: 
+test-local tests-local:: 
 	@ ${strip ${call invoke_spec, $(RUBY)}}
 
-localjspec localjspecs:: 
+jspec-local jspecs-local:: 
 	@ ${strip ${call invoke_spec, $(JRUBY), --color -fs}}
 
-localjtest localjtests:: 
+jtest-local jtests-local:: 
 	@ ${strip ${call invoke_spec, $(JRUBY)}}
