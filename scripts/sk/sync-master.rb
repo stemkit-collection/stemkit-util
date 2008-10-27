@@ -59,6 +59,10 @@ module SK
       self.capacity = @config.capacity
     end
 
+    def waiters_in_queue
+	  @waiters.size
+	end
+
     def capacity=(value)
       @capacity = value && [ value.to_i, 1 ].max
     end
