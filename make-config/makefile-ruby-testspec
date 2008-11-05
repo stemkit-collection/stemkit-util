@@ -62,7 +62,7 @@ test-local tests-local::
 	@ Dir['*.rb'].each { |item| system "$(RUBY) -I$(RUBY_EXTRA_LOADPATH) #{item}" or exit(2) }
 
 jtest-local jtests-local:: 
-	@ Dir['*.rb'].each { |item| puts item; system %Q[ $(JRUBY) -e '$$:.concat ENV["RUBY_EXTRA_LOADPATH"].split(":"); load #{item.inspect}'] or exit(2) }
+	 @ items = %w[ $(ITEMS) ]; Dir['*.rb'].each { |item| next if items.empty? == false && items.include?(item) == false; puts item; system %Q[ $(JRUBY) -e '$$:.concat ENV["RUBY_EXTRA_LOADPATH"].split(":"); load #{item.inspect}'] or exit(2) }
 
 spec-local specs-local:: 
 	@ ${strip ${call invoke_spec, $(RUBY), --color -fs}}
