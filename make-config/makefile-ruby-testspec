@@ -50,7 +50,7 @@ all::
 	@ puts "Use 'make [j]tests' or 'make [j]specs' for unit tests or specs ('j' for JRuby)."
 
 test tests spec specs jtest jtests jspec jspecs:: 
-	@ Dir['*/makefile'].map { |item| system "$(MAKE) -C #{File.dirname(item)} $(@)" or exit(2) }
+	@ %w[ $(ITEMS) ].empty? && Dir['*/makefile'].map { |item| system "$(MAKE) -C #{File.dirname(item)} $(@)" or exit(2) }
 
 test tests:: tests-local
 jtest jtests:: jtests-local
