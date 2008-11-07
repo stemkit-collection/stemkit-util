@@ -23,14 +23,15 @@ module SK
     DEFAULTS = { 
       :tag => :sk, 
       :relay => false, 
+      :verbose => false,
+      :ignore => false,
       :terminate_tolerance => 5
     }
     def initialize(args = {})
-      params = TSC::Dataset[DEFAULTS].update(args)
+      @params = TSC::Dataset[DEFAULTS].update(args)
 
-      @tag = "#{params.tag}-#{object_id}"
-      @relay = params.relay 
-      @terminate_tolerance = params.terminate_tolerance.to_s.to_i
+      @tag = "#{@params.tag}-#{object_id}"
+      @terminate_tolerance = @params.terminate_tolerance.to_s.to_i
 
       @transients = []
       @lock = Mutex.new
@@ -49,11 +50,12 @@ module SK
           case error
             when SK::Executor::Exit
             else
-              if @relay 
-                _parent.raise TSC::Error.new(error)
-              else
-                $stderr.puts TSC::Error.textualize(error)
-                raise
+              unless @params.ignore
+                if @params.relay 
+                  _parent.raise TSC::Error.new(error)
+                else
+                  $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose )
+                end
               end
           end
         end
@@ -125,13 +127,6 @@ module SK
       }
     end
 
-    private
-    #######
-
-    def localstore(thread = nil)
-      (thread || Thread.current)[@tag] ||= Hash.new 
-    end
-
     def enforce_timeouts
       threads = @lock.synchronize {
         @transients.clone
@@ -149,6 +144,13 @@ module SK
         }
         _thread.raise Timeout::Error, "#{delta} exceeds #{tolerance}"
       end
+    end
+
+    private
+    #######
+
+    def localstore(thread = nil)
+      (thread || Thread.current)[@tag] ||= Hash.new 
     end
 
     def terminate(threads)

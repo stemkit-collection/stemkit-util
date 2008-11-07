@@ -34,7 +34,7 @@ module SK
     def path
       @path ||= begin 
         File.join @specification.split('::').map { |_component|
-          _component.split(%r{([A-Z][a-z0-9_]*[A-Z][A-Z]+)|([A-Z][a-z0-9_]*)}).flatten.map { |_part|
+          _component.split(%r{([A-Z][a-z0-9_]+[A-Z][A-Z]+)|([A-Z][A-Z]*[a-z0-9_]+)}).flatten.map { |_part|
             _part.downcase unless _part.strip.empty?
           }.compact.join('-')
         }
@@ -72,6 +72,10 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
       def test_figure_path_stringio
         assert_equal "stringio", ClassLoader['StringIO'].path
+      end
+
+      def test_figure_path_jruby
+        assert_equal "jruby/drb-server", ClassLoader['JRuby::DRbServer'].path
       end
     end
   end
