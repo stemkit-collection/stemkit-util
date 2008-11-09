@@ -323,6 +323,42 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         assert_equal "Terminate tolerance exceeded (2)", error.message
       end
 
+      def test_startup
+        assert_equal 0, executor.threads.size
+      end
+
+      def test_in_ruby_terminate
+        t = executor.in_a_thread do
+          sleep 60
+        end
+        sleep 1
+        assert_equal 1, executor.threads.size
+        assert_equal true, t.alive?
+
+        executor.terminate_threads
+
+        sleep 1
+        assert_equal 0, executor.threads.size
+        assert_equal false, t.alive?
+      end
+
+      if RUBY_PLATFORM == 'java'
+        def test_in_java_terminate
+          t = executor.in_a_thread do
+            java.lang.Thread.sleep(60000)
+          end
+          sleep 1
+          assert_equal 1, executor.threads.size
+          assert_equal true, t.alive?
+
+          executor.terminate_threads
+
+          sleep 1
+          assert_equal 0, executor.threads.size
+          assert_equal false, t.alive?
+        end
+      end
+
       def setup
         @executor = Executor.new
       end
