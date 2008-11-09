@@ -48,17 +48,22 @@ module SK
 
           block.call _parent
         rescue Exception => error
-          case error
-            when native_exception_class
-            when SK::Executor::Exit
-            else
-              unless @params.ignore
-                if @params.relay 
-                  _parent.raise TSC::Error.new(error)
-                else
-                  $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose )
-                end
+          catch :done do
+            case error
+              when native_exception_class
+                throw :done if error.cause.class == java.lang.InterruptedException
+
+              when SK::Executor::Exit
+                throw :done
+            end
+
+            unless @params.ignore
+              if @params.relay 
+                _parent.raise TSC::Error.new(error)
+              else
+                $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose )
               end
+            end
           end
         end
       end
@@ -162,6 +167,7 @@ module SK
 
     def interrupt_if_native_java_thread(thread)
       (localstore(thread)[:java] or return).interrupt if jruby?
+      sleep 0.01
     end
 
     def stop_if_alive(thread)
