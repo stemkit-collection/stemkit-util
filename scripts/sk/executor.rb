@@ -43,11 +43,13 @@ module SK
       thread = Thread.new Thread.current do |_parent|
         begin
           localstore[:internal] = true
+          preserve_if_native_java_thread Thread.current
           ready = true
 
           block.call _parent
         rescue Exception => error
           case error
+            when native_exception_class
             when SK::Executor::Exit
             else
               unless @params.ignore
@@ -149,13 +151,37 @@ module SK
     private
     #######
 
+    def preserve_if_native_java_thread(thread)
+      return unless jruby?
+      localstore(thread)[:java] = java.lang.Thread.currentThread 
+    end
+
+    def native_exception_class
+      jruby? ? NativeException : nil.class
+    end
+
+    def interrupt_if_native_java_thread(thread)
+      (localstore(thread)[:java] or return).interrupt if jruby?
+    end
+
+    def stop_if_alive(thread)
+      return unless thread.alive?
+
+      interrupt_if_native_java_thread(thread)
+      thread.raise(Exit)
+    end
+
+    def jruby?
+      RUBY_PLATFORM == 'java' 
+    end
+
     def localstore(thread = nil)
       (thread || Thread.current)[@tag] ||= Hash.new 
     end
 
     def terminate(threads)
       threads.each do |_thread|
-        _thread.raise(Exit) if _thread.alive?
+        stop_if_alive _thread
 
         ready = false
         guard = Thread.new Thread.current do |_master|
