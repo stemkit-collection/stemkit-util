@@ -54,32 +54,6 @@ module SK
       add_thread thread
     end
 
-    def handle_errors
-      begin
-        yield
-      rescue Exception => error
-        handle_errors do
-          catch :done do
-            case error
-              when native_exception_class
-                throw :done if error.cause.class == java.lang.InterruptedException
-
-              when SK::Executor::Exit
-                throw :done
-            end
-
-            unless @params.ignore
-              if @params.relay 
-                _parent.raise TSC::Error.new(error)
-              else
-                $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose )
-              end
-            end
-          end
-        end
-      end
-    end
-
     def threads
       @group.list
     end
@@ -163,6 +137,32 @@ module SK
 
     private
     #######
+
+    def handle_errors
+      begin
+        yield
+      rescue Exception => error
+        handle_errors do
+          catch :done do
+            case error
+              when native_exception_class
+                throw :done if error.cause.class == java.lang.InterruptedException
+
+              when SK::Executor::Exit
+                throw :done
+            end
+
+            unless @params.ignore
+              if @params.relay 
+                _parent.raise TSC::Error.new(error)
+              else
+                $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose )
+              end
+            end
+          end
+        end
+      end
+    end
 
     def preserve_if_native_java_thread(thread)
       return unless jruby?
