@@ -41,13 +41,24 @@ module SK
     def in_a_thread(&block)
       ready = false
       thread = Thread.new Thread.current do |_parent|
-        begin
+        handle_errors do
           localstore[:internal] = true
           preserve_if_native_java_thread Thread.current
           ready = true
 
           block.call _parent
-        rescue Exception => error
+        end
+      end
+
+      sleep 0.01 until ready
+      add_thread thread
+    end
+
+    def handle_errors
+      begin
+        yield
+      rescue Exception => error
+        handle_errors do
           catch :done do
             case error
               when native_exception_class
@@ -67,9 +78,6 @@ module SK
           end
         end
       end
-
-      sleep 0.01 until ready
-      add_thread thread
     end
 
     def threads
