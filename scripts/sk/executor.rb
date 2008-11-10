@@ -106,9 +106,12 @@ module SK
         localstore[:enforcer] = true
 
         loop do
-          sleep(interval)
-          block.call if block
-          enforce_timeouts
+          sleep interval
+
+          handle_errors do
+            block.call if block
+            enforce_timeouts
+          end
         end
       end
     end
