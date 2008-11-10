@@ -36,6 +36,8 @@ module SK
       @transients = []
       @lock = Mutex.new
       @group = ThreadGroup.new
+
+      preserve_if_native_java_thread Thread.current
     end
 
     def in_a_thread(&block)
@@ -91,10 +93,18 @@ module SK
       begin
         yield
       ensure
-        localstore.delete(:timeout)
-        @lock.synchronize {
-          @transients.delete Thread.current
-        }
+        begin
+          @lock.synchronize {
+            localstore.delete :timeout
+            @transients.delete Thread.current
+          }
+        rescue Exception => error
+          unless @params.ignore
+            $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose)
+          end
+
+          retry
+        end
       end
     end
 
@@ -130,8 +140,10 @@ module SK
 
         @lock.synchronize {
           @transients.delete _thread
+
+          interrupt_if_native_java_thread(_thread)
+          _thread.raise Timeout::Error, "#{delta} exceeds #{tolerance}"
         }
-        _thread.raise Timeout::Error, "#{delta} exceeds #{tolerance}"
       end
     end
 
@@ -175,7 +187,6 @@ module SK
 
     def interrupt_if_native_java_thread(thread)
       (localstore(thread)[:java] or return).interrupt if jruby?
-      sleep 0.01
     end
 
     def stop_if_alive(thread)
