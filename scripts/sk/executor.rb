@@ -83,28 +83,21 @@ module SK
       terminate @group.list.map
     end
 
-    def timeout(seconds)
-      return unless block_given?
+    def timeout(seconds, &block)
+      return unless block
 
       localstore[:timeout] = [ Time.now.to_i, seconds ]
       @lock.synchronize {
         @transients.push Thread.current
       }
-      begin
-        yield
-      ensure
-        begin
-          @lock.synchronize {
-            localstore.delete :timeout
-            @transients.delete Thread.current
-          }
-        rescue Exception => error
-          unless @params.ignore
-            $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose)
-          end
 
-          retry
-        end
+      begin
+        delay_java_native_interrupt_if_any &block
+      ensure
+        @lock.synchronize {
+          localstore.delete :timeout
+          @transients.delete Thread.current
+        }
       end
     end
 
@@ -150,26 +143,34 @@ module SK
     private
     #######
 
-    def handle_errors
+    def delay_java_native_interrupt_if_any(&block)
       begin
         yield
       rescue Exception => error
-        handle_errors do
-          catch :done do
-            case error
-              when native_exception_class
-                throw :done if error.cause.class == java.lang.InterruptedException
+        case error
+          when native_exception_class
+            sleep 0.5 if error.cause.class == java.lang.InterruptedException
+        end
 
-              when SK::Executor::Exit
-                throw :done
-            end
+        raise
+      end
+    end
 
-            unless @params.ignore
-              if @params.relay 
-                _parent.raise TSC::Error.new(error)
-              else
-                $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose )
-              end
+    def handle_errors(&block)
+      begin
+        delay_java_native_interrupt_if_any &block
+      rescue Exception => error
+        catch :done do
+          case error
+            when SK::Executor::Exit
+              throw :done
+          end
+
+          unless @params.ignore
+            if @params.relay 
+              _parent.raise TSC::Error.new(error)
+            else
+              $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose )
             end
           end
         end
@@ -187,6 +188,7 @@ module SK
 
     def interrupt_if_native_java_thread(thread)
       (localstore(thread)[:java] or return).interrupt if jruby?
+      sleep 0.1
     end
 
     def stop_if_alive(thread)
