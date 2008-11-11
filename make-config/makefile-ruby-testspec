@@ -12,7 +12,14 @@ ifndef SPECDIR
 SPECDIR = SPECS specs
 endif
 
-export RUBY_EXTRA_LOADPATH = ${strip $(LOADPATH)}:$(PATH)
+loadpath := ${strip $(LOADPATH)}
+ifdef $(loadpath)
+  loadpath = $(loadpath):$(PATH)
+else
+  loadpath = $(PATH)
+endif
+
+export RUBY_EXTRA_LOADPATH = $(loadpath)
 
 RUBY = ruby -rubygems 
 JRUBY = jruby -rubygems -rjava
