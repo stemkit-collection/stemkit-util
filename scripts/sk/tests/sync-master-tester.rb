@@ -19,7 +19,7 @@ require 'stubba'
 module SK
   module Tests
     module SyncMasterTester
-      attr_reader :lock, :executor, :depot
+      attr_reader :executor, :depot
 
       def test_populate_with_lock_must_succeed
         assert make_slices(10, 1000, 500).all? { |_item|
@@ -159,11 +159,14 @@ module SK
       def setup
         @depot = []
         @executor = SK::Executor.new
-        @lock = SyncMaster.new
       end
 
       def teardown
         executor.reset
+      end
+
+      def lock
+        raise TSC::NotImplementedError, :lock
       end
 
       private

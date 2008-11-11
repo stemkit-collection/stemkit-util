@@ -9,16 +9,10 @@
   Author: Gennady Bystritsky (gennady.bystritsky@quest.com)
 =end
 
-require 'sync'
 require 'tsc/dataset.rb'
 
 module SK
   class SyncMaster
-    CONFIG = {
-      :capacity => nil,
-      :locker => Sync,
-      :wakeall => true
-    }
     class DataReady < Exception
     end
 
@@ -50,13 +44,23 @@ module SK
     end
 
     def initialize(params = {})
-      @config = TSC::Dataset.new(CONFIG, params)
+      defaults = {
+        :capacity => nil,
+        :locker => nil,
+        :wakeall => true
+      }
+      @config = TSC::Dataset[defaults].update params
 
-      @lock = @config.locker.new
+      @lock = (@config.locker || default_locker).new
       @waiters = []
       @owner = nil
 
       self.capacity = @config.capacity
+    end
+
+    def default_locker
+      require 'sync'
+      Sync
     end
 
     def waiters_in_queue
@@ -151,9 +155,12 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     class SyncMasterTest < Test::Unit::TestCase
       include SK::Tests::SyncMasterTester
 
+      def lock
+        @lock ||= SyncMaster.new
+      end
+
       def setup
         super
-        @lock = SyncMaster.new
       end
     end
   end
