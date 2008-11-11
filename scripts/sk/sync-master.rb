@@ -59,8 +59,12 @@ module SK
     end
 
     def default_locker
-      require 'sync'
-      Sync
+      if RUBY_PLATFORM == 'java'
+        java.util.concurrent.locks.ReentrantLock
+      else
+        require 'sync'
+        Sync
+      end
     end
 
     def waiters_in_queue
