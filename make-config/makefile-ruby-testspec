@@ -13,13 +13,13 @@ SPECDIR = SPECS specs
 endif
 
 loadpath := ${strip $(LOADPATH)}
-ifdef $(loadpath)
-  loadpath = $(loadpath):$(PATH)
+ifdef loadpath
+  loadpath := $(loadpath):$(PATH)
 else
-  loadpath = $(PATH)
+  loadpath := $(PATH)
 endif
 
-export RUBY_EXTRA_LOADPATH = $(loadpath)
+export RUBY_EXTRA_LOADPATH := $(loadpath)
 
 RUBY = ruby -rubygems 
 JRUBY = jruby -rubygems -rjava
