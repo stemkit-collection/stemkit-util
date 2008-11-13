@@ -142,18 +142,20 @@ module SK
         end
       end
 
-      def test_non_blocking
-        executor.in_a_thread {
-          lock.synchronize(true) do
-            sleep 2
-          end
-        }
-        Thread.pass
+      if RUBY_PLATFORM == 'java'
+        def test_non_blocking
+          executor.in_a_thread {
+            lock.synchronize(true) do
+              sleep 2
+            end
+          }
+          Thread.pass
 
-        assert_equal true, lock.locked?
-        assert_equal false, lock.synchronize(false) { "inside" }
-        sleep 2
-        assert_equal "inside", lock.synchronize(false) { "inside" }
+          assert_equal true, lock.locked?
+          assert_equal false, lock.synchronize(false) { "inside" }
+          sleep 2
+          assert_equal "inside", lock.synchronize(false) { "inside" }
+        end
       end
 
       def setup
