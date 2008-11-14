@@ -153,18 +153,16 @@ module SK
 end
 
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
-  require 'sk/tests/sync-master-tester.rb'
+  require 'test/unit'
+  require 'mocha'
+  require 'stubba'
 
   module SK
     class SyncMasterTest < Test::Unit::TestCase
-      include SK::Tests::SyncMasterTester
-
-      def lock
-        @lock ||= SyncMaster.new
+      def test_nothing
       end
 
       def setup
-        super
       end
     end
   end
