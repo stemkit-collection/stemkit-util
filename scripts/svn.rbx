@@ -104,7 +104,7 @@ class Application < TSC::Application
 
   def config
     @config ||= begin 
-      TSC::ConfigLocator.new('.svnrc').merge_all_above_with_personal
+      TSC::ConfigLocator.new('.svnrc').merge_all_above_with_personal(20)
     end
   end
 
