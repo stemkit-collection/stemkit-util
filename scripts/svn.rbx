@@ -5,7 +5,7 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
-$:.concat ENV.to_hash['PATH'].to_s.split(File::PATH_SEPARATOR)
+$:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
 
 require 'tsc/application.rb'
 require 'tsc/path.rb'
