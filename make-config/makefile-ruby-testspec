@@ -43,7 +43,7 @@ define invoke_spec
   };
   $$:.concat path;
   require 'sk/file-locator';
-  %w[ $(SPECDIR) ].each do |_folder| 
+  %w[$(SPECDIR)].map { |_item| Dir.glob(_item) }.flatten.each do |_folder| 
     File.directory? _folder and begin
       system %Q[ $(1) -I#{path.join(':')} -I#{_folder} -S #{rspec_launcher}
         --require sk/spec/config $(2)
