@@ -156,6 +156,38 @@ module SK
           sleep 2
           assert_equal "inside", lock.synchronize(false) { "inside" }
         end
+
+        def test_java_error
+          executor.in_a_thread {
+            lock.synchronize(true) do
+              begin
+                sleep 4
+              end
+            end
+          }
+          Thread.pass
+
+          assert_equal true, lock.locked?
+          java.util.ArrayList.new.get(0)
+          $stderr.puts Time.now
+          assert_equal "inside", lock.synchronize(true) { "inside" }
+        end
+
+        def test_ruby_error
+          executor.in_a_thread {
+            lock.synchronize(true) do
+              begin
+                sleep 4
+              end
+            end
+          }
+          Thread.pass
+
+          assert_equal true, lock.locked?
+          raise "Test Error"
+          $stderr.puts Time.now
+          assert_equal "inside", lock.synchronize(true) { "inside" }
+        end
       end
 
       def setup
@@ -165,6 +197,7 @@ module SK
 
       def teardown
         executor.reset
+        @lock = nil
       end
 
       def lock
