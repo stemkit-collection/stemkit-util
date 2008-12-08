@@ -149,7 +149,7 @@ module SK
               sleep 2
             end
           }
-          Thread.pass
+          sleep 0.25
 
           assert_equal true, lock.locked?
           assert_equal false, lock.synchronize(false) { "inside" }
@@ -160,15 +160,13 @@ module SK
         def test_java_error
           executor.in_a_thread {
             lock.synchronize(true) do
-              begin
-                sleep 4
-              end
+              sleep 2
+              java.util.ArrayList.new.get(0)
             end
           }
-          Thread.pass
+          sleep 0.25
 
           assert_equal true, lock.locked?
-          java.util.ArrayList.new.get(0)
           $stderr.puts Time.now
           assert_equal "inside", lock.synchronize(true) { "inside" }
         end
@@ -176,15 +174,13 @@ module SK
         def test_ruby_error
           executor.in_a_thread {
             lock.synchronize(true) do
-              begin
-                sleep 4
-              end
+              sleep 2
+              raise "Test Error"
             end
           }
-          Thread.pass
 
+          sleep 0.25
           assert_equal true, lock.locked?
-          raise "Test Error"
           $stderr.puts Time.now
           assert_equal "inside", lock.synchronize(true) { "inside" }
         end
@@ -192,10 +188,11 @@ module SK
 
       def setup
         @depot = []
-        @executor = SK::Executor.new
+        @executor = SK::Executor.new # :verbose => true
       end
 
       def teardown
+        sleep 0.25
         executor.reset
         @lock = nil
       end
