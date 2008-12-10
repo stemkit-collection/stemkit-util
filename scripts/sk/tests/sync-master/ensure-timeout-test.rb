@@ -11,7 +11,7 @@
 
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'sk/sync-master.rb'
-  require 'sk/tests/sync-master-tester.rb'
+  require 'sk/tests/sync-master/sync-master-fixture.rb'
 
   module SK
     module Tests
@@ -24,6 +24,18 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
         def setup
           super
+        end
+
+        def test_ensure_timeout
+          block_called = false
+          assert_raises SyncMaster::TimeoutError do
+            lock.synchronize do |_condition|
+              _condition.ensure depot.size > 0, 1 do
+                block_called = true
+              end
+            end
+            assert_equal true, block_called
+          end
         end
       end
     end
