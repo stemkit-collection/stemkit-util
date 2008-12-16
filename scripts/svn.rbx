@@ -20,6 +20,7 @@ require 'tsc/path.rb'
 class Application < TSC::Application
   def start
     handle_errors {
+      require 'rubygems'
       require 'tsc/config-locator.rb'
       require 'yaml'
       require 'open3'
