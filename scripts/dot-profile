@@ -17,6 +17,7 @@ eval <<'RUBY'
       #{userinfo.dir}/projects/tools/trunk/src/scripts
       #{userinfo.dir}/bin/#{sysid} 
       #{userinfo.dir}/bin
+      /opt/quest/platform/#{sysid}/bin
       #{userinfo.dir}/local/#{sysid}/bin
       #{userinfo.dir}/local/bin
       #{userinfo.dir}/local/#{sysid}/java/jdk-1.6/bin
@@ -401,7 +402,7 @@ act_as_profile()
   trap 'ruby '"${ENV}"' stop ${SECONDS:-0}' EXIT
 
   PATH="${HOME}/bin:${PATH}" export PATH
-  RUBY=`locate_ruby ${HOME}/local/*/bin /usr/local/bin /usr/bin`
+  RUBY=`locate_ruby /opt/quest/platform/*/bin ${HOME}/local/*/bin /usr/local/bin /usr/bin`
   eval `"${RUBY:-ruby}" -rubygems "${ENV}" start`
   unset RUBY
 
