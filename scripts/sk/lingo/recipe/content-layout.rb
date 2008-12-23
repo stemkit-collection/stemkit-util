@@ -15,12 +15,12 @@ module SK
   module Lingo
     module Recipe
       module ContentLayout
-        def make_content(item)
+        def make_content(item, top = nil)
           [
             config.lines(config.target['shebang']),
             append_newline_if(make_block_comments(make_copyright_notice)),
 
-            map_content(config.target) { |_entry|
+            map_content(top || config.target) { |_entry|
               content = _entry.content
               if _entry.namespace
                 content = make_modules(item.namespace) {

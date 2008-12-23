@@ -159,6 +159,7 @@ module SK
         substitutions = Hash[
           'FULL_CLASS_NAME' => make_qualified_name(item.namespace, item.name),
           'CLASS_NAME' => make_qualified_name(item.name),
+          'CLASS_PATH' => make_item_path(item),
           'NAMESPACE' => make_qualified_name(item.namespace),
           'CLASS_TAG' => make_item_tag(item)
         ]
@@ -177,6 +178,10 @@ module SK
 
       def make_item_tag(item)
         [ '', item.namespace, item.name, '' ].flatten.compact.map { |_item| _item.to_s.upcase }.join('_')
+      end
+
+      def make_item_path(item)
+        File.join item.namespace, item.name 
       end
       
       def indent_prefix
