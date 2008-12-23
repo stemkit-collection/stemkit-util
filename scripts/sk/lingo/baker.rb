@@ -159,7 +159,8 @@ module SK
         substitutions = Hash[
           'FULL_CLASS_NAME' => make_qualified_name(item.namespace, item.name),
           'CLASS_NAME' => make_qualified_name(item.name),
-          'NAMESPACE' => make_qualified_name(item.namespace)
+          'NAMESPACE' => make_qualified_name(item.namespace),
+          'CLASS_TAG' => make_item_tag(item)
         ]
         pattern = Regexp.new substitutions.keys.map { |_variable|
           Regexp.quote('#{' + _variable + '}')
@@ -172,6 +173,10 @@ module SK
 
       def make_qualified_name(*args)
         args.flatten.compact.map { |_item| _item.capitalize }.join('::')
+      end
+
+      def make_item_tag(item)
+        [ '', item.namespace, item.name, '' ].flatten.compact.map { |_item| _item.to_s.upcase }.join('_')
       end
       
       def indent_prefix
