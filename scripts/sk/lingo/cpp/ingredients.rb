@@ -1,3 +1,4 @@
+# vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
@@ -41,16 +42,14 @@ module SK
         end
         
         def constructors
-          klass = Struct.new(:parameters, :body, :comments)
           process_methods(target['factory']) { |_returns, _name, _parameters, _body, _comments|
-            klass.new(_parameters, _body, _comments) if _name == 'constructor'
+            TSC::Dataset[ :parameters => _parameters, :body => _body, :comments => _comments ] if _name == 'constructor'
           }.compact
         end
 
         def destructors
-          klass = Struct.new(:type, :body, :comments)
-          process_methods(target['factory']) { |_returns, _name, _parameters, _body, _comments|
-            klass.new(_returns, _body, _comments) if _name == 'destructor'
+          process_methods(target['factory']) { |_kind, _name, _parameters, _body, _comments|
+            TSC::Dataset[ :kind => _kind, :body => _body, :comments => _comments ] if _name == 'destructor'
           }.compact
         end
 
@@ -74,7 +73,7 @@ module SK
         #######
         
         def process_methods(methods, &block)
-          return [] unless block and Hash === methods
+          return [] unless block and methods
 
           methods.map { |_declaration, _body|
             returns, name, parameters = _declaration.scan(%r{^(.*?)\s*(\w+)\s*([(][^)]*[)].*)$}).first

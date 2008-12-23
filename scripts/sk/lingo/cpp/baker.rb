@@ -43,18 +43,22 @@ module SK
         end
 
         def cpp_item(item, extension, kind)
-          TSC::Dataset.new(item, :kind => kind, :extension => (extension || item.extension))
+          TSC::Dataset.new item, Hash[
+            :kind => kind, 
+            :extension => (extension || item.extension),
+            :namespace => locator.namespace(item.namespace)
+          ]
         end
 
         def header(item, extension = nil)
-          namespace = locator.namespace(item.namespace)
-          save cpp_item(item, extension, 'include'), [
+          item = cpp_item item, extension, 'include'
+          save item, [
             append_newline_if(make_comments(make_copyright_notice)),
-            make_h_guard(namespace, item.name, item.extension) {
+            make_h_guard(item.namespace, item.name, item.extension) {
               [
                 '',
                 append_newline_if(make_includes(config.header_includes)),
-                make_namespace(namespace) {
+                make_namespace(item.namespace) {
                   make_class_definition(item.name)
                 },
                 '',
@@ -69,10 +73,10 @@ module SK
         end
 
         def body(item, extension = nil)
-          namespace = locator.namespace(item.namespace)
-          scope = (namespace + [ item.name, '' ]).join('::')
+          item = cpp_item item, extension, 'lib'
+          scope = (item.namespace + [ item.name, '' ]).join('::')
 
-          save cpp_item(item, extension, 'lib'), [
+          save item, [
             make_comments(make_copyright_notice),
             prepend_newline_if(make_includes(config.body_includes)),
             prepend_newline_if(make_includes([ locator.header_specification(item.name, item.extension) ])),
@@ -81,7 +85,7 @@ module SK
               [
                 '',
                 scope,
-                "#{name}#{_constructor.parameters}",
+                "#{item.name}#{_constructor.parameters}",
                 indent(make_initialization_list(config.initializes)),
                 '{',
                  indent(_constructor.body),
@@ -92,7 +96,7 @@ module SK
               [
                 '',
                 scope,
-                "~#{name}()",
+                "~#{item.name}()",
                 '{',
                 indent(_destructor.body),
                 '}'
@@ -139,7 +143,7 @@ module SK
                     "#{name}#{_constructor.parameters};"
                   } + 
                   config.destructors.map { |_destructor|
-                    "#{_destructor.type} ~#{name}();".strip
+                    "#{_destructor.kind} ~#{name}();".strip
                   }
                 ) +
                 append_newline_if(make_method_definition(config.public_methods))
@@ -189,6 +193,10 @@ module SK
 
         def make_config(options, data)
           SK::Lingo::Cpp::Config.new options, data
+        end
+
+        def make_qualified_name(*args)
+          args.flatten.compact.join('::')
         end
 
         def locator
