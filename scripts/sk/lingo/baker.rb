@@ -1,3 +1,4 @@
+# vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
@@ -114,13 +115,13 @@ module SK
       end
 
       def save(item, *content)
+        file = make_filename(item)
         if bakery.options.print?
           $stderr.puts "=== #{file}"
           output item, content, $stdout
 
           false
         else
-          file = make_filename(item)
           File.open(file, file_write_flags) do |_io|
             bakery.undo.add {
               File.unlink(file)

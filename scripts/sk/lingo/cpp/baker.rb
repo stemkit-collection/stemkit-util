@@ -42,11 +42,13 @@ module SK
           end
         end
 
-        def header(item, extension = nil)
-          filename = locator.figure_for 'include', item.name, item.extension
-          namespace = locator.namespace(item.namespace)
+        def cpp_item(item, extension, kind)
+          TSC::Dataset.new(item, :kind => kind, :extension => (extension || item.extension))
+        end
 
-          save item, [
+        def header(item, extension = nil)
+          namespace = locator.namespace(item.namespace)
+          save cpp_item(item, extension, 'include'), [
             append_newline_if(make_comments(make_copyright_notice)),
             make_h_guard(namespace, item.name, item.extension) {
               [
@@ -62,12 +64,15 @@ module SK
           ]
         end
 
-        def body(item)
-          filename = locator.figure_for 'lib', item.name, item.extension
+        def make_filename(item)
+          locator.path_for item.kind, super(item)
+        end
+
+        def body(item, extension = nil)
           namespace = locator.namespace(item.namespace)
           scope = (namespace + [ item.name, '' ]).join('::')
 
-          save item, [
+          save cpp_item(item, extension, 'lib'), [
             make_comments(make_copyright_notice),
             prepend_newline_if(make_includes(config.body_includes)),
             prepend_newline_if(make_includes([ locator.header_specification(item.name, item.extension) ])),

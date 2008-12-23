@@ -23,8 +23,7 @@ module SK
           namespace.empty? ? @components : namespace
         end
 
-        def figure_for(kind, name, extension)
-          file = name + '.' + extension
+        def path_for(kind, file)
           return file if (local? or @kind == kind)
 
           directory = [ '..' ] * @components.size.next + [ kind, *@components ]
@@ -40,6 +39,7 @@ module SK
 
         private
         #######
+        
         def local?
           @is_local ||= (@options.has_key?('local') or @top.nil?)
         end
