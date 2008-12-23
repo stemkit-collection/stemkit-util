@@ -46,7 +46,7 @@ module SK
           filename = locator.figure_for 'include', item.name, item.extension
           namespace = locator.namespace(item.namespace)
 
-          save filename, item.name, namespace, [
+          save item, [
             append_newline_if(make_comments(make_copyright_notice)),
             make_h_guard(namespace, item.name, item.extension) {
               [
@@ -67,10 +67,10 @@ module SK
           namespace = locator.namespace(item.namespace)
           scope = (namespace + [ item.name, '' ]).join('::')
 
-          save filename, item.name, namespace, [
+          save item, [
             make_comments(make_copyright_notice),
             prepend_newline_if(make_includes(config.body_includes)),
-            prepend_newline_if(make_includes([ locator.header_specification(name, extension) ])),
+            prepend_newline_if(make_includes([ locator.header_specification(item.name, item.extension) ])),
             prepend_newline_if(config.body_top),
             config.constructors.map { |_constructor|
               [
