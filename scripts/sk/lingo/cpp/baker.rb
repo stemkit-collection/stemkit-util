@@ -10,6 +10,8 @@
 =end
 
 require 'sk/lingo/baker.rb'
+require 'sk/lingo/recipe/content-layout.rb'
+
 require 'sk/lingo/cpp/locator.rb'
 require 'sk/lingo/cpp/recipes.rb'
 require 'sk/lingo/cpp/config.rb'
@@ -19,6 +21,7 @@ module SK
     module Cpp
       class Baker < SK::Lingo::Baker
         include SK::Lingo::Cpp::Recipes
+        include SK::Lingo::Recipe::ContentLayout
 
         def accept(item)
           case item.extension
@@ -52,20 +55,7 @@ module SK
 
         def header(item, extension = nil)
           item = cpp_item item, extension, 'include'
-          save item, [
-            append_newline_if(make_comments(make_copyright_notice)),
-            make_h_guard(item.namespace, item.name, item.extension) {
-              [
-                '',
-                append_newline_if(make_includes(config.header_includes)),
-                make_namespace(item.namespace) {
-                  make_class_definition(item.name)
-                },
-                '',
-                append_newline_if(config.header_bottom)
-              ]
-            }
-          ]
+          save item, make_content(item)
         end
 
         def make_filename(item)
@@ -116,7 +106,7 @@ module SK
           ]
         end
 
-        def make_namespace(namespace, &block)
+        def make_modules(namespace, &block)
           block ||= proc {
             []
           }
@@ -124,7 +114,7 @@ module SK
           [
             "namespace #{namespace.first} {",
             indent(
-              make_namespace(namespace[1..-1], &block)
+              make_modules(namespace[1..-1], &block)
             ),
             '}'
           ]
@@ -199,6 +189,10 @@ module SK
           args.flatten.compact.join('::')
         end
 
+        def make_item_tag(item)
+          [ '', item.namespace, item.name, item.extension, '' ].flatten.compact.map { |_item| _item.to_s.upcase }.join('_')
+        end
+
         def locator
           @locator ||= SK::Lingo::Cpp::Locator.new(bakery.options, Dir.pwd)
         end
@@ -230,60 +224,38 @@ end
 __END__
 
 cpp:
-  header_includes: |
+  indent: 0
+  content:
+    - 
+      namespace: false
+      content: |
+        #ifndef #{CLASS_TAG}
+        #define #{CLASS_TAG}
 
-  body_includes: |
-    <iostream>
-    <iomanip>
+    -
+      namespace: false
+      content: |
+        #include <sk/util/Object.h>
 
-  extends: |
+    -
+      namespace: true
+      content: |-
+        class #{CLASS_NAME} 
+          : public virtual sk::util::Object
+        {
+          public:
+            #{CLASS_NAME}();
+            virtual ~#{CLASS_NAME}();
 
-  initializes: |
+            // sk::util::Object re-implementation.
+            const sk::util::Class getClass() const;
 
-  public_methods:
+          private:
+            #{CLASS_NAME}(const #{CLASS_NAME}& other);
+            #{CLASS_NAME}& operator = (const #{CLASS_NAME}& other);
+        };
 
-  protected_methods:
-
-  private_methods:
-
-  data: |
-
-  factory:
-    constructor(): |
-    destructor(): |
-
-  test:
-    class_init: |
-      CPPUNIT_TEST_SUITE(#{FULL_CLASS_NAME});
-        CPPUNIT_TEST(testSimple);
-      CPPUNIT_TEST_SUITE_END();
-
-    header_includes: |
-      <cppunit/TestFixture.h>
-      <cppunit/extensions/HelperMacros.h>
-
-    body_top: |
-      CPPUNIT_TEST_SUITE_REGISTRATION(#{FULL_CLASS_NAME});
-
-    header_bottom: |
-
-    body_includes: |
-
-    extends: |
-      public CppUnit::TestFixture
-
-    initializes: |
-
-    public_methods:
-      void setUp(): |
-      void tearDown(): |
-      void testSimple(): |
-        CPPUNIT_ASSERT_EQUAL(true, false);
-
-    protected_methods:
-
-    private_methods:
-
-    data: |
-
-    factory:
+    - 
+      namespace: false
+      content: |
+        #endif /* #{CLASS_TAG} */

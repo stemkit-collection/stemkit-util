@@ -1,3 +1,4 @@
+# vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
@@ -46,12 +47,13 @@ module SK
           content = entry['content']
           header = entry['header']
           footer = entry['footer']
+          gap = (entry['gap'] || 1).to_s.to_i
 
           [
             map_content_item(indent, false, header, &block),
             case content
               when Array
-                content.map { |_content|
+                intersperse gap, *content.map { |_content|
                   map_content(_content, indent + (entry['indent'] || 1).to_i, &block)
                 }
               else
@@ -59,6 +61,14 @@ module SK
             end,
             map_content_item(indent, false, footer, &block)
           ]
+        end
+
+        private
+        #######
+        
+        def intersperse(gap, content, *rest)
+          return [ content, *rest ] unless gap > 0 and rest.empty? == false
+          [ content, [ '' ] * gap, *intersperse(gap, *rest) ]
         end
       end
     end
