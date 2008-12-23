@@ -60,6 +60,7 @@ module SK
             }
           ]
         end
+
         def inline_config_locator
           SK::Config::InlineLocator[ read_after_end_marker(__FILE__), super ]
         end
