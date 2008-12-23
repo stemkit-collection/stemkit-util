@@ -1,3 +1,4 @@
+# vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
@@ -11,6 +12,7 @@
 require 'sk/lingo/baker.rb'
 require 'sk/lingo/cpp/locator.rb'
 require 'sk/lingo/cpp/recipes.rb'
+require 'sk/lingo/cpp/config.rb'
 
 module SK
   module Lingo
@@ -41,17 +43,17 @@ module SK
         end
 
         def header(item, extension = nil)
-          filename = locator.figure_for 'include', name, extension
-          namespace = locator.namespace(namespace)
+          filename = locator.figure_for 'include', item.name, item.extension
+          namespace = locator.namespace(item.namespace)
 
-          save filename, name, namespace, [
-            append_newline_if(make_c_comments(make_copyright_notice)),
-            make_h_guard(namespace, name, extension) {
+          save filename, item.name, namespace, [
+            append_newline_if(make_comments(make_copyright_notice)),
+            make_h_guard(namespace, item.name, item.extension) {
               [
                 '',
                 append_newline_if(make_includes(config.header_includes)),
                 make_namespace(namespace) {
-                  make_class_definition(name)
+                  make_class_definition(item.name)
                 },
                 '',
                 append_newline_if(config.header_bottom)
@@ -61,12 +63,12 @@ module SK
         end
 
         def body(item)
-          filename = locator.figure_for 'lib', name, extension
-          namespace = locator.namespace(namespace)
-          scope = (namespace + [ name, '' ]).join('::')
+          filename = locator.figure_for 'lib', item.name, item.extension
+          namespace = locator.namespace(item.namespace)
+          scope = (namespace + [ item.name, '' ]).join('::')
 
-          save filename, name, namespace, [
-            make_c_comments(make_copyright_notice),
+          save filename, item.name, namespace, [
+            make_comments(make_copyright_notice),
             prepend_newline_if(make_includes(config.body_includes)),
             prepend_newline_if(make_includes([ locator.header_specification(name, extension) ])),
             prepend_newline_if(config.body_top),
@@ -147,7 +149,7 @@ module SK
                 "#{name}(const #{name}& other);",
                 "#{name}& operator = (const #{name}& other);",
                 prepend_newline_if(make_method_definition(config.private_methods)),
-                prepend_newline_if(config.data)
+                prepend_newline_if(config.private_data_members)
               )
             ),
             '};'
@@ -174,6 +176,10 @@ module SK
         def make_initialization_list(content)
           return content if content.empty?
           [ ': ' + content.first, *content[1..-1].map { |_line| '  ' + _line } ]
+        end
+
+        def make_config(options, data)
+          SK::Lingo::Cpp::Config.new nil, options, data
         end
 
         def locator
