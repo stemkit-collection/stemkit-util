@@ -13,61 +13,61 @@ module SK
     module Cpp
       module Ingredients 
         def header_includes
-          lines data['header_includes']
+          lines target['header_includes']
         end
 
         def header_bottom
-          lines data['header_bottom']
+          lines target['header_bottom']
         end
 
         def body_top
-          lines data['body_top']
+          lines target['body_top']
         end
 
         def body_includes
-          lines data['body_includes']
+          lines target['body_includes']
         end
 
         def extends
-          lines data['extends']
+          lines target['extends']
         end
 
         def initializes
-          lines data['initializes']
+          lines target['initializes']
         end
 
         def private_data_members
-          lines data['data']
+          lines target['data']
         end
         
         def constructors
           klass = Struct.new(:parameters, :body, :comments)
-          process_methods(data['factory']) { |_returns, _name, _parameters, _body, _comments|
+          process_methods(target['factory']) { |_returns, _name, _parameters, _body, _comments|
             klass.new(_parameters, _body, _comments) if _name == 'constructor'
           }.compact
         end
 
         def destructors
           klass = Struct.new(:type, :body, :comments)
-          process_methods(data['factory']) { |_returns, _name, _parameters, _body, _comments|
+          process_methods(target['factory']) { |_returns, _name, _parameters, _body, _comments|
             klass.new(_returns, _body, _comments) if _name == 'destructor'
           }.compact
         end
 
         def class_init
-          lines data['class_init']
+          lines target['class_init']
         end
 
         def public_methods
-          @public_methods ||= map_methods(data['public_methods'])
+          @public_methods ||= map_methods(target['public_methods'])
         end
 
         def protected_methods
-          @protected_methods ||= map_methods(data['protected_methods'])
+          @protected_methods ||= map_methods(target['protected_methods'])
         end
 
         def private_methods
-          @private_methods ||= map_methods(data['private_methods'])
+          @private_methods ||= map_methods(target['private_methods'])
         end
         
         private

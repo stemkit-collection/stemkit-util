@@ -178,8 +178,12 @@ module SK
           [ ': ' + content.first, *content[1..-1].map { |_line| '  ' + _line } ]
         end
 
+        def inline_config_locator
+          SK::Config::InlineLocator[ read_after_end_marker(__FILE__), super ]
+        end
+
         def make_config(options, data)
-          SK::Lingo::Cpp::Config.new nil, options, data
+          SK::Lingo::Cpp::Config.new options, data
         end
 
         def locator

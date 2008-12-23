@@ -17,6 +17,10 @@ module SK
     module Cpp
       class Config < SK::Lingo::Config
         include SK::Lingo::Cpp::Ingredients
+
+        def initialize(*args)
+          super 'cpp', *args
+        end
       end
     end
   end
