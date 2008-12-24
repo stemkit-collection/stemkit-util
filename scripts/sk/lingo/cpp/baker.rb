@@ -28,24 +28,38 @@ module SK
 
         def accept(item)
           case item.extension
-            when 'h', 'hpp', 'hxx', 'cxx'
+            when 'h', 'hpp'
               proc {
-                header item
+                header item, :h
+              }
+
+            when 'hxx'
+              proc {
+                header item, :hxx
+              }
+
+            when 'cxx'
+              proc {
+                header item, :cxx
               }
 
             when 'cc', 'cpp'
               proc {
-                body item
+                body item, :cc
               }
 
             else
               if item.extension.nil? or enforced?
                 proc {
-                  header item, 'h'
-                  body item, 'cc'
+                  generate_default_fileset(item)
                 }
               end
           end
+        end
+
+        def generate_default_fileset(item)
+          header item, :h, 'h'
+          body item, :cc, 'cpp'
         end
 
         def cpp_item(item, extension, kind)
@@ -60,14 +74,14 @@ module SK
           locator.path_for item.kind, super(item)
         end
 
-        def header(item, extension = nil)
+        def header(item, section, extension = nil)
           item = cpp_item item, extension, 'include'
-          save item, make_content(item, config.target['h'] || {})
+          save item, make_content(item, config.target[section] || {})
         end
 
-        def body(item, extension = nil)
+        def body(item, section, extension = nil)
           item = cpp_item item, extension, 'lib'
-          save item, make_content(item, config.target['cc'] || {})
+          save item, make_content(item, config.target[section] || {})
         end
 
         def make_modules(namespace, &block)
