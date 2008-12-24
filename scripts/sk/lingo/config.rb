@@ -17,28 +17,26 @@ module SK
     class Config
       include Ingredients
 
-      attr_reader :options, :data
+      attr_reader :options, :data, :tag, :target
 
       def initialize(tag, options, data)
         @options = options
         @data = data
 
-        return unless tag
-
-        tag = tag.to_s
-        tagged_data = data[tag] || {}
+        @tag = tag ? @data.fetch(tag, data.class.new) : @data
 
         if options.mode?
-          tagged_data = tagged_data[options.mode] || {}
+          @target = @tag.fetch(options.mode, data.class.new)
         else
-          tagged_data = tagged_data['default'] || tagged_data
+          @target = @tag.fetch(:default, @tag)
         end
 
-        [ tag, 'target' ].each do |_name|
-          self.class.send(:define_method, _name) {
-            tagged_data
-          }
+        10.times do
+          return unless @target.key?(:like)
+          @target = @tag.fetch @target.fetch(:like), data.class.new
         end
+
+        raise "Looping in resolving like-ness"
       end
 
       def indent
