@@ -136,14 +136,10 @@ cpp:
     indent: 0
     content:
       - 
-        namespace: false
-        content: |
+        content: |-
           #ifndef #{class_tag}
           #define #{class_tag}
-
-      -
-        namespace: false
-        content: |
+        
           #include <sk/util/Object.h>
 
       -
@@ -165,38 +161,31 @@ cpp:
           };
 
       - 
-        namespace: false
-        content: |
+        content: |-
           #endif /* #{class_tag} */
 
   cc:
     indent: 0
-    content:
-      -
-        content: |-
-          #include <sk/util/Class.h>
-          #include <sk/util/String.h>
+    content: |-
+      #include <sk/util/Class.h>
+      #include <sk/util/String.h>
 
-      - 
-        content: |-
-          #include #{class_reference(:h)}
+      #include #{class_reference(:h)}
 
-      -
-        content: |-
-          #{full_class_name}::
-          #{class_name}()
-          {
-          }
-    
-          #{full_class_name}::
-          ~#{class_name}()
-          {
-          }
+      #{full_class_name}::
+      #{class_name}()
+      {
+      }
 
-          const sk::util::Class
-          #{full_class_name}::
-          getClass() const
-          {
-            return sk::util::Class("#{full_class_name}");
-          }
+      #{full_class_name}::
+      ~#{class_name}()
+      {
+      }
+
+      const sk::util::Class
+      #{full_class_name}::
+      getClass() const
+      {
+        return sk::util::Class("#{full_class_name}");
+      }
         
