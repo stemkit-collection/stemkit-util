@@ -34,14 +34,16 @@ module SK
           ]
         end
 
-        def make_block_comments(lines)
+        def make_block_comments(*args)
+          lines = args.flatten.compact
           return lines if lines.empty?
 
           first, *rest = lines
           [ "/*  #{first}" ] + rest.map { |_line| " *  #{_line}" } + [ '*/' ]
         end
 
-        def make_line_comments(lines)
+        def make_line_comments(*args)
+          lines = args.flatten.compact
           return lines if lines.empty?
 
           width = lines.map { |_line| _line.size }.max
@@ -50,9 +52,6 @@ module SK
           }
         end
 
-        def make_comments(lines)
-          lines.size == 1 ? make_line_comments(lines) : make_block_comments(lines)
-        end
       end
     end
   end

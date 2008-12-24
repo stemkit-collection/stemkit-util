@@ -44,6 +44,10 @@ module SK
         def make_block_comments(*args)
           make_pound_comments(*args)
         end
+
+        def make_line_comments(*args)
+          make_pound_comments(*args)
+        end
       end
     end
   end

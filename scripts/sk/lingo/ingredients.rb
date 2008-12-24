@@ -1,3 +1,4 @@
+# vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
@@ -19,14 +20,26 @@ module SK
       end
 
       def authors
-        authors = Array(data['authors'])
+        authors = Array(data[:authors])
         authors.push user.gecos if authors.empty?
 
         lines authors
       end
 
       def license
-        lines data['license']
+        lines data[:license]
+      end
+      
+      def indent
+        @indent ||= (options.indent || data[:indent]).to_i
+      end
+
+      def shebang
+        lines(target[:shebang] || tag[:shebang] || data[:shebang])
+      end
+
+      def vim
+        lines(target[:vim] || tag[:vim] || data[:vim])
       end
     end
   end

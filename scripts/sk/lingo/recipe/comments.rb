@@ -12,9 +12,9 @@ module SK
   module Lingo
     module Recipe
       module Comments
-        def make_pound_comments(lines)
-          lines.map { |_line|
-            '#  ' + _line
+        def make_pound_comments(*args)
+          args.flatten.compact.map { |_line|
+            '# ' + _line
           }
         end
       end

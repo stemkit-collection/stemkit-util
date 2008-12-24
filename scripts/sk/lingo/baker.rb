@@ -99,6 +99,18 @@ module SK
         SK::Config::InlineLocator[ read_after_end_marker(__FILE__) ]
       end
 
+      def make_comments(*lines)
+        lines.flatten.compact.size == 1 ? make_line_comments(*lines) : make_block_comments(*lines)
+      end
+
+      def make_block_comments(*lines)
+        raise TSC::NotImplementedError, [ self.class.name, :make_block_comments ]
+      end
+
+      def make_line_comments(*lines)
+        raise TSC::NotImplementedError, [ self.class.name, :make_line_comments ]
+      end
+
       def decorate(content, &block)
         (block.nil? or content.empty?) ? content : block.call(content)
       end
@@ -210,6 +222,8 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 end
 
 __END__
+
+vim: "vim: set sw=#{indent}:"
 
 indent: 2
 

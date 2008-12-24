@@ -10,12 +10,14 @@
 
 require 'sk/lingo/baker.rb'
 require 'sk/lingo/recipe/content-layout.rb'
+require 'sk/lingo/recipe/comments.rb'
 
 module SK
   module Lingo
     module Ruby
       class Baker < SK::Lingo::Baker
         include SK::Lingo::Recipe::ContentLayout
+        include SK::Lingo::Recipe::Comments
 
         def accept(item)
           if enforced? or [ 'rb', nil ].include? item.extension
@@ -55,7 +57,12 @@ module SK
           ]
         end
 
-        def make_block_comments(lines)
+        def make_line_comments(*lines)
+          make_pound_comments lines
+        end
+
+        def make_block_comments(*args)
+          lines = args.flatten.compact
           [
             '=begin',
             lines.map { |_line|
@@ -105,28 +112,29 @@ ruby:
   content:
     -
       namespace: true
-      content: |
+      content: |-
         class #{class_name}
         end
 
     -
-      header: |+
-
+      header: |-
         if $0 == __FILE__ or defined?(Test::Unit::TestCase)
-          require 'test/unit'
-          require 'mocha'
-          require 'stubba'
 
       content:
         -
+          content: |-
+            require 'test/unit'
+            require 'mocha'
+            require 'stubba'
+        -
           namespace: true
-          content: |
+          content: |-
             class #{class_name}Test < Test::Unit::TestCase
               def setup
               end
             end
 
-      footer: |
+      footer: |-
         end
 
   app:

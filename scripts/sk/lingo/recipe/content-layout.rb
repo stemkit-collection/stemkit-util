@@ -17,8 +17,8 @@ module SK
       module ContentLayout
         def make_content(item, top = nil)
           [
-            config.lines(config.target['shebang']),
-            append_newline_if(make_block_comments(make_copyright_notice)),
+            config.shebang,
+            append_newline_if(make_comments(config.vim, make_copyright_notice)),
 
             map_content(top || config.target) { |_entry|
               content = _entry.content

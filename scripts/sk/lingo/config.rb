@@ -39,10 +39,6 @@ module SK
         raise "Looping in resolving like-ness"
       end
 
-      def indent
-        @indent ||= (options.indent || data['indent']).to_i
-      end
-
       def lines(content)
         unit = nil
         content.to_s.map { |_line| 

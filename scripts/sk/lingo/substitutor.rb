@@ -18,7 +18,11 @@ module SK
 
       def process(content)
         content.gsub(%r{#\{[^\}]*\}}) { |_match|
-          @scope.instance_eval _match.slice(2...-1)
+          begin
+            @scope.instance_eval _match.slice(2...-1)
+          rescue Exception => error
+            raise TSC::Error, [ "Substituion of #{_match} failed", error ]
+          end
         }
       end
     end
@@ -42,6 +46,10 @@ module SK
 
       def namespace
         @baker.make_qualified_name @item.namespace
+      end
+
+      def indent
+        @baker.config.indent
       end
 
       def class_tag
