@@ -23,14 +23,16 @@ module SK
 
     attr_reader :data
 
-    def initialize(locator)
+    def initialize(locator, options = {})
       @data = SK::Config::Data.new
+      @options = options
+
       locator.invoke(self)
     end
 
     def process(data, location)
       begin
-        @data.update Hash[ (YAML.parse(data) || self).transform ]
+        @data.update Hash[ (YAML.parse(data) || self).transform ], @options
       rescue => original
         raise ParseError, [ original, location ]
       end
