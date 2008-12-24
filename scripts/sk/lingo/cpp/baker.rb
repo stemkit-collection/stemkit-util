@@ -132,60 +132,61 @@ end
 __END__
 
 cpp:
-  h:
-    indent: 0
-    content:
-      - 
-        content: |-
-          #ifndef #{class_tag}
-          #define #{class_tag}
-        
-          #include <sk/util/Object.h>
+  default:
+    h:
+      indent: 0
+      content:
+        - 
+          content: |-
+            #ifndef #{class_tag}
+            #define #{class_tag}
+          
+            #include <sk/util/Object.h>
 
-      -
-        namespace: true
-        content: |-
-          class #{class_name} 
-            : public virtual sk::util::Object
-          {
-            public:
-              #{class_name}();
-              virtual ~#{class_name}();
+        -
+          namespace: true
+          content: |-
+            class #{class_name} 
+              : public virtual sk::util::Object
+            {
+              public:
+                #{class_name}();
+                virtual ~#{class_name}();
 
-              // sk::util::Object re-implementation.
-              const sk::util::Class getClass() const;
+                // sk::util::Object re-implementation.
+                const sk::util::Class getClass() const;
 
-            private:
-              #{class_name}(const #{class_name}& other);
-              #{class_name}& operator = (const #{class_name}& other);
-          };
+              private:
+                #{class_name}(const #{class_name}& other);
+                #{class_name}& operator = (const #{class_name}& other);
+            };
 
-      - 
-        content: |-
-          #endif /* #{class_tag} */
+        - 
+          content: |-
+            #endif /* #{class_tag} */
 
-  cc:
-    indent: 0
-    content: |-
-      #include <sk/util/Class.h>
-      #include <sk/util/String.h>
+    cc:
+      indent: 0
+      content: |-
+        #include <sk/util/Class.h>
+        #include <sk/util/String.h>
 
-      #include #{class_reference(:h)}
+        #include #{class_reference(:h)}
 
-      #{full_class_name}::
-      #{class_name}()
-      {
-      }
+        #{full_class_name}::
+        #{class_name}()
+        {
+        }
 
-      #{full_class_name}::
-      ~#{class_name}()
-      {
-      }
+        #{full_class_name}::
+        ~#{class_name}()
+        {
+        }
 
-      const sk::util::Class
-      #{full_class_name}::
-      getClass() const
-      {
-        return sk::util::Class("#{full_class_name}");
-      }
+        const sk::util::Class
+        #{full_class_name}::
+        getClass() const
+        {
+          return sk::util::Class("#{full_class_name}");
+        }
         
