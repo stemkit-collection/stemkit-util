@@ -77,7 +77,7 @@ module SK
 
       def config
         @config ||= begin
-          make_config bakery.options, SK::YamlConfig[config_locator].data
+          make_config bakery.options, SK::YamlConfig.new(config_locator, :consolidate => false).data
         end
       end
 
