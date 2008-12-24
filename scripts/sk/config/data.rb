@@ -106,13 +106,13 @@ module SK
         @hash.size
       end
 
-      def update(item)
-        self.class.merge(self, item)
+      def update(item, options = {})
+        self.class.merge(self, item, options)
       end
 
       class << self
         def merge(receiver, item, options = {})
-          control = TSC::Dataset[ :override => true ]
+          control = TSC::Dataset[ :override => true, :consolidate => true ]
           control.update(options)
 
           loop do
@@ -139,6 +139,7 @@ module SK
               when Array 
                 case item
                   when Hash, self, Array
+                    return item unless control.consolidate
                     data = consolidate_array(item)
 
                     return receiver.map { |_item|
