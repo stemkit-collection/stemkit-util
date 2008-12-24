@@ -1,3 +1,4 @@
+# vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
@@ -108,37 +109,39 @@ end
 
 __END__
 ruby:
-  indent: 0
-  content:
-    -
-      namespace: true
-      content: |-
-        class #{class_name}
-        end
+  default:
+    indent: 0
+    content:
+      -
+        namespace: true
+        content: |-
+          class #{class_name}
+          end
 
-    -
-      header: |-
-        if $0 == __FILE__ or defined?(Test::Unit::TestCase)
+      -
+        header: |-
+          if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
-      content:
-        -
-          content: |-
-            require 'test/unit'
-            require 'mocha'
-            require 'stubba'
-        -
-          namespace: true
-          content: |-
-            class #{class_name}Test < Test::Unit::TestCase
-              def setup
+        content:
+          -
+            content: |-
+              require 'test/unit'
+              require 'mocha'
+              require 'stubba'
+          -
+            namespace: true
+            content: |-
+              class #{class_name}Test < Test::Unit::TestCase
+                def setup
+                end
               end
-            end
 
-      footer: |-
-        end
+        footer: |-
+          end
 
-  app:
+  tsc-app:
     shebang: "#!/usr/bin/env ruby"
+    indent: 0
     content: |
       $:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
 

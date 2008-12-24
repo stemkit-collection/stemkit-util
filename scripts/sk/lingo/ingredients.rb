@@ -31,7 +31,7 @@ module SK
       end
       
       def indent
-        @indent ||= (options.indent || data[:indent]).to_i
+        @indent ||= (options.indent || tag[:indent] || data[:indent]).to_i
       end
 
       def shebang
