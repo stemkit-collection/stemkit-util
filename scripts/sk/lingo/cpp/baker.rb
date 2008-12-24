@@ -140,6 +140,48 @@ cpp:
           content: |-
             #ifndef #{class_tag}
             #define #{class_tag}
+
+        -
+          namespace: true
+          content: |-
+            class #{class_name} 
+            {
+              public:
+                #{class_name}();
+                ~#{class_name}();
+
+              private:
+                #{class_name}(const #{class_name}& other);
+                #{class_name}& operator = (const #{class_name}& other);
+            };
+
+        - 
+          content: |-
+            #endif /* #{class_tag} */
+
+    cc:
+      indent: 0
+      content: |-
+        #include #{class_reference(:h)}
+
+        #{full_class_name}::
+        #{class_name}()
+        {
+        }
+
+        #{full_class_name}::
+        ~#{class_name}()
+        {
+        }
+
+  sk-default:
+    h:
+      indent: 0
+      content:
+        - 
+          content: |-
+            #ifndef #{class_tag}
+            #define #{class_tag}
           
             #include <sk/util/Object.h>
 
@@ -190,3 +232,99 @@ cpp:
           return sk::util::Class("#{full_class_name}");
         }
         
+  cppunit-test:
+    h:
+      indent: 0
+      content:
+        -
+          content: |-
+            #ifndef #{class_tag}
+            #define #{class_tag}
+
+            #include <cppunit/TestFixture.h>
+            #include <cppunit/extensions/HelperMacros.h>
+
+        - 
+          namespace: true
+          content: |-
+              class #{class_name}
+                : public CppUnit::TestFixture
+              {
+                CPPUNIT_TEST_SUITE(#{full_class_name});
+                  CPPUNIT_TEST(testBasics);
+                CPPUNIT_TEST_SUITE_END();
+                
+                public:
+                  #{class_name}();
+                  virtual ~#{class_name}();
+                  
+                  void setUp();
+                  void tearDown();
+                  void testBasics();
+                  
+                private:
+                  #{class_name}(const #{class_name}& other);
+                  #{class_name}& operator = (const #{class_name}& other);
+              };
+
+        -
+          content: |-
+            #endif /* #{class_tag} */
+
+    cc:
+      indent: 0
+      content: |-
+        #include #{class_reference(:h)}
+
+        CPPUNIT_TEST_SUITE_REGISTRATION(#{full_class_name});
+
+        #{full_class_name}::
+        #{class_name}()
+        {
+        }
+
+        #{full_class_name}::
+        ~#{class_name}()
+        {
+        }
+
+        void
+        #{full_class_name}::
+        setUp()
+        {
+        }
+
+        void
+        #{full_class_name}::
+        tearDown()
+        {
+        }
+
+        void
+        #{full_class_name}::
+        testBasics()
+        {
+          CPPUNIT_ASSERT_EQUAL(true, false);
+        }
+
+  cppunit-sk-suite:
+    cc:
+      indent: 0
+      content: |-
+        #include <cppunit/extensions/TestFactoryRegistry.h>
+        #include <sk/cppunit/TestRunner.h>
+        #include <sk/cppunit/SourcePath.h>
+
+        #include <iostream>
+
+        int main(int argc, char **argv)
+        {
+          CppUnit::TestFactoryRegistry &registry = CppUnit::TestFactoryRegistry::getRegistry();
+          sk::cppunit::TestRunner runner;
+
+          if(argc == 2) {
+            sk::cppunit::SourcePath::setBase(argv[1]);
+          }
+          runner.addTest(registry.makeTest());
+          return !runner.run();
+        }
