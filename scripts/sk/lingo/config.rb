@@ -1,4 +1,5 @@
 =begin
+  vim: set sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
   Distributed under the MIT Licence.
@@ -23,20 +24,23 @@ module SK
         @options = options
         @data = data
 
-        @tag = tag ? @data.fetch(tag, data.class.new) : @data
+        raise "Language tag not spedified" unless tag
+        @tag = @data.fetch(tag) || data.class.new
 
-        if options.mode?
-          @target = @tag.fetch(options.mode, data.class.new)
-        else
-          @target = @tag.fetch(:default, nil) || @tag
+        TSC::Error.wrap_with tag  do
+          if options.mode?
+            @target = @tag.fetch(options.mode) || data.class.new
+          else
+            @target = @tag.fetch(:default) || data.class.new
+          end
+
+          10.times do
+            return unless @target.key?(:like)
+            @target = @tag.fetch(@target.fetch(:like)) || data.class.new
+          end
+
+          raise "Looping in resolving like-ness"
         end
-
-        10.times do
-          return unless @target.key?(:like)
-          @target = @tag.fetch @target.fetch(:like), data.class.new
-        end
-
-        raise "Looping in resolving like-ness"
       end
 
       def lines(content)

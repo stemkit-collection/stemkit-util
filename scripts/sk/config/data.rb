@@ -17,7 +17,7 @@ module SK
     class Data
       class MissingPathError < TSC::Error
         def initialize(path)
-          super "Path #{path.inspect} missing"
+          super path, "Path missing"
         end
       end
 

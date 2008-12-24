@@ -1,4 +1,5 @@
 =begin
+  vim: set sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
   Distributed under the MIT Licence.
@@ -37,6 +38,10 @@ module SK
                 }
               end
           end
+        end
+
+        def make_config(options, data)
+          SK::Lingo::Config.new "c", options, data
         end
 
         def body(item, extension = nil)
@@ -91,3 +96,4 @@ end
 
 __END__
 c:
+  default:
