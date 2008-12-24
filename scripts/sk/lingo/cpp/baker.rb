@@ -14,7 +14,6 @@ require 'sk/lingo/recipe/content-layout.rb'
 
 require 'sk/lingo/cpp/locator.rb'
 require 'sk/lingo/cpp/recipes.rb'
-require 'sk/lingo/cpp/config.rb'
 
 module SK
   module Lingo
@@ -86,7 +85,7 @@ module SK
         end
 
         def make_config(options, data)
-          SK::Lingo::Cpp::Config.new options, data
+          SK::Lingo::Config.new 'cpp', options, data
         end
 
         def make_qualified_name(*args)
