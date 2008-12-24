@@ -30,6 +30,8 @@ module SK
 
         if options.mode?
           tagged_data = tagged_data[options.mode] || {}
+        else
+          tagged_data = tagged_data['default'] || tagged_data
         end
 
         [ tag, 'target' ].each do |_name|
