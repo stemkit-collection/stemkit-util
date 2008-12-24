@@ -97,7 +97,7 @@ module SK
           [ '', item.namespace, item.name, item.extension, '' ].flatten.compact.map { |_item| _item.to_s.upcase }.join('_')
         end
 
-        def make_item_path(item)
+        def make_item_reference(item)
           File.join item.namespace, item.name 
         end
 
@@ -138,8 +138,8 @@ cpp:
       - 
         namespace: false
         content: |
-          #ifndef #{CLASS_TAG}
-          #define #{CLASS_TAG}
+          #ifndef #{class_tag}
+          #define #{class_tag}
 
       -
         namespace: false
@@ -149,25 +149,25 @@ cpp:
       -
         namespace: true
         content: |-
-          class #{CLASS_NAME} 
+          class #{class_name} 
             : public virtual sk::util::Object
           {
             public:
-              #{CLASS_NAME}();
-              virtual ~#{CLASS_NAME}();
+              #{class_name}();
+              virtual ~#{class_name}();
 
               // sk::util::Object re-implementation.
               const sk::util::Class getClass() const;
 
             private:
-              #{CLASS_NAME}(const #{CLASS_NAME}& other);
-              #{CLASS_NAME}& operator = (const #{CLASS_NAME}& other);
+              #{class_name}(const #{class_name}& other);
+              #{class_name}& operator = (const #{class_name}& other);
           };
 
       - 
         namespace: false
         content: |
-          #endif /* #{CLASS_TAG} */
+          #endif /* #{class_tag} */
 
   cc:
     indent: 0
@@ -179,24 +179,24 @@ cpp:
 
       - 
         content: |-
-          #include <#{CLASS_PATH}.h>
+          #include <#{class_reference}.h>
 
       -
         content: |-
-          #{FULL_CLASS_NAME}::
-          #{CLASS_NAME}()
+          #{full_class_name}::
+          #{class_name}()
           {
           }
     
-          #{FULL_CLASS_NAME}::
-          ~#{CLASS_NAME}()
+          #{full_class_name}::
+          ~#{class_name}()
           {
           }
 
           const sk::util::Class
-          #{FULL_CLASS_NAME}::
+          #{full_class_name}::
           getClass() const
           {
-            return sk::util::Class("#{FULL_CLASS_NAME}");
+            return sk::util::Class("#{full_class_name}");
           }
         

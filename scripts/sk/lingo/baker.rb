@@ -12,6 +12,7 @@
 require 'tsc/errors.rb'
 require 'tsc/after-end-reader.rb'
 require 'sk/lingo/config.rb'
+require 'sk/lingo/substitutor.rb'
 require 'sk/config/inline-locator.rb'
 require 'sk/config/uproot-locator.rb'
 require 'sk/config/home-locator.rb'
@@ -156,20 +157,7 @@ module SK
       end
 
       def output(item, content, stream)
-        substitutions = Hash[
-          'FULL_CLASS_NAME' => make_qualified_name(item.namespace, item.name),
-          'CLASS_NAME' => make_qualified_name(item.name),
-          'CLASS_PATH' => make_item_path(item),
-          'NAMESPACE' => make_qualified_name(item.namespace),
-          'CLASS_TAG' => make_item_tag(item)
-        ]
-        pattern = Regexp.new substitutions.keys.map { |_variable|
-          Regexp.quote('#{' + _variable + '}')
-        }.join('|')
-
-        stream.puts content.flatten.join("\n").gsub(pattern) { |_match|
-          substitutions[_match[2...-1]]
-        }
+        stream.puts Substitutor.new(item, self).process(content.flatten.join("\n"))
       end
 
       def make_qualified_name(*args)
@@ -180,7 +168,7 @@ module SK
         [ '', item.namespace, item.name, '' ].flatten.compact.map { |_item| _item.to_s.upcase }.join('_')
       end
 
-      def make_item_path(item)
+      def make_item_reference(item)
         File.join item.namespace, item.name 
       end
       
