@@ -97,8 +97,8 @@ module SK
           [ '', item.namespace, item.name, item.extension, '' ].flatten.compact.map { |_item| _item.to_s.upcase }.join('_')
         end
 
-        def make_item_reference(item)
-          File.join item.namespace, item.name 
+        def make_item_reference(item, extension)
+          locator.header_specification(item.name, extension)
         end
 
         def locator
@@ -179,7 +179,7 @@ cpp:
 
       - 
         content: |-
-          #include <#{class_reference}.h>
+          #include #{class_reference(:h)}
 
       -
         content: |-

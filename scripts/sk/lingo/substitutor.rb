@@ -36,8 +36,8 @@ module SK
         @baker.make_qualified_name @item.name
       end
 
-      def class_reference
-        @baker.make_item_reference @item
+      def class_reference(*args)
+        @baker.make_item_reference @item, *args
       end
 
       def namespace
