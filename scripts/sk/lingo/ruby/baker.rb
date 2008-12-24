@@ -158,9 +158,9 @@ ruby:
             throw :TEST if options.test?
             raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
 
-            puts "P: #{options.parameter.inspect}" if options.parameter?
-            puts "L: #{options.parameter_list.inspect}" if options.parameter_list?
-            puts "I: #{ARGV.inspect}"
+            puts "P: " + options.parameter.inspect if options.parameter?
+            puts "L: " + options.parameter_list.inspect if options.parameter_list?
+            puts "I: " + ARGV.inspect
           }
         end
 

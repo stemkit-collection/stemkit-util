@@ -47,10 +47,6 @@ module SK
       def class_tag
         @baker.make_item_tag @item
       end
-
-      def method_missing(name, *args)
-        self.respond_to?(name.downcase) ? self.send(name.downcase, *args) : super
-      end
     end
   end
 end

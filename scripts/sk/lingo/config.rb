@@ -28,7 +28,7 @@ module SK
         if options.mode?
           @target = @tag.fetch(options.mode, data.class.new)
         else
-          @target = @tag.fetch(:default, @tag)
+          @target = @tag.fetch(:default, nil) || @tag
         end
 
         10.times do
