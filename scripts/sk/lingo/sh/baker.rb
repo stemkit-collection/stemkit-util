@@ -21,6 +21,10 @@ module SK
         include SK::Lingo::Recipe::Comments
         include SK::Lingo::Recipe::ContentLayout
 
+        def initialize(*args)
+          super :sh, *args
+        end
+
         def accept(item)
           if enforced? or [ 'sh', nil ].include? item.extension
             proc {
@@ -36,10 +40,6 @@ module SK
 
         def inline_config_locator
           SK::Config::InlineLocator[ read_after_end_marker(__FILE__), super ]
-        end
-
-        def make_config(options, data)
-          SK::Lingo::Config.new 'sh', options, data
         end
 
         def make_block_comments(*args)

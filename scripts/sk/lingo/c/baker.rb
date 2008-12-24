@@ -18,6 +18,10 @@ module SK
       class Baker < SK::Lingo::Baker
         include Recipes
 
+        def initialize(*args)
+          super :c, *args
+        end
+
         def accept(item)
           case item.extension
             when 'h'
@@ -38,10 +42,6 @@ module SK
                 }
               end
           end
-        end
-
-        def make_config(options, data)
-          SK::Lingo::Config.new "c", options, data
         end
 
         def body(item, extension = nil)

@@ -67,12 +67,12 @@ module SK
         end
       end
 
-      def initialize(bakery)
-        @bakery = bakery
+      def initialize(tag, bakery)
+        @tag, @bakery = tag.to_s, bakery
       end
 
       def accept(item)
-        raise TSC::NotImplementedError, :accept
+        raise TSC::NotImplementedError, [ self.class.name, :accept ]
       end
 
       def config
@@ -82,7 +82,7 @@ module SK
       end
 
       def make_config(options, data)
-        SK::Lingo::Config.new nil, options, data
+        SK::Lingo::Config.new @tag, options, data
       end
 
       def config_locator

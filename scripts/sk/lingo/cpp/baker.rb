@@ -21,6 +21,10 @@ module SK
       class Baker < SK::Lingo::Baker
         include SK::Lingo::Cpp::Recipes
         include SK::Lingo::Recipe::ContentLayout
+        
+        def initialize(*args)
+          super :cpp, *args
+        end
 
         def accept(item)
           case item.extension
@@ -82,10 +86,6 @@ module SK
 
         def inline_config_locator
           SK::Config::InlineLocator[ read_after_end_marker(__FILE__), super ]
-        end
-
-        def make_config(options, data)
-          SK::Lingo::Config.new 'cpp', options, data
         end
 
         def make_qualified_name(*args)

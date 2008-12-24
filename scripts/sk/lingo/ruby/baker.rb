@@ -20,6 +20,10 @@ module SK
         include SK::Lingo::Recipe::ContentLayout
         include SK::Lingo::Recipe::Comments
 
+        def initialize(*args)
+          super :ruby, *args
+        end
+
         def accept(item)
           if enforced? or [ 'rb', nil ].include? item.extension
             proc {
@@ -71,10 +75,6 @@ module SK
             },
             '=end'
           ]
-        end
-
-        def make_config(options, data)
-          SK::Lingo::Config.new 'ruby', options, data
         end
       end
     end
