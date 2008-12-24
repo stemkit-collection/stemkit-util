@@ -106,7 +106,7 @@ ruby:
     -
       namespace: true
       content: |
-        class #{CLASS_NAME}
+        class #{class_name}
         end
 
     -
@@ -121,7 +121,7 @@ ruby:
         -
           namespace: true
           content: |
-            class #{CLASS_NAME}Test < Test::Unit::TestCase
+            class #{class_name}Test < Test::Unit::TestCase
               def setup
               end
             end
