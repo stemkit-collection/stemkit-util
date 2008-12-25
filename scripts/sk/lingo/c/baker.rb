@@ -45,25 +45,11 @@ module SK
         end
 
         def body(item, extension = nil)
-          save item, [
-            make_comments(make_copyright_notice),
-            ''
-          ]
+          save item, make_content(item)
         end
 
         def header(item, extension = nil)
-          save item, [
-            append_newline_if(make_comments(make_copyright_notice)),
-            make_h_guard(item.namespace, item.name, item.extension) {
-              [
-                '',
-                make_cpp_guard {
-                  ''
-                },
-                ''
-              ]
-            }
-          ]
+          save item, make_content(item)
         end
 
         def inline_config_locator
@@ -95,5 +81,17 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 end
 
 __END__
+
 c:
-  default:
+  main:
+    body:
+      indent: 0
+      content: |-
+        #include <stdio.h>
+        
+        int main(int argc, const char* argv[])
+        {
+          return 0;
+        }
+
+    header:
