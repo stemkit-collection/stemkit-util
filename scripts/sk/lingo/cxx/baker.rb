@@ -13,26 +13,26 @@ require 'sk/lingo/cpp/baker.rb'
 
 module SK
   module Lingo
-    module Cc
+    module Cxx
       class Baker < SK::Lingo::Cpp::Baker
         def accept_by_extension(item)
           case item.extension
-            when 'h', 'hpp'
+            when 'hxx'
               proc {
-                header item, :h
+                header item, :hxx
               }
 
-            when 'cc'
+            when 'cxx'
               proc {
-                body item, :cc
+                header item, :cxx
               }
           end
         end
 
         def accept_default(item)
           proc {
-            header item, :h, 'h'
-            body item, :cc, 'cc'
+            header item, :hxx, 'hxx'
+            header item, :cxx, 'cxx'
           }
         end
       end

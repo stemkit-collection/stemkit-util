@@ -27,39 +27,32 @@ module SK
         end
 
         def accept(item)
+          accept_by_extension(item) or begin
+            if item.extension.nil? or enforced?
+              accept_default(item)
+            end
+          end
+        end
+
+        def accept_by_extension(item)
           case item.extension
             when 'h', 'hpp'
               proc {
                 header item, :h
               }
 
-            when 'hxx'
-              proc {
-                header item, :hxx
-              }
-
-            when 'cxx'
-              proc {
-                header item, :cxx
-              }
-
-            when 'cc', 'cpp'
+            when 'cpp'
               proc {
                 body item, :cc
               }
-
-            else
-              if item.extension.nil? or enforced?
-                proc {
-                  generate_default_fileset(item)
-                }
-              end
           end
         end
 
-        def generate_default_fileset(item)
-          header item, :h, 'h'
-          body item, :cc, 'cpp'
+        def accept_default(item)
+          proc {
+            header item, :h, 'h'
+            body item, :cc, 'cpp'
+          }
         end
 
         def cpp_item(item, extension, kind)
