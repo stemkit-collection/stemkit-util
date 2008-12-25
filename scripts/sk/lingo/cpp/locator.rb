@@ -31,7 +31,7 @@ module SK
         end
 
         def header_specification(name, extension)
-          file = name + '.h'
+          file = [ name, extension ].join('.')
           return '"' + file + '"' if local?
 
           '<' + File.join(@components, file) + '>'
