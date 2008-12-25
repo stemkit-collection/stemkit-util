@@ -23,10 +23,6 @@ require 'fileutils'
 module SK
   module Lingo
     class Baker
-      attr_reader :bakery
-
-      include TSC::AfterEndReader
-
       class << self
         include Enumerable
 
@@ -67,6 +63,9 @@ module SK
         end
       end
 
+      attr_reader :bakery, :tag
+      include TSC::AfterEndReader
+
       def initialize(tag, bakery)
         @tag, @bakery = tag.to_s, bakery
       end
@@ -82,7 +81,7 @@ module SK
       end
 
       def make_config(options, data)
-        SK::Lingo::Config.new @tag, options, data
+        SK::Lingo::Config.new tag, options, data
       end
 
       def config_locator

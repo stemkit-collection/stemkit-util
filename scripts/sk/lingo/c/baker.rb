@@ -9,47 +9,35 @@
   Author: Gennady Bystritsky
 =end
 
-require 'sk/lingo/baker.rb'
-require 'sk/lingo/c/recipes.rb'
+require 'sk/lingo/cpp/baker.rb'
 
 module SK
   module Lingo
     module C
-      class Baker < SK::Lingo::Baker
-        include Recipes
-
-        def initialize(*args)
-          super :c, *args
+      class Baker < SK::Lingo::Cpp::Baker
+        def tag
+          "c"
         end
-
-        def accept(item)
+        
+        def accept_by_extension(item)
           case item.extension
             when 'h'
               proc {
-                header item
+                header item, :header
               }
 
             when 'c'
               proc {
-                body item
+                body item, :body
               }
-
-            else
-              if item.extension.nil? or enforced?
-                proc {
-                  header item, 'h'
-                  body item, 'c'
-                }
-              end
           end
         end
 
-        def body(item, extension = nil)
-          save item, make_content(item)
-        end
-
-        def header(item, extension = nil)
-          save item, make_content(item)
+        def accept_default(item)
+          proc {
+            header item, :header, 'h'
+            body item, :body, 'c'
+          }
         end
 
         def inline_config_locator
