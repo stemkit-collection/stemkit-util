@@ -78,6 +78,12 @@ __END__
 
 sh: 
   default:
+    like: main
+  
+  ain: 
+    like: main
+
+  main:
     content: |
       TRACE=no
 

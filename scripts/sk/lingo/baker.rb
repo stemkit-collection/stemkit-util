@@ -196,7 +196,9 @@ module SK
       end
 
       def make_executable(item)
-        FileUtils.chmod 0755, make_filename(item)
+        unless bakery.options.print?
+          FileUtils.chmod 0755, make_filename(item)
+        end
       end
     end
   end

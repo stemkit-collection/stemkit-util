@@ -139,6 +139,12 @@ ruby:
         footer: |-
           end
 
+  main:
+    like: tsc-app
+
+  ain:
+    like: main
+
   tsc-app:
     shebang: "#!/usr/bin/env ruby"
     indent: 0
