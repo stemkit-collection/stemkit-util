@@ -103,8 +103,8 @@ java:
         content: |-
           public final class #{class_name} {
             public static void main(final String[] args) {
-              #{class_name} app = new #{class_name}(args);
               try {
+                #{class_name} app = new #{class_name}(args);
                 app.process();
               }
               catch(Exception error) {
