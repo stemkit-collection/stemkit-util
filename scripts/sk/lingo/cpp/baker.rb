@@ -180,6 +180,35 @@ cpp:
         {
         }
 
+  main:
+    cc:
+      indent: 0
+      content: |-
+        #include <iostream>
+        #include <iomanip>
+        #include <exception>
+        #include <string>
+
+        int main(int argc, const char* argv[])
+        {
+          try {
+            throw std::string("Hello, world!!!");
+          }
+          catch(const std::exception& exception) {
+            std::cerr << "E: " << exception.what() << std::endl;
+          }
+          catch(const std::string& message) {
+            std::cout << message << std::endl;
+          }
+          catch(...) {
+            std::cerr << "Unknown error" << std::endl;
+          }
+        }
+  ain: 
+    like: main
+
+    h:
+
   sk-default:
     h:
       indent: 0
@@ -323,7 +352,7 @@ cpp:
 
         #include <iostream>
 
-        int main(int argc, char **argv)
+        int main(int argc, const char* argv[])
         {
           CppUnit::TestFactoryRegistry &registry = CppUnit::TestFactoryRegistry::getRegistry();
           sk::cppunit::TestRunner runner;

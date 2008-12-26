@@ -8,13 +8,17 @@
   Author: Gennady Bystritsky
 =end
 
-require 'sk/lingo/c/recipes.rb'
-
 module SK
   module Lingo
     module Cpp
       module Recipes
-        include SK::Lingo::C::Recipes
+        def make_block_comments(*args)
+          lines = args.flatten.compact
+          return lines if lines.empty?
+
+          first, *rest = lines
+          [ "/*  #{first}" ] + rest.map { |_line| " *  #{_line}" } + [ '*/' ]
+        end
 
         def make_line_comments(lines)
           return lines if lines.empty?

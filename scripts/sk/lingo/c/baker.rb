@@ -10,11 +10,14 @@
 =end
 
 require 'sk/lingo/cpp/baker.rb'
+require 'sk/lingo/c/recipes.rb'
 
 module SK
   module Lingo
     module C
       class Baker < SK::Lingo::Cpp::Baker
+        include SK::Lingo::C::Recipes
+
         def tag
           "c"
         end
@@ -71,6 +74,32 @@ end
 __END__
 
 c:
+  default:
+    header:
+      indent: 0
+      content:
+        - 
+          content: |-
+            #ifndef #{class_tag}
+            #define #{class_tag}
+
+            #if defined(__cplusplus)
+            extern "C" {
+            #endif
+
+        - 
+          content: |-
+            #if defined(__cplusplus)
+            }
+            #endif
+            
+            #endif /* #{class_tag} */
+        
+    body:
+      indent: 0
+      content: |-
+        #include #{class_reference(:h)}
+
   main:
     body:
       indent: 0
@@ -79,7 +108,12 @@ c:
         
         int main(int argc, const char* argv[])
         {
+          printf("Hello, world!!!\n");
           return 0;
         }
 
     header:
+
+  ain:
+    like: main
+

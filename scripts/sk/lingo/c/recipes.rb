@@ -1,4 +1,5 @@
 =begin
+  vim: set sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
   Distributed under the MIT Licence.
@@ -8,39 +9,13 @@
   Author: Gennady Bystritsky
 =end
 
+require 'sk/lingo/cpp/recipes.rb'
+
 module SK
   module Lingo
     module C
       module Recipes
-        def make_h_guard(*args)
-          tag = "_#{args.flatten.compact.join('_').upcase}_"
-          [
-            "#ifndef #{tag}",
-            "#define #{tag}",
-            yield,
-            "#endif /* #{tag} */"
-          ]
-        end
-
-        def make_cpp_guard
-          [
-            '#if defined(__cplusplus)',
-            'extern "C" {',
-            '#endif',
-            yield,
-            '#if defined(__cplusplus)',
-            '}',
-            '#endif'
-          ]
-        end
-
-        def make_block_comments(*args)
-          lines = args.flatten.compact
-          return lines if lines.empty?
-
-          first, *rest = lines
-          [ "/*  #{first}" ] + rest.map { |_line| " *  #{_line}" } + [ '*/' ]
-        end
+        include SK::Lingo::Cpp::Recipes
 
         def make_line_comments(*args)
           lines = args.flatten.compact
@@ -51,7 +26,6 @@ module SK
             "/* %-#{width}.#{width}s */" % _line
           }
         end
-
       end
     end
   end
