@@ -83,6 +83,7 @@ end
 __END__
 
 java:
+  indent: 4
   default:
     indent: 0
     content:
