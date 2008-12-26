@@ -131,6 +131,7 @@ module SK
         if bakery.options.print?
           $stderr.puts "=== #{file}"
           output item, content, $stdout
+          $stdout.flush
 
           false
         else
