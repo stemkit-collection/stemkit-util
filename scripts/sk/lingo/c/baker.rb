@@ -87,6 +87,9 @@ c:
             extern "C" {
             #endif
 
+        -
+          content: |-
+            void #{class_name}();
         - 
           content: |-
             #if defined(__cplusplus)
@@ -99,6 +102,10 @@ c:
       indent: 0
       content: |-
         #include #{class_reference(:h)}
+
+        void #{class_name}() 
+        {
+        }
 
   main:
     body:
