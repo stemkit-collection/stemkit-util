@@ -20,10 +20,6 @@ module SK
         @undo = undo
       end
 
-      def target(item)
-        return app.target if app.target?
-      end
-
       def make(item)
         return Baker.find(options.target).new(self).accept(item).call if options.target?
     
