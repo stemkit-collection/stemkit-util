@@ -188,7 +188,7 @@ module SK
       end
 
       def indent(*content)
-        content.flatten.map { |_line| indent_prefix + _line } 
+        content.flatten.compact.map { |_line| indent_prefix + _line } 
       end
 
       def make_filename(item)

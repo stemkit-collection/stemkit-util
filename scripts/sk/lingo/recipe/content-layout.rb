@@ -25,7 +25,7 @@ module SK
               if _entry.namespace
                 content = make_modules(item.namespace) {
                   content
-                }
+                }.flatten.compact
               end
 
               _entry.indent.times do
