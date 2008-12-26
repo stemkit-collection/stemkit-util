@@ -118,6 +118,7 @@ java:
             private void process() {
               System.out.println("Hello, world!!!");
             }
+
             private String[] _args;
           }
 
