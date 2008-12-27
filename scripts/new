@@ -54,34 +54,10 @@ class Application < TSC::Application
       TSC::Error.undo(Exception) do |_stack|
         bakery = SK::Lingo::Bakery.new options, _stack
         ARGV.each do |_item|
-          bakery.make normalize(_item)
+          bakery.make _item
         end
       end
     }
-  end
-
-  def normalize(item)
-    name, extension = item.scan(%r{^(.+?)(?:[.](.+))?$}).first
-    namespace = split_namespace(name)
-
-    TSC::Dataset[ 
-      :name => namespace.pop, 
-      :namespace => global_namespace + namespace,
-      :extension => extension
-    ]
-  end
-
-  private
-  #######
-
-  def global_namespace
-    @global_namespace ||= begin
-      split_namespace options['namespace']
-    end
-  end
-
-  def split_namespace(namespace)
-    namespace.to_s.split(%r{(?::+)|(?:[.])})
   end
 
   in_generator_context do |_content|
@@ -109,53 +85,7 @@ require 'sk/lingo/bakery.rb'
 class ApplicationTest < Test::Unit::TestCase
   attr_reader :app
 
-  def test_normalize_with_global_namespace_with_collon
-    app.expects(:options).returns Hash[ 'namespace' => "uuu::zzz" ]
-
-    assert_equal 'aaa', app.normalize('aaa.cc').name
-    assert_equal 'aaa', app.normalize('aaa.').name
-    assert_equal 'aaa', app.normalize('aaa').name
-
-    assert_equal 'cc', app.normalize('aaa.cc').extension
-    assert_equal nil, app.normalize('aaa.').extension
-    assert_equal nil, app.normalize('aaa').extension
-
-    assert_equal [ 'uuu', 'zzz' ], app.normalize('aaa.cc').namespace
-    assert_equal [ 'uuu', 'zzz' ], app.normalize('aaa').namespace
-    assert_equal [ 'uuu', 'zzz', 'ccc', 'ddd' ], app.normalize('ccc::ddd:aaa.rb').namespace
-  end
-
-  def test_normalize_with_global_namespace_with_dot
-    app.expects(:options).returns Hash[ 'namespace' => "uuu.zzz" ]
-
-    assert_equal 'aaa', app.normalize('aaa.cc').name
-    assert_equal 'cc', app.normalize('aaa.cc').extension
-
-    assert_equal [ 'uuu', 'zzz' ], app.normalize('aaa.cc').namespace
-    assert_equal [ 'uuu', 'zzz' ], app.normalize('aaa').namespace
-    assert_equal [ 'uuu', 'zzz', 'ccc', 'ddd' ], app.normalize('ccc::ddd:aaa.rb').namespace
-  end
-
-  def test_normalize_with_plain_global_namespace
-    app.expects(:options).returns Hash[ 'namespace' => "yyy" ]
-
-    assert_equal 'aaa', app.normalize('aaa.cc').name
-    assert_equal 'cc', app.normalize('aaa.cc').extension
-
-    assert_equal [ 'yyy' ], app.normalize('aaa.cc').namespace
-    assert_equal [ 'yyy' ], app.normalize('aaa').namespace
-    assert_equal [ 'yyy', 'ddd' ], app.normalize('ddd::aaa.rb').namespace
-  end
-
-  def test_normalize_no_global_namespace
-    app.expects(:options).returns Hash[]
-
-    assert_equal 'aaa', app.normalize('aaa.cc').name
-    assert_equal 'cc', app.normalize('aaa.cc').extension
-
-    assert_equal [], app.normalize('aaa.cc').namespace
-    assert_equal [], app.normalize('aaa').namespace
-    assert_equal [ 'ccc', 'ddd' ], app.normalize('ccc::ddd:aaa.rb').namespace
+  def test_nothing
   end
 
   def setup
