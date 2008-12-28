@@ -24,7 +24,7 @@ module SK
         namespace = split_namespace(name)
 
         @name = namespace.pop
-        @location = location.cleanpath
+        @location = location.cleanpath.to_s
         @namespace = specified_namespace(bakery.options).compact + namespace
         @extension = extension
       end
@@ -60,10 +60,44 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
       class ItemTest < Test::Unit::TestCase
         attr_reader :bakery
 
-        def test_basics
+        def test_simple_name_specified_namespace
           bakery.expects(:options).returns TSC::Dataset[ :namespace => 'aaa.bbb' ]
           item = SK::Lingo::Item.new 'ccc.java', bakery
+
           assert_equal 'ccc', item.name
+          assert_equal 'java', item.extension
+          assert_equal [ 'aaa', 'bbb' ], item.namespace
+          assert_equal '.', item.location
+        end
+
+        def test_simple_name_no_specified_namespace
+          bakery.expects(:options).returns TSC::Dataset[ :namespace => nil ]
+          item = SK::Lingo::Item.new 'ccc.java', bakery
+
+          assert_equal 'ccc', item.name
+          assert_equal 'java', item.extension
+          assert_equal [], item.namespace
+          assert_equal '.', item.location
+        end
+
+        def test_simple_name_no_extension
+          bakery.expects(:options).returns TSC::Dataset[ :namespace => nil ]
+          item = SK::Lingo::Item.new 'ccc', bakery
+          
+          assert_equal 'ccc', item.name
+          assert_equal nil, item.extension
+          assert_equal [], item.namespace
+          assert_equal '.', item.location
+        end
+
+        def test_simple_name_no_extension_specified_namespace_with_empty_components
+          bakery.expects(:options).returns TSC::Dataset[ :namespace => 'aaa.bbb///ccc::::ddd.' ]
+          item = SK::Lingo::Item.new 'ccc', bakery
+          
+          assert_equal 'ccc', item.name
+          assert_equal nil, item.extension
+          assert_equal [ 'aaa', 'bbb', 'ccc', 'ddd' ], item.namespace
+          assert_equal '.', item.location
         end
 
         def setup
