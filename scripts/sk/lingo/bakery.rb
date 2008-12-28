@@ -9,8 +9,8 @@
   Author: Gennady Bystritsky
 =end
 
+require 'sk/lingo/item.rb'
 require 'sk/lingo/baker.rb'
-require 'pathname'
 
 module SK
   module Lingo
@@ -23,7 +23,7 @@ module SK
       end
 
       def make(item)
-        process normalize(item)
+        process SK::Lingo::Item.new(item, self)
       end
 
       def process(item)
@@ -36,30 +36,6 @@ module SK
         raise 'Unspecified target language, use option --target' unless processors.size == 1
         
         processors.first.call
-      end
-
-      private
-      #######
-      
-      def normalize(item)
-        name, extension = item.scan(%r{^(.+?)(?:[.](.+))?$}).first
-        namespace = split_namespace(name)
-
-        TSC::Dataset[ 
-          :name => namespace.pop, 
-          :namespace => global_namespace + namespace,
-          :extension => extension
-        ]
-      end
-
-      def global_namespace
-        @global_namespace ||= begin
-          split_namespace options['namespace']
-        end
-      end
-
-      def split_namespace(namespace)
-        namespace.to_s.split(%r{(?::+)|(?:[.])})
       end
     end
   end
