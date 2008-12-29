@@ -10,23 +10,26 @@
 =end
 
 require 'pathname'
+require 'tsc/dataset.rb'
 
 module SK
   module Lingo
-    class Item
-      attr_reader :bakery, :location, :name, :namespace, :extension
+    class Item < TSC::Dataset
+      attr_reader :bakery
 
       def initialize(entry, bakery)
+        super :location => nil, :name => nil, :namespace => nil, :extension => nil
+
         @bakery = bakery
         location, file = Pathname.new(entry).split
 
         name, extension = file.to_s.scan(%r{^(.+?)(?:[.]([^.]+))?$}).first
         namespace = split_namespace(name)
 
-        @name = namespace.pop
-        @location = location.cleanpath.to_s
-        @namespace = specified_namespace(bakery.options).compact + namespace
-        @extension = extension
+        self.name = namespace.pop
+        self.location = location.cleanpath.to_s
+        self.namespace = specified_namespace(bakery.options).compact + namespace
+        self.extension = extension
       end
 
       private

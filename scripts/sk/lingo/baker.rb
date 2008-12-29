@@ -135,6 +135,7 @@ module SK
 
           false
         else
+          FileUtils.mkdir_p File.dirname(file)
           File.open(file, file_write_flags) do |_io|
             bakery.undo.add {
               File.unlink(file)
