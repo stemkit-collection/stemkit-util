@@ -58,7 +58,17 @@ module SK
       end
 
       def user
-        @user ||= Etc.getpwuid
+        @user ||= begin 
+          entry = Etc.getpwuid
+
+          class << entry
+            def description
+              @description ||= (gecos.strip.empty? ? name : gecos).strip
+            end
+          end
+
+          entry
+        end
       end
     end
   end

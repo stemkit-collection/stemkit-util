@@ -14,14 +14,14 @@ module SK
     module Ingredients
       def copyright_holders
         holders = Array(data['copyright_holders'])
-        holders.push user.gecos if holders.empty?
+        holders.push user.description if holders.empty?
 
         lines holders
       end
 
       def authors
-        authors = Array(data[:authors])
-        authors.push user.gecos if authors.empty?
+        authors = Array(data['authors'])
+        authors.push user.description if authors.empty?
 
         lines authors
       end

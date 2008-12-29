@@ -20,7 +20,8 @@ module SK
           [ "/*  #{first}" ] + rest.map { |_line| " *  #{_line}" } + [ '*/' ]
         end
 
-        def make_line_comments(lines)
+        def make_line_comments(*args)
+          lines = args.flatten.compact
           return lines if lines.empty?
 
           width = lines.map { |_line| _line.size }.max
