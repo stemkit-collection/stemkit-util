@@ -15,12 +15,9 @@ require 'tsc/dataset.rb'
 module SK
   module Lingo
     class Item < TSC::Dataset
-      attr_reader :bakery
-
-      def initialize(entry, bakery)
+      def initialize(entry, options)
         super :location => nil, :name => nil, :namespace => nil, :extension => nil
 
-        @bakery = bakery
         location, file = Pathname.new(entry).split
 
         name, extension = file.to_s.scan(%r{^(.+?)(?:[.]([^.]+))?$}).first
@@ -28,7 +25,7 @@ module SK
 
         self.name = namespace.pop
         self.location = location.cleanpath.to_s
-        self.namespace = specified_namespace(bakery.options).compact + namespace
+        self.namespace = specified_namespace(options).compact + namespace
         self.extension = extension
       end
 
@@ -61,11 +58,10 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Lingo
       class ItemTest < Test::Unit::TestCase
-        attr_reader :bakery
+        attr_reader :options
 
         def test_simple_name_specified_namespace
-          bakery.expects(:options).returns TSC::Dataset[ :namespace => 'aaa.bbb' ]
-          item = SK::Lingo::Item.new 'ccc.java', bakery
+          item = SK::Lingo::Item.new 'ccc.java', TSC::Dataset[ :namespace => 'aaa.bbb' ]
 
           assert_equal 'ccc', item.name
           assert_equal 'java', item.extension
@@ -74,8 +70,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         end
 
         def test_simple_name_no_specified_namespace
-          bakery.expects(:options).returns TSC::Dataset[ :namespace => nil ]
-          item = SK::Lingo::Item.new 'ccc.java', bakery
+          item = SK::Lingo::Item.new 'ccc.java', TSC::Dataset[ :namespace => nil ]
 
           assert_equal 'ccc', item.name
           assert_equal 'java', item.extension
@@ -84,8 +79,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         end
 
         def test_simple_name_no_extension
-          bakery.expects(:options).returns TSC::Dataset[ :namespace => nil ]
-          item = SK::Lingo::Item.new 'ccc', bakery
+          item = SK::Lingo::Item.new 'ccc', TSC::Dataset[ :namespace => nil ]
           
           assert_equal 'ccc', item.name
           assert_equal nil, item.extension
@@ -94,8 +88,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         end
 
         def test_simple_name_no_extension_specified_namespace_with_empty_components
-          bakery.expects(:options).returns TSC::Dataset[ :namespace => 'aaa.bbb///ccc::::ddd.' ]
-          item = SK::Lingo::Item.new 'ccc', bakery
+          item = SK::Lingo::Item.new 'ccc', TSC::Dataset[ :namespace => 'aaa.bbb///ccc::::ddd.' ]
           
           assert_equal 'ccc', item.name
           assert_equal nil, item.extension
@@ -104,7 +97,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         end
 
         def setup
-          @bakery = mock('bakery')
+          @options = mock 'options'
         end
       end
     end

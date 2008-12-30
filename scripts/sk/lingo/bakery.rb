@@ -23,7 +23,7 @@ module SK
       end
 
       def make(item)
-        process SK::Lingo::Item.new(item, self)
+        process SK::Lingo::Item.new(item, options)
       end
 
       def process(item)
