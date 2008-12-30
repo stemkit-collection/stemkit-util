@@ -16,7 +16,7 @@ module SK
   module Lingo
     class Item < TSC::Dataset
       def initialize(entry, options)
-        super :location => nil, :name => nil, :namespace => nil, :extension => nil
+        super :location => nil, :name => nil, :namespace => nil, :extension => nil, :forced_namespace => false
         path = Pathname.new(entry).cleanpath
 
         name, extension = path.to_s.scan(%r{^(.+?)(?:[.]([^.]+))?$}).first
@@ -27,8 +27,11 @@ module SK
         self.name = components.pop
         self.location = components
         self.extension = extension
-        self.namespace = specified_namespace.compact.empty? ? [] : begin
-          [ specified_namespace, (components unless specified_namespace.last) ].flatten.compact
+        self.namespace = begin
+          specified_namespace.compact.empty? ? components : begin
+            self.forced_namespace = true
+            [ specified_namespace, (components unless specified_namespace.last) ].flatten.compact
+          end
         end
       end
 
@@ -98,7 +101,8 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           
           assert_equal 'ccc', item.name
           assert_equal 'z', item.extension
-          assert_equal [], item.namespace
+          assert_equal false, item.forced_namespace?
+          assert_equal [ 'a', 'b', 'c', 'd' ], item.namespace
           assert_equal [ 'a', 'b', 'c', 'd' ], item.location
         end
 
@@ -107,6 +111,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           
           assert_equal 'ccc', item.name
           assert_equal 'z', item.extension
+          assert_equal true, item.forced_namespace?
           assert_equal [ 'uu', 'oo'], item.namespace
           assert_equal [ 'a', 'b', 'c', 'd' ], item.location
         end
@@ -116,6 +121,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           
           assert_equal 'ccc', item.name
           assert_equal 'z', item.extension
+          assert_equal true, item.forced_namespace?
           assert_equal [ 'uu', 'oo', 'a', 'b' ], item.namespace
           assert_equal [ 'a', 'b' ], item.location
         end
