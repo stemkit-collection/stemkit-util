@@ -83,8 +83,37 @@ sh:
   ain: 
     like: main
 
+  tsc-tpm:
+    shebang: "#!/bin/sh"
+    indent: 0
+    content: |-
+      SOURCE=__FILE__
+      eval <<'RUBY'
+        require 'tsc/application.rb'
+        class Application < TSC::Application
+          in_generator_context do |_content|
+            _content << IO.readlines(SOURCE).slice(0, 2)
+            _content << 'INSTALLATION_TOP=' + self.class.installation_top.inspect
+            _content << IO.readlines(SOURCE).slice(3..-1)
+          end
+        end
+      RUBY
+      __END__() {
+        true
+      }
+      __END__
+
+      main()
+      {
+        : 
+      }
+
+      main "${@}"
+
   main:
-    content: |
+    shebang: "#!/bin/sh"
+    indent: 0
+    content: |-
       TRACE=no
 
       print_usage()
