@@ -194,7 +194,7 @@ module SK
       end
 
       def make_filename(item)
-        [ item.name, item.extension ].compact.join('.')
+        File.join *[ item.location, [ item.name, item.extension ].compact.join('.') ].flatten
       end
 
       def make_executable(item)
