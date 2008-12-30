@@ -13,7 +13,7 @@ describe SK::Lingo::Item do
       item.name.should == 'ccc'
       item.extension.should == 'java'
       item.namespace.should == [ 'aaa', 'bbb' ]
-      item.location.should == '.'
+      item.location.should == []
     end
   end
 end

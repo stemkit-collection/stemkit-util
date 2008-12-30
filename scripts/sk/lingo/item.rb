@@ -17,29 +17,26 @@ module SK
     class Item < TSC::Dataset
       def initialize(entry, options)
         super :location => nil, :name => nil, :namespace => nil, :extension => nil
+        path = Pathname.new(entry).cleanpath
 
-        location, file = Pathname.new(entry).split
+        name, extension = path.to_s.scan(%r{^(.+?)(?:[.]([^.]+))?$}).first
+        components = split_namespace(name).compact
 
-        name, extension = file.to_s.scan(%r{^(.+?)(?:[.]([^.]+))?$}).first
-        namespace = split_namespace(name)
+        specified_namespace = split_namespace(options.namespace)
 
-        self.name = namespace.pop
-        self.location = location.cleanpath.to_s
-        self.namespace = specified_namespace(options).compact + namespace
+        self.name = components.pop
+        self.location = components
         self.extension = extension
+        self.namespace = specified_namespace.compact.empty? ? [] : begin
+          [ specified_namespace, (components unless specified_namespace.last) ].flatten.compact
+        end
       end
 
       private
       #######
       
-      def specified_namespace(options)
-        @specified_namespace ||= begin
-          split_namespace options.namespace
-        end
-      end
-
       def split_namespace(namespace)
-        namespace.to_s.split(%r{[:/.]+}).map { |_component|
+        namespace.to_s.split(%r{[:/.]+}, -1).map { |_component|
           component = _component.strip
           component.empty? ? nil : component
         }
@@ -66,7 +63,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           assert_equal 'ccc', item.name
           assert_equal 'java', item.extension
           assert_equal [ 'aaa', 'bbb' ], item.namespace
-          assert_equal '.', item.location
+          assert_equal [], item.location
         end
 
         def test_simple_name_no_specified_namespace
@@ -75,7 +72,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           assert_equal 'ccc', item.name
           assert_equal 'java', item.extension
           assert_equal [], item.namespace
-          assert_equal '.', item.location
+          assert_equal [], item.location
         end
 
         def test_simple_name_no_extension
@@ -84,7 +81,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           assert_equal 'ccc', item.name
           assert_equal nil, item.extension
           assert_equal [], item.namespace
-          assert_equal '.', item.location
+          assert_equal [], item.location
         end
 
         def test_simple_name_no_extension_specified_namespace_with_empty_components
@@ -93,7 +90,34 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           assert_equal 'ccc', item.name
           assert_equal nil, item.extension
           assert_equal [ 'aaa', 'bbb', 'ccc', 'ddd' ], item.namespace
-          assert_equal '.', item.location
+          assert_equal [], item.location
+        end
+
+        def test_component_name_no_specified_namespace
+          item = SK::Lingo::Item.new 'a/b.c::d.ccc.z', TSC::Dataset[ :namespace => nil ]
+          
+          assert_equal 'ccc', item.name
+          assert_equal 'z', item.extension
+          assert_equal [], item.namespace
+          assert_equal [ 'a', 'b', 'c', 'd' ], item.location
+        end
+
+        def test_component_name_specified_namespace_overrides
+          item = SK::Lingo::Item.new 'a/b.c::d.ccc.z', TSC::Dataset[ :namespace => "uu::oo" ]
+          
+          assert_equal 'ccc', item.name
+          assert_equal 'z', item.extension
+          assert_equal [ 'uu', 'oo'], item.namespace
+          assert_equal [ 'a', 'b', 'c', 'd' ], item.location
+        end
+
+        def test_component_name_specified_namespace_joins
+          item = SK::Lingo::Item.new 'a/b/ccc.z', TSC::Dataset[ :namespace => "uu::oo::" ]
+          
+          assert_equal 'ccc', item.name
+          assert_equal 'z', item.extension
+          assert_equal [ 'uu', 'oo', 'a', 'b' ], item.namespace
+          assert_equal [ 'a', 'b' ], item.location
         end
 
         def setup
