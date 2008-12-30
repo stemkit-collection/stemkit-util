@@ -11,17 +11,26 @@
 
 main()
 {
-  locate_ruby "${HOME}"/local/*/bin /usr/local/bin /usr/bin
+  locate_ruby "${@}" "${HOME}"/local/*/bin "${PATH}" /usr/local/bin /usr/bin
 }
 
 locate_ruby()
 {
-  for directory in "${@}"; do
-    program="${directory}/ruby"
-    [ "`${program} -rubygems -e 'puts %q{HELLO}'`" = 'HELLO' ] && {
-      echo ${program}
-      break
-    }
+  for path in "${@}"; do
+    ifs=${IFS}
+    IFS=":"
+    set -- entry ${path}
+    shift
+
+    for directory in "${@}"; do
+      program="${directory}/ruby"
+      [ "`${program} -rubygems -e 'puts %q{HELLO}'`" = 'HELLO' ] && {
+        echo ${program}
+        return 0
+      }
+    done
+
+    IFS=${ifs}
   done 2>/dev/null
 }
 
