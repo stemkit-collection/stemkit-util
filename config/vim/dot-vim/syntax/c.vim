@@ -134,14 +134,14 @@ syntax match	cCommentStartError display "/\*"me=e-1 contained
 
 
 " doxygen comments
-syn cluster doxygenRegionHook	add=cDoxygenCommentLeader
-syn match cDoxygenCommentLeader +\/\*\*+ contained
-syn region cDoxygenComment	start="/\*\*" end="\*/" contains=cDoxygenCommentLeader,@cDoxygen fold
+" syn cluster doxygenRegionHook	add=cDoxygenCommentLeader
+" syn match cDoxygenCommentLeader +\/\*\*+ contained
+" syn region cDoxygenComment	start="/\*\*" end="\*/" contains=cDoxygenCommentLeader,@cDoxygen fold
 
-syntax include @cDoxygen syntax/doxygen.vim
+" syntax include @cDoxygen syntax/doxygen.vim
 
-hi def link cDoxygenCommentLeader csDoxygenComment
-hi cDoxygenComment guifg=#000099
+" hi def link cDoxygenCommentLeader csDoxygenComment
+" hi cDoxygenComment guifg=#000099
 
 syn keyword	cOperator	sizeof
 if exists("c_gnu")
