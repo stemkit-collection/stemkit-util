@@ -6,6 +6,7 @@ if &background == "dark"
   hi Special    term=bold ctermfg=Magenta guifg=Orange
   hi Identifier term=underline cterm=bold ctermfg=Grey guifg=#40ffff
   hi Statement  term=bold ctermfg=Brown guifg=#ffff60 gui=bold
+  hi Search     cterm=bold,underline ctermfg=Red ctermbg=Black guifg=#ffff60 gui=bold
   hi PreProc    term=underline ctermfg=DarkGreen guifg=#ff80ff
   hi Type       term=underline ctermfg=Brown guifg=#60ff60 gui=bold
   hi Ignore     ctermfg=black guifg=bg

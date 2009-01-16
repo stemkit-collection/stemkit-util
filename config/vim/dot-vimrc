@@ -38,6 +38,8 @@ map -- 0?^[ 	]*{<CR>z.$
 map }} mn>'m'n
 map {{ mn<'m'n
 
+map gg :GtagsCursor<CR>
+
 imap <C-L> <C-X><C-L>
 imap <C-F> <C-X><C-F>
 
