@@ -358,7 +358,7 @@ function! s:ExecLoad(option, long_option, pattern)
     " Open the quickfix window
     if g:Gtags_OpenQuickfixWindow == 1
 "        topleft vertical copen
-        botright copen
+        botright copen 5
     endif
     " Parse the output of 'global -x' and show in the quickfix window.
     let efm_org = &efm

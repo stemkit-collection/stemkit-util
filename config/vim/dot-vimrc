@@ -51,6 +51,8 @@ command Revert execute "!svn revert %" <Bar> e
 command Update execute "!svn update %" <Bar> e
 command Commit execute "!svn commit %"
 command Resolved execute "!svn resolved %"
+command -nargs=* GT execute "Gtags <args>"
+command -nargs=* GS execute "Gtags -s <args>"
 command -nargs=* Blame execute "!svn annotate % <args> | less"
 command -nargs=* Diff execute "!svn diff % <args> | less"
 command -nargs=* Log execute "!svn log % <args> | less"
@@ -69,9 +71,10 @@ map cp :cp<CR>
 map cl :cl<CR>
 map cm :Make<CR>
 map cj :Jam<CR>
-map co :Open<CR>
-map cs :Syntax<CR>
+map co :copen 5<CR>
+map cs :cclose<CR>
 map cd :Diff<CR>
+map tt :Test<CR>
 
 map <F1><F1> :help<CR>
 map <F1>m :Make <CR>
