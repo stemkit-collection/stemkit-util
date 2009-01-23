@@ -1,0 +1,14 @@
+#!/bin/sh
+
+[ "${#}" -ne 3 ] && {
+  echo "USAGE: ${0} <from> <to> <repo>" 1>&2
+  exit 2
+}
+
+r1="${1}"
+r2="${2}"
+repo="${3}@${2}"
+
+svn log -q -r${r1}:${r2} ${repo} | awk '$1~/^r/{print substr($1,2)}' | while read rev; do
+  svn log -v -c ${rev} ${repo} && svn diff -c ${rev} ${repo} | sed "s/^/  ${rev}: /"
+done 
