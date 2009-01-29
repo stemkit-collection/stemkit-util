@@ -15,10 +15,11 @@ require 'sk/lingo/baker.rb'
 module SK
   module Lingo
     class Bakery
-      attr_reader :options, :undo
+      attr_reader :options, :location, :undo
 
-      def initialize(options, undo)
+      def initialize(options, location, undo)
         @options = options
+        @location = location
         @undo = undo
       end
 

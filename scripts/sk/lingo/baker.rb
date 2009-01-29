@@ -89,7 +89,11 @@ module SK
           'config/new.yaml', 
           SK::Config::HomeLocator[ 
             '.new.yaml', 
-            inline_config_locator 
+            SK::Config::UprootLocator.new(
+              :item => 'config/new.yaml',
+              :spot => bakery.location,
+              :locator => inline_config_locator 
+            )
           ] 
         ]
       end

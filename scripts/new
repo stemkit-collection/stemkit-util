@@ -52,7 +52,7 @@ class Application < TSC::Application
       raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
 
       TSC::Error.undo(Exception) do |_stack|
-        bakery = SK::Lingo::Bakery.new options, _stack
+        bakery = SK::Lingo::Bakery.new options, script_location, _stack
         ARGV.each do |_item|
           bakery.make _item
         end
