@@ -171,6 +171,7 @@ ruby:
         def start
           handle_errors {
             process_command_line
+            require 'rubygems'
 
             throw :TEST if options.test?
             raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
