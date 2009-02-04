@@ -38,6 +38,8 @@ module SK
         waitpid pid
       end
 
+      alias_method :daemonize, :demonize
+
       def cleanup_file_descriptors(descriptors)
         descriptors.each do |_descriptor|
           TSC::Error.ignore {
