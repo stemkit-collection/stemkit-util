@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# vim: set sw=2:
 # Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
 # 
 # Distributed under the MIT Licence.
@@ -60,13 +61,19 @@ class Application < TSC::Application
     puts "<Using #{@command}>" if verbose?
 
     exec command, *ARGV.map { |_item|
-      _item.gsub(%r{%[rtu]}i) { |_match|
-        case _match.downcase
-          when '%r' then root
-          when '%u' then url
-          when '%t' then top
-        end
-      }
+      case _item 
+        when '-S'
+          '--stop-on-copy'
+
+        else
+          _item.gsub(%r{%[rtu]}i) { |_match|
+            case _match.downcase
+              when '%r' then root
+              when '%u' then url
+              when '%t' then top
+            end
+          }
+      end
     }
   end
 
