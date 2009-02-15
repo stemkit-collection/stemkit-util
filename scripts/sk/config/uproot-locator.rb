@@ -16,7 +16,7 @@ module SK
       def initialize(*args)
         super(*args) { |_item, _spot, _locator|
           parent = File.dirname(_spot)
-          parent == '/' ? {} : {
+          parent =~ %r{^(.:)*[/\\]$}  ? {} : {
             :locator => self.class.new(:item => _item, :spot => parent, :locator => _locator)
           }
         }
