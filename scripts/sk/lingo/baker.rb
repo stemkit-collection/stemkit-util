@@ -19,6 +19,7 @@ require 'sk/config/home-locator.rb'
 require 'sk/yaml-config.rb'
 
 require 'fileutils'
+require 'pathname'
 
 module SK
   module Lingo
@@ -41,7 +42,8 @@ module SK
         end
 
         def targets
-          Dir[ File.join(File.dirname(__FILE__), '*', 'baker.rb') ].map { |_item|
+          dirname = File.dirname(__FILE__).tr('\\', '/')
+          Dir[ File.join(dirname, '*', 'baker.rb') ].map { |_item|
             [ _item, _item.scan(%r{^.*/(.*?)/baker.rb$}).flatten.compact.first ]
           }
         end

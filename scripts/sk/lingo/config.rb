@@ -15,6 +15,16 @@ require 'sk/lingo/ingredients.rb'
 
 module SK
   module Lingo
+    class AnonymousUser
+      def name
+        "???"
+      end
+
+      def description
+        name
+      end
+    end
+
     class Config
       include Ingredients
 
@@ -61,10 +71,14 @@ module SK
         @user ||= begin 
           entry = Etc.getpwuid
 
-          class << entry
-            def description
-              @description ||= (gecos.strip.empty? ? name : gecos).strip
+          if entry
+            class << entry
+              def description
+                @description ||= (gecos.strip.empty? ? name : gecos).strip
+              end
             end
+          else
+            entry = AnonymousUser.new
           end
 
           entry
