@@ -10,6 +10,7 @@ if &background == "dark"
   hi PreProc    term=underline ctermfg=DarkGreen guifg=#ff80ff
   hi Type       term=underline ctermfg=Brown guifg=#60ff60 gui=bold
   hi Ignore     ctermfg=black guifg=bg
+  hi MatchParen term=bold ctermbg=black ctermfg=white
 else
   hi Comment    term=bold ctermfg=DarkBlue guifg=Blue
   hi Constant   term=underline ctermfg=DarkRed guifg=Magenta
