@@ -39,11 +39,12 @@ class Application < TSC::Application
   end
 
   in_generator_context do |_content|
-    directory, file = File.split(target)
-    original = File.join(directory, 'original', file)
+    file = File.basename(target)
+    directory = File.join(self.class.installation_top, 'bin')
+    original = File.join(directory, 'originals', file)
 
-    _content << '#!' + figure_ruby_path
-    _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
+    _content << '#!/usr/bin/env ' + figure_ruby_path
+    _content << TSC::PATH.current.front(directory).to_ruby_eval
     _content << "SVN_ORIGINAL = #{original.inspect}"
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
