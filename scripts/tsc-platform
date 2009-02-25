@@ -34,7 +34,7 @@ __END__
 
 main()
 {
-  : ${RUBY:=`locate-ruby`}
+  : ${RUBY:=ruby}
 
   [ "${RUBY:+set}" != set ] && {
     echo "Ruby not found" 1>&2
