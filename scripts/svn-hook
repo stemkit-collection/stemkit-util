@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# vim:sw=2:
 # Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
 # 
 # Distributed under the MIT Licence.
@@ -85,7 +86,7 @@ class Application < TSC::Application
     ENV['LOGNAME'] = user.name
     ENV['HOME'] = user.dir
 
-    $:.concat TSC::PATH.current.front(location, '/bin', '/usr/bin').install.entries
+    $:.concat TSC::PATH.current.back(location, '/bin', '/usr/bin').install.entries
   end
 
   def location
@@ -108,8 +109,12 @@ class Application < TSC::Application
   end
 
   in_generator_context do |_content|
-    _content << '#!' + figure_ruby_path
-    _content << TSC::PATH.current.front(installation_tools_bin, File.join(self.class.installation_top, 'bin')).to_ruby_eval
+    top = Pathname.new(self.class.installation_top)
+    ruby = top.join('bin', 'ruby')
+    ruby = Pahtname.new(figure_ruby_path) unless ruby.exist?
+
+    _content << '#!/usr/bin/env ' + ruby.to_s
+    _content << TSC::PATH.current.front(ruby.dirname.to_s).to_ruby_eval
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
 end
