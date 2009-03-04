@@ -20,7 +20,7 @@ module SK
             return if exception.is_a?(SystemExit)
 
             report = [
-              "SNV(#{repository.inspect}): #{message}",
+              "SVN[#{repository.inspect}] #{message}",
               *TSC::Error.textualize(exception, :stderr => true, :backtrace => true)
             ]
 
