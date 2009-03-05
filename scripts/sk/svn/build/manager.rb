@@ -1,3 +1,4 @@
+# vim:sw=2:
 # Copyright (c) 2006, Gennady Bystritsky <bystr@mac.com>
 # 
 # Distributed under the MIT Licence.
@@ -72,7 +73,12 @@ module SK
           dirs.any? { |_item|
             trunk_top = File.join(trunk_url, *_item)
             build_top = File.join(builds_url, build.to_s, *_item)
-            launch("svn diff #{build_top} #{trunk_top}").first.empty? == false
+
+            begin
+              launch("svn diff #{build_top} #{trunk_top}").first.empty? == false
+            rescue
+              false
+            end
           }
         end
 
