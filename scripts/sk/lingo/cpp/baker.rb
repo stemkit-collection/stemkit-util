@@ -250,7 +250,7 @@ cpp:
 
         #include #{class_reference(:h)}
 
-        static const sk::util::Class __class("#{full_class_name}");
+        static const char* __className("#{full_class_name}");
 
         #{full_class_name}::
         #{class_name}()
@@ -266,7 +266,7 @@ cpp:
         #{full_class_name}::
         getClass() const
         {
-          return __class;
+          return sk::util::Class(__className);
         }
         
   cppunit-test:
