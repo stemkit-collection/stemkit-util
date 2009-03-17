@@ -3,13 +3,17 @@
 OPTERR=0
 unset selector
 selector="-name *.[CcHh]*"
+grep_options=""
 
 set -o noglob
 
-while getopts "van:" option; do
+while getopts "vqan:" option; do
   case "${option}" in
     v)
       set -xv
+    ;;
+    q)
+      grep_options="${grep_options} -q"
     ;;
     a)
       unset selector
@@ -38,4 +42,4 @@ pattern="${2}"
 [ "${#}" -ne 0 ] && shift
 [ "${#}" -ne 0 ] && shift
 
-exec find "${location:-.}" -name .svn -prune -o -type f ${selector} ${pattern:+-exec grep "${pattern}" "{}" \;} "${@:--print}"
+exec find "${location:-.}" -name .svn -prune -o -type f ${selector} ${pattern:+-exec grep ${grep_options} "${pattern}" "{}" \;} "${@:--print}"
