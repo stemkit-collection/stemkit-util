@@ -20,4 +20,4 @@ while getopts "vd:" option; do
 done
 shift $(( ${OPTIND} - 1 ))
 
-find ${FOLDERS:-.} -name src -prune -print | xargs ${XARGS_OPTIONS} -n1 svn "${@:-status}"
+find ${FOLDERS:-.} -name src -prune -exec test -d {}/.svn \; -print | xargs ${XARGS_OPTIONS} -n1 svn "${@:-status}"
