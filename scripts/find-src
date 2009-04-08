@@ -1,4 +1,5 @@
 #!/bin/ksh
+# vi: sw=2:
 
 OPTERR=0
 unset selector
@@ -7,13 +8,16 @@ grep_options=""
 
 set -o noglob
 
-while getopts "vqan:" option; do
+while getopts "viqan:" option; do
   case "${option}" in
     v)
       set -xv
     ;;
     q)
       grep_options="${grep_options} -q"
+    ;;
+    i)
+      grep_options="${grep_options} -i"
     ;;
     a)
       unset selector
@@ -42,4 +46,8 @@ pattern="${2}"
 [ "${#}" -ne 0 ] && shift
 [ "${#}" -ne 0 ] && shift
 
-exec find "${location:-.}" -name .svn -prune -o -type f ${selector} ${pattern:+-exec grep ${grep_options} "${pattern}" "{}" \;} "${@:--print}"
+if [ "${pattern:+set}" = set ]; then
+  exec find "${location:-.}" -name .svn -prune -o -type f ${selector} -exec grep ${grep_options} "${pattern}" "{}" \; "${@:--print}"
+else
+  exec find "${location:-.}" -name .svn -prune -o -type f ${selector} "${@:--print}"
+fi
