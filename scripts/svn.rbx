@@ -66,6 +66,9 @@ class Application < TSC::Application
         when '-S'
           '--stop-on-copy'
 
+        when '-I'
+          '--no-ignore'
+
         else
           _item.gsub(%r{%[rtu]}i) { |_match|
             case _match.downcase
