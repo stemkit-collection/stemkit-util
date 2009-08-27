@@ -45,14 +45,21 @@ main()
 
   path="${1}"
   set entry `split "${REVSPEC}" :`
-  r1=`suppress_error_output expr "${2}" + 1`
-  r2=`suppress_error_output expr "${3}" + 0`
+  r1=${2}
+  r2=${3}
+
+  r1=`suppress_error_output expr "${r1}" + 1`
+
+  [ "${r2}" != "HEAD" ] && {
+    r2=`suppress_error_output expr "${r2}" + 0`
+  }
 
   [ "${#}" -ne 3 -o "${r1:-set}" = set -o "${r2:-set}" = set ] && {
     print_error "Wrong or no revision specification."
     print_usage_and_exit
   }
-  repo="${path}@${r2}"
+  # repo="${path}@${r2}"
+  repo="${path}"
 
   trace_and_run svn log -q -r${r1}:${r2} ${repo} | awk '$1~/^r/{print substr($1,2)}' | while read rev; do
     trace_and_run svn log -v -c ${rev} ${repo} && trace_and_run svn diff -c ${rev} ${repo} | sed "s/^/  ${rev}: /" 
