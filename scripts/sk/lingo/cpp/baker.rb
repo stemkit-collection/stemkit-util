@@ -250,7 +250,7 @@ cpp:
 
         #include #{class_reference(:h)}
 
-        static const char* __className("#{full_class_name}");
+        static const sk::util::String __className("#{full_class_name}");
 
         #{full_class_name}::
         #{class_name}()
