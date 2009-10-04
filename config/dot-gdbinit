@@ -1,0 +1,14 @@
+
+define exit
+  quit
+end
+
+document exit
+  An alias for quit command
+end
+
+set print elements 0
+set print object on
+set print pretty on
+set print array on
+set history save on
