@@ -51,8 +51,9 @@ command Revert execute "!svn revert %" <Bar> e
 command Update execute "!svn update %" <Bar> e
 command Commit execute "!svn commit %"
 command Resolved execute "!svn resolved %"
-command -nargs=* GT execute "Gtags <args>"
-command -nargs=* GS execute "Gtags -s <args>"
+command -nargs=* Gt execute "Gtags <args>"
+command -nargs=* Gs execute "Gtags -s <args>"
+command -nargs=* Gp execute "Gtags -P <args>"
 command -nargs=* Blame execute "!svn annotate % <args> | less"
 command -nargs=* Diff execute "!svn diff % <args> | less"
 command -nargs=* Log execute "!svn log % <args> | less"
