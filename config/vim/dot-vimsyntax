@@ -22,3 +22,6 @@ else
   hi Ignore     ctermfg=white guifg=bg
 endif
 
+if filereadable(expand("~/.vimsyntax-local"))
+    so ~/.vimsyntax-local
+endif
