@@ -1,0 +1,34 @@
+#!/bin/sh
+
+[ "${#}" != 2 -a "${#}" != 3 ] && {
+  echo "USAGE: ${0} <source-path> <target-path> [<abi>]"
+  exit 2
+}
+
+include_source="${1}/src/include"
+library_source="${1}/bin/lib"
+
+include_target="${2}/include"
+library_target="${2}/lib${3:+-${3}}"
+
+rm -rf "${include_target}"
+mkdir -p "${include_target}"
+include_target=`cd "${include_target}" >/dev/null 2>&1 && pwd`
+
+[ "${include_target:+set}" != set ] && {
+    echo "Cannot figure target folder for header files"
+    exit 3
+}
+
+(
+    cd "${include_source}" && {
+        find . -name .svn -prune -o -type f -print | cpio -vdump "${include_target}"
+    }
+)
+
+rm -rf "${library_target}"
+mkdir -p "${library_target}"
+
+find "${library_source}" \( -name "*.lib" -o -name "*.dll" -o -name "*.jar" -o -name "*.s[ol].*" \) -print | {
+    xargs -t -i cp {} "${library_target}"
+}
