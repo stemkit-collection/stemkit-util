@@ -402,6 +402,9 @@ act_as_profile()
 
   PATH="${HOME}/bin:${PATH}" export PATH
   RUBY=`locate_ruby /opt/sk/platform/*/bin /opt/quest/platform/*/bin ${HOME}/local/*/bin /usr/local/bin /usr/bin`
+
+  tty -s || return 0
+
   eval `"${RUBY:-ruby}" -rubygems "${ENV}" start`
   unset RUBY
 
