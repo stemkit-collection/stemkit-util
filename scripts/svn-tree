@@ -43,7 +43,7 @@ main()
   shift `expr "${OPTIND}" - 1`
 
   for top in `find ${FOLDERS:-.} -name src -prune -exec sh -c 'test -d $0/.svn' {} \; -print`; do
-   trace_and_run svn "${@:-status}" "${top}"
+   trace_and_run ruby -S svn.rbx "${@:-status}" "${top}"
   done
 
   return 0
