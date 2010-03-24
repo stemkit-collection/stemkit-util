@@ -421,6 +421,8 @@ act_as_profile()
   PATH_WINDOWS=/dev/fs/C/WINDOWS/system32/.com,.exe,.ksh,.bat,.cmd,:/dev/fs/C/SFU-ROOT/common/.com,.exe,.ksh,.bat,.cmd,
   export PATH_WINDOWS
 
+  SQLPATH="${HOME}/.sqlplus" export SQLPATH
+
   umask 2
   mesg y
   stty intr ^c susp ^z kill ^u eol ^w erase ^h tostop 
