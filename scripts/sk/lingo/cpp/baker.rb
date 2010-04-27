@@ -189,7 +189,7 @@ cpp:
         #include <exception>
         #include <string>
 
-        int main(int argc, const char* argv[])
+        int main(int argc, const char* const argv[])
         {
           try {
             throw std::string("Hello, world!!!");
@@ -354,7 +354,7 @@ cpp:
 
         #include <iostream>
 
-        int main(int argc, const char* argv[])
+        int main(int argc, const char* const argv[])
         {
           CppUnit::TestFactoryRegistry &registry = CppUnit::TestFactoryRegistry::getRegistry();
           sk::cppunit::TestRunner runner;
