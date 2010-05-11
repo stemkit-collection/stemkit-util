@@ -1,4 +1,6 @@
 =begin
+  vim: sw=2:
+
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
   Distributed under the MIT Licence.
@@ -17,7 +19,7 @@ module SK
         super(*args) { |_item, _spot, _locator|
           parent = File.dirname(_spot)
           parent =~ %r{^(.:)*[/\\]$}  ? {} : {
-            :locator => self.class.new(:item => _item, :spot => parent, :locator => _locator)
+            :locator => self.class.new(options.merge Hash[ :item => _item, :spot => parent, :locator => _locator])
           }
         }
       end

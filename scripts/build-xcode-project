@@ -1,0 +1,101 @@
+#!/usr/bin/env ruby
+=begin
+  vim: set sw=2:
+  Copyright (c) 2010, Gennady Bystritsky <bystr@mac.com>
+  
+  Distributed under the MIT Licence.
+  This is free software. See 'LICENSE' for details.
+  You must read and accept the license prior to use.
+  
+  Author: Gennady Bystritsky
+=end
+
+$:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
+
+require 'tsc/application.rb'
+require 'tsc/path.rb'
+require 'tsc/dtools.rb'
+
+class Application < TSC::Application
+  def initialize
+    super { |_config|
+      _config.arguments = '[-- <xcodebuild options> ...]'
+      _config.options = [
+        [ '--dryrun', 'Do not execute the command, just print', nil, '-n' ],
+        [ '--test', 'Run internal tests', nil ]
+      ]
+      _config.description = [
+        "Locates Xcode project file and invokes the build process"
+      ]
+    }
+  end
+
+  def start
+    handle_errors {
+      process_command_line
+      require 'rubygems'
+
+      throw :TEST if options.test?
+
+      require 'sk/config/uproot-locator.rb'
+
+      locator = SK::Config::UprootLocator.new(:item => '*.xcodeproj', :spot => '.', :pathonly => true)
+      info = catch :project do
+        locator.invoke self
+        raise "No Xcode project found" 
+      end
+
+      Dir.cd info.last do
+        invoke_project File.basename(info.first)
+      end
+    }
+  end
+
+  def invoke_project(project)
+    args = ARGV.clone
+    args << '-alltargets' if args.empty?
+
+    command = [ 'xcodebuild', '-project', project, *args ]
+    if options.dryrun?
+      puts command.inspect if options.dryrun?
+    else
+      exec *command
+    end
+  end
+
+  def process(path, spot)
+    project = Dir[path].first
+    throw :project, [project, spot] if project
+  end
+
+  in_generator_context do |_content|
+    _content << '#!' + figure_ruby_path
+    _content << '$VERBOSE = nil'
+    _content << TSC::PATH.current.front(File.dirname(figure_ruby_path)).to_ruby_eval
+    _content << IO.readlines(__FILE__).slice(1..-1)
+  end
+end
+
+unless defined? Test::Unit::TestCase
+  catch :TEST do
+    Application.new.start
+    exit 0
+  end
+end
+
+require 'rubygems'
+require 'test/unit'
+
+require 'mocha'
+require 'stubba'
+
+class ApplicationTest < Test::Unit::TestCase
+  attr_reader :app
+
+  def test_nothing
+  end
+
+  def setup
+    @app = Application.new
+  end
+end

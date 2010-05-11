@@ -45,6 +45,8 @@ module SK
       #######
 
       def content(path)
+        return [ path ] if options[:pathonly]
+
         self.class.open path do |_io|
           return TSC::Error.wrap_with(path) {
             counter = 0
