@@ -1,4 +1,5 @@
 #!/bin/ksh
+# vim: sw=2:
     IDENT="@(#)Title:     Class edit"
    AUTHOR="@(#)Author:    Gennady F. Bystritsky (gfb@tonesoft.com)"
   VERSION="@(#)Version:   1.0"
@@ -73,16 +74,25 @@ ClassEdit ()
   [ -f "${classHead}.h" ] || {
     classHead=`echo $classHead|sed 's%/lib/%/include/%'`
   }
-  [ -f "${classBody}.rcc" ] || {
-    classBody=`echo $classBody|sed 's%/include/%/lib/%'`
-  }
-  [ -f "${classBody}.cc" ] || {
-    classBody=`echo $classBody|sed 's%/include/%/lib/%'`
-  }
+
+  classBody=`adjustClassBody "${classBody}"`
+
   [ "${EDITOR:=vim}" = vim ] && {
     OPTIONS="-o2"
   }
-  ${EDITOR} ${OPTIONS} "$classHead".h "$classBody".[rcly]*
+  ${EDITOR} ${OPTIONS} "$classHead".h "$classBody".[mrcly]*
+}
+
+adjustClassBody()
+{
+  for type in c rcc cc cpp m mm; do
+    [ -f "${classBody}.rcc" ] && {
+      echo ${classBody}
+      return
+    }
+  done
+
+  echo $classBody|sed 's%/include/%/lib/%'
 }
 
 ##################
