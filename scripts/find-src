@@ -3,7 +3,7 @@
 
 OPTERR=0
 unset selector
-selector="-name *.[CcHh]*"
+selector="-name *.[MmCcHh]*"
 grep_options=""
 
 set -o noglob
