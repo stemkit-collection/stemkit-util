@@ -34,19 +34,22 @@ class Application < TSC::Application
     handle_errors {
       process_command_line
       require 'rubygems'
+      require 'pathname'
 
       throw :TEST if options.test?
 
       require 'sk/config/uproot-locator.rb'
 
       locator = SK::Config::UprootLocator.new(:item => '*.xcodeproj', :spot => '.', :pathonly => true)
-      info = catch :project do
-        locator.invoke self
-        raise "No Xcode project found" 
-      end
+      locator.invoke self
 
-      Dir.cd info.last do
-        invoke_project File.basename(info.first)
+      raise "No Xcode projects found" if projects.empty?
+      raise "Multiple Xcode projects found" if projects.size > 1
+
+      project = Pathname.new(projects.first)
+
+      Dir.cd project.dirname do
+        invoke_project File.basename(project.basename)
       end
     }
   end
@@ -57,15 +60,18 @@ class Application < TSC::Application
 
     command = [ 'xcodebuild', '-project', project, *args ]
     if options.dryrun?
-      puts command.inspect if options.dryrun?
+      puts "cd #{Dir.pwd}" + " && " + command.join(" ")
     else
       exec *command
     end
   end
 
+  def projects
+    @projects ||= []
+  end
+
   def process(path, spot)
-    project = Dir[path].first
-    throw :project, [project, spot] if project
+    projects.concat Dir[path]
   end
 
   in_generator_context do |_content|
