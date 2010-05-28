@@ -3,4 +3,4 @@ column object_name format a30
 column subobject_name format a14
 column owner format a15
 
-set linesize 1024
+set linesize 132
