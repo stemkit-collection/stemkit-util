@@ -58,7 +58,7 @@ class Application < TSC::Application
     args = ARGV.clone
     args << '-alltargets' if args.empty?
 
-    command = [ 'xcodebuild', '-project', project, ENV['BUILD_XCODE_PROJECT'].split(' '), args ].flatten.compact
+    command = [ 'xcodebuild', '-project', project, ENV['BUILD_XCODE_PROJECT'].to_s.split(' '), args ].flatten.compact
     if options.dryrun?
       puts "cd #{Dir.pwd}" + " && " + command.inspect
     else
