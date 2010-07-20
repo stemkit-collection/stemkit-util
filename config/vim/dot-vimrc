@@ -45,7 +45,7 @@ imap <C-F> <C-X><C-F>
 
 command Make set makeprg=make <Bar> make
 command Jam  set makeprg=jam <Bar> make
-command Xcode  set makeprg=build-xcode-project <Bar> make
+command Xcode  set makeprg=xcode-build <Bar> make
 command Test make test
 command Open execute "!svn status \\%t"
 command Revert execute "!svn revert %" <Bar> e
