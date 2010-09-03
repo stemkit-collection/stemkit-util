@@ -23,8 +23,10 @@ class Application < TSC::Application
     handle_errors {
       require 'rubygems'
       require 'tsc/config-locator.rb'
+      require 'tsc/launch'
       require 'yaml'
       require 'open3'
+      require 'time'
 
       if defined? SVN_ORIGINAL
         invoke SVN_ORIGINAL
@@ -59,15 +61,19 @@ class Application < TSC::Application
     @command = find_original(command)
     setup_library_path_for(@command)
 
-    puts "<Using #{@command}>" if verbose?
+    $stderr.puts "#{script_name}: Using #{@command}>" if verbose?
 
-    exec command, *ARGV.map { |_item|
+    argv = *ARGV.map { |_item|
       case _item 
         when '-S'
           '--stop-on-copy'
 
         when '-I'
           '--no-ignore'
+
+        when '--xml-local-time'
+          @translate_xml_time = true
+          '--xml'
 
         else
           _item.gsub(%r{%[rtu]}i) { |_match|
@@ -79,6 +85,26 @@ class Application < TSC::Application
           }
       end
     }
+    execute command, *argv
+  end
+
+  def execute(*args)
+    puts args.inspect if verbose?
+    exec *args unless @translate_xml_time
+    launch(args) { |_stdout, _stderr|
+      $stderr.puts _stderr if _stderr
+      $stdout.puts translate_xml_time(_stdout) if _stdout
+    }
+  end
+
+  def translate_xml_time(line)
+    line.gsub(%r{(<date>)(.*)T(.*)[.](.*)Z(</date>)}) { |*_match|
+      $1 + gmt_to_local($2, $3, $4) + $5
+    }
+  end
+
+  def gmt_to_local(date, time, ms)
+    Time.parse("#{date} #{time} GMT").strftime("%Y-%m-%dT%H:%M:%S.#{ms}Z%Z")
   end
 
   def find_original(command)
