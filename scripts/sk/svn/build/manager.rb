@@ -75,7 +75,7 @@ module SK
             build_top = File.join(builds_url, build.to_s, *_item)
 
             begin
-              launch("svn diff #{build_top} #{trunk_top}").first.empty? == false
+              launch("svn diff --summarize #{build_top} #{trunk_top}").first.empty? == false
             rescue
               false
             end
