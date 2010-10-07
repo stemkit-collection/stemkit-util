@@ -63,7 +63,7 @@ class Application < TSC::Application
 
     $stderr.puts "#{script_name}: Using #{@command}>" if verbose?
 
-    argv = *ARGV.map { |_item|
+    argv = ARGV.map { |_item|
       case _item 
         when '-S'
           '--stop-on-copy'
