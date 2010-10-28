@@ -1,4 +1,5 @@
 =begin
+  vim: sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
   Distributed under the MIT Licence.
@@ -9,6 +10,7 @@
 =end
 
 require 'set'
+require 'pp'
 
 module SK
   class Subordinator
@@ -44,7 +46,7 @@ module SK
 
     def slaves
       @entries.map { |_entry|
-        Array(_entry.last)
+        _entry.last
       }.flatten.sort
     end
 
@@ -54,12 +56,28 @@ module SK
       }.sort
     end
 
-    def lineup
-      @entries.transpose.flatten.map { |_item| Array(_item).sort }.flatten.uniq
+    def lineup(*items)
+      pickup(*figure_items_for_lineup(items)).flatten.uniq
     end
 
     private
     #######
+
+    def figure_items_for_lineup(items)
+      if items.empty?
+        entries.map { |_entry|
+          _entry.first
+        }
+      else
+        entries.flatten & items
+      end
+    end
+
+    def pickup(*items)
+      items.map { |_item|
+        [ _item, pickup(*Array(Array(@entries.assoc(_item)).last)) ]
+      }
+    end
 
     def normalize_and_order items, hash
       items.each do |_item|
@@ -77,12 +95,12 @@ module SK
       }
       while entry = array.shift
         if array.detect { |_item| _item.last.include? entry.first }
-          raise CycleError, entry if processed[entry]  > 1
+          raise CycleError, entry if processed[entry]  > 10
           processed[entry] += 1
 
           array << entry
         else
-          @entries << entry
+          @entries << [ entry.first, entry.last.to_a ]
         end
       end
     end
@@ -155,7 +173,8 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           :gena => :felix,
           :dennis => :gena,
           :vika => :gena,
-          :felix => :klim
+          :felix => :klim,
+          :vika => :dennis
         ]
         assert_equal [ :klim, :felix, :gena, :dennis, :vika ], Subordinator.slave_to_master(*h).lineup
       end
