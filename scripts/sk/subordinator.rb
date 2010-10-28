@@ -47,13 +47,13 @@ module SK
     def slaves
       @entries.map { |_entry|
         _entry.last
-      }.flatten.sort
+      }.flatten
     end
 
     def masters
       @entries.map { |_entry|
         _entry.first
-      }.sort
+      }
     end
 
     def lineup(*items)
@@ -64,13 +64,7 @@ module SK
     #######
 
     def figure_items_for_lineup(items)
-      if items.empty?
-        entries.map { |_entry|
-          _entry.first
-        }
-      else
-        entries.flatten & items
-      end
+      items.empty? ? masters : (entries.flatten & items)
     end
 
     def pickup(*items)
@@ -126,13 +120,13 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
       def test_slaves
         100.times do
-          assert_equal [3, 4, 5, 6, 7, 8, 9, 17, 18, 19], Subordinator.slave_to_master(*randomize(array)).slaves
+          assert_equal Set[3, 4, 5, 6, 7, 8, 9, 17, 18, 19], Set[*Subordinator.slave_to_master(*randomize(array)).slaves]
         end
       end
 
       def test_masters
         100.times do
-          assert_equal [ 1, 3, 5, 6 ], Subordinator.slave_to_master(*randomize(array)).masters
+          assert_equal Set[ 1, 3, 5, 6 ], Set[*Subordinator.slave_to_master(*randomize(array)).masters]
         end
       end
 
@@ -164,7 +158,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         ]
 
         100.times do
-          assert_equal [ 16973, 16975, 16976, 16977, 17217], Subordinator.slave_to_master(*randomize(a)).slaves
+          assert_equal Set[ 16973, 16975, 16976, 16977, 17217], Set[*Subordinator.slave_to_master(*randomize(a)).slaves]
         end
       end
 
