@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+ssh_environment = '~/.ssh/environment'
+command = [
+    'ssh', 
+    ARGV[0...-1], 
+    "[ -f #{ssh_environment} ] && . #{ssh_environment}; #{ARGV.last}"
+].flatten
+
+exec *command.flatten
