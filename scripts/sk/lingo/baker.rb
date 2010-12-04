@@ -232,7 +232,7 @@ end
 
 __END__
 
-vim: "vim: set sw=#{indent}:"
+vim: "vim: sw=#{indent}:"
 
 indent: 2
 
