@@ -19,7 +19,7 @@ require 'tsc/config.rb'
 class Application < TSC::Application
   def initialize
     super { |_config|
-      _config.arguments = '<items> ...'
+      _config.arguments = '<files> ...'
       _config.options = [
         [ '--prefix', 'A prefix for variables', 'string', '-p' ],
         [ '--upcase', 'Upcase all characters', nil, '-u' ],
@@ -27,7 +27,8 @@ class Application < TSC::Application
         [ '--test', 'Run internal tests', nil ]
       ]
       _config.description = [
-        "It is just a template"
+        "This utility generates shell variable assignments",
+        "from the content of a yaml config file."
       ]
     }
   end
