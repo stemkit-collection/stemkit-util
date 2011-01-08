@@ -23,6 +23,7 @@ class Application < TSC::Application
       _config.options = [
         [ '--prefix', 'Prefix for variables', 'string', '-p' ],
         [ '--config', 'YAML config file', 'path', '-c' ],
+        [ '--key', 'Top level attribute key', 'key', '-k', '-T' ],
         [ '--upcase', 'Upcase all characters', nil, '-u' ],
         [ '--export', 'Generate output suitable for eval', nil, '-e' ],
         [ '--test', 'Run internal tests', nil ]
@@ -75,7 +76,7 @@ class Application < TSC::Application
   end
 
   def config
-    @config ||= TSC::Config.parse(config_file).hash
+    @config ||= TSC::Config.parse(config_file).hash(*options.key_list)
   end
 
   def make_name(item)
