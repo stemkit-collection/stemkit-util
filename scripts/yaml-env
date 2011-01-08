@@ -19,9 +19,10 @@ require 'tsc/config.rb'
 class Application < TSC::Application
   def initialize
     super { |_config|
-      _config.arguments = '<files> ...'
+      _config.arguments = '[ <command> [ <command options> ... ] ]'
       _config.options = [
-        [ '--prefix', 'A prefix for variables', 'string', '-p' ],
+        [ '--prefix', 'Prefix for variables', 'string', '-p' ],
+        [ '--config', 'YAML config file', 'path', '-c' ],
         [ '--upcase', 'Upcase all characters', nil, '-u' ],
         [ '--export', 'Generate output suitable for eval', nil, '-e' ],
         [ '--test', 'Run internal tests', nil ]
@@ -35,26 +36,46 @@ class Application < TSC::Application
 
   def start
     handle_errors {
-      process_command_line
+      process_command_line true
       require 'rubygems'
 
-      throw :TEST if options.test?
-      raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
+      case
+        when options.test?
+          throw :TEST
 
-      ARGV.each do |_item|
-        process TSC::Config.parse(_item)
+        when ARGV.empty?
+          print_env
+
+        else
+          exec_with_env
       end
     }
   end
 
-  def process(item)
-    item.hash.each do |_name, _value|
+  def print_env
+    config.each do |_name, _value|
       name = make_name(_name)
       puts *[
         "#{name}=#{_value.to_s.inspect}",
         ("export #{name};" if options.export?)
       ].compact.join(' ')
     end
+  end
+
+  def exec_with_env
+    config.each do |_name, _value|
+      ENV[make_name(_name)] = _value.to_s
+    end
+
+    exec *ARGV
+  end
+
+  def config_file
+    options.config or raise TSC::MissingResourceError, 'config file'
+  end
+
+  def config
+    @config ||= TSC::Config.parse(config_file).hash
   end
 
   def make_name(item)
