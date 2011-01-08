@@ -42,7 +42,7 @@ class Application < TSC::Application
       raise TSC::UsageError, 'Nothing to do' if ARGV.empty?
 
       ARGV.each do |_item|
-        process TSC::Config.parse _item
+        process TSC::Config.parse(_item)
       end
     }
   end
