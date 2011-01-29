@@ -5,12 +5,12 @@
 # You must read and accept the license prior to use.
 
 require 'tsc/launch.rb'
-require 'sk/svn/hook/logger.rb'
+require 'sk/svn/logger.rb'
 
 module SK
   module Svn
     class Commander
-      include Hook::Logger
+      include SK::Svn::Logger
 
       attr_reader :launcher
 
