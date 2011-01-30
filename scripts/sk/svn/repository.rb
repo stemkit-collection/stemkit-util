@@ -15,7 +15,8 @@ require 'xmlsimple'
 require 'tsc/launch.rb'
 require 'tsc/dataset.rb'
 require 'sk/ruby.rb'
-require 'xmlsimple'
+
+require 'sk/svn/revision.rb'
 
 module SK
   module Svn
@@ -114,17 +115,6 @@ end
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'test/unit'
   require 'mocha'
-
-  require 'sk/svn/depot.rb'
-  require 'sk/svn/revision.rb'
-
-  depot = SK::Svn::Depot.new
-  spo = depot.repository('spo')
-
-  p spo.local_url
-  p spo.head_revision.number
-
-  p spo.revision(3).reload.message
 
   module SK
     module Svn

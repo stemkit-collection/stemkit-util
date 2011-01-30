@@ -10,6 +10,7 @@
 =end
 
 require 'pathname'
+require 'sk/svn/repository.rb'
 
 module SK
   module Svn
@@ -48,6 +49,17 @@ end
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'test/unit'
   require 'mocha'
+
+  depot = SK::Svn::Depot.new
+  spo = depot.repository('spo')
+
+  p spo.local_url
+  p spo.head_revision.number
+
+  p spo.revision(3).reload.message
+
+  tools = depot.repository('tools')
+  p tools.head_revision
 
   module SK
     module Svn
