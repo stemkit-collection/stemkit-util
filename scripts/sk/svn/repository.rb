@@ -47,7 +47,9 @@ module SK
       end
 
       def head_revision
-        revision_from_log getlog('-r', 'HEAD').first
+        with getlog('-r', 'HEAD') do |_entries|
+          _entries.empty? ? revision(0) : revision_from_log(_entries.first)
+        end
       end
 
       def tail_revision(*args)
@@ -59,7 +61,7 @@ module SK
       end
 
       def getlog(*args)
-        XmlSimple.xml_in(svn('log', '--xml', *args).join("\n")).fetch('logentry')
+        XmlSimple.xml_in(svn('log', '--xml', *args).join("\n")).fetch('logentry', [])
       end
 
       def svn(command, *args)
