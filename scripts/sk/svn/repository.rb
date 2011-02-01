@@ -53,7 +53,7 @@ module SK
       end
 
       def tail_revision(*args)
-        revision_from_log getlog(*args).last
+        revision_from_log getlog('-r', '0:HEAD', '--limit', '2', *args).first
       end
 
       def tail_branch_revision
