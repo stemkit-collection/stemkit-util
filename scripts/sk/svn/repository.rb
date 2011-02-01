@@ -35,7 +35,7 @@ module SK
       end
 
       def local_url
-        @local_url ||= "file://" + self.path.to_s
+        @local_url ||= "file://" + path.to_s
       end
 
       def revision(number)
@@ -69,7 +69,11 @@ module SK
       end
 
       def svnlook(command, *args)
-        launch 'svnlook', command, local_url, args
+        launch 'svnlook', command, path.to_s, args
+      end
+
+      def svnadmin(command, *args)
+        launch 'svnadmin', command, path.to_s, args
       end
 
       private

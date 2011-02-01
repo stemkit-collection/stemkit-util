@@ -13,6 +13,7 @@ require 'tsc/dataset.rb'
 require 'sk/ruby.rb'
 
 require 'time'
+require 'tempfile'
 
 module SK
   module Svn
@@ -45,6 +46,21 @@ module SK
 
       def message
         @values[:message] ||= @params.log.fetch('msg').first
+      end
+
+      def message=(content)
+        @values[:message] = content.to_s
+
+        Tempfile.open("sk_") { |_tempfile|
+          begin
+            _tempfile.write(message)
+            _tempfile.close
+
+            @repository.svnadmin 'setlog', '-r', number, '--bypass-hooks', _tempfile.path
+          ensure
+            _tempfile.unlink
+          end
+        }
       end
 
       def reload
