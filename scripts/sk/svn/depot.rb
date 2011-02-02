@@ -11,14 +11,19 @@
 
 require 'pathname'
 require 'sk/svn/repository.rb'
+require 'tsc/dataset.rb'
 
 module SK
   module Svn
     class Depot
       attr_reader :repositories
 
-      def initialize(location = "~/depots")
-        @repositories = find_repository_folders(location).map { |_folder|
+      DEFAULT_PARAMS = { :location => "~/depots" }
+
+      def initialize(params = {})
+        @params = TSC::Dataset.new(DEFAULT_PARAMS).update(normalize_params(params))
+
+        @repositories = find_repository_folders(@params.location).map { |_folder|
           Repository.new self, :name => _folder.basename.to_s, :path => _folder
         }
       end
@@ -29,8 +34,26 @@ module SK
         }
       end
 
+      def launch(*args)
+        begin
+          @launcher.launch(normalize_command_args(args)).first
+        rescue TSC::Launcher::TerminateError => error
+          raise error.errors.first
+        end
+      end
+      
       private
       #######
+
+      def normalize_params(params)
+        Hash === params ? params : Hash[ :location => params ]
+      end
+
+      def normalize_command_args(*args)
+        args.flatten.compact.map { |_item|
+          _item.to_s
+        }
+      end
 
       def find_repository_folders(location)
         normalize_folder(location).children.select { |_entry|
@@ -56,6 +79,13 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   p spo.local_url
   p spo.head_revision.number
 
+  m = spo.revision(3).reload.message
+  p spo.revision(3).reload.message
+
+  spo.revision(3).reload.message = m * 2
+  p spo.revision(3).reload.message
+
+  spo.revision(3).reload.message = m 
   p spo.revision(3).reload.message
 
   tools = depot.repository('tools')

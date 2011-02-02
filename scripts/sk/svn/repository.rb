@@ -80,17 +80,7 @@ module SK
       #######
 
       def launch(*args)
-        begin
-          @launcher.launch(normalize_command_args(args)).first
-        rescue TSC::Launcher::TerminateError => error
-          raise error.errors.first
-        end
-      end
-      
-      def normalize_command_args(*args)
-        args.flatten.compact.map { |_item|
-          _item.to_s
-        }
+        @depot.launch(*args)
       end
 
       def normalize_revision_number(number)
