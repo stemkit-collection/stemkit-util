@@ -63,6 +63,18 @@ module SK
         }
       end
 
+      def items
+        @values[:items] ||= begin 
+          with Hash.new do |_result|
+            getlog('-v').first.fetch('paths').first.fetch('path').each do |_item|
+              (_result[normalize_path_action(_item['action'])] ||= []) << _item['content']
+            end
+
+            _result
+          end
+        end
+      end
+
       def reload
         return if number.zero?
         @values = {}
@@ -76,6 +88,19 @@ module SK
 
       private
       #######
+
+      def normalize_path_action(action)
+        case action
+          when 'M'
+            :modified
+
+          when 'D'
+            :deleted
+
+          when 'A', 'R'
+            :added
+        end
+      end
 
       def translate_xml_time(line)
         with line.scan(%r{^(.*)T(.*)[.](.*)Z$}).first do |_items|
