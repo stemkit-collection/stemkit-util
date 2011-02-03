@@ -12,7 +12,6 @@
 require 'forwardable'
 require 'xmlsimple'
 
-require 'tsc/launch.rb'
 require 'tsc/dataset.rb'
 require 'sk/ruby.rb'
 
@@ -30,8 +29,6 @@ module SK
       def initialize(depot, params = {})
         @depot, @params = depot, TSC::Dataset.new(DEFAULT_PARAMS).update(params)
         @revisions = {}
-
-        @launcher = TSC::Launcher.new
       end
 
       def local_url

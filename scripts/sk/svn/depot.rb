@@ -12,6 +12,7 @@
 require 'pathname'
 require 'sk/svn/repository.rb'
 require 'tsc/dataset.rb'
+require 'tsc/launch.rb'
 
 module SK
   module Svn
@@ -22,6 +23,7 @@ module SK
 
       def initialize(params = {})
         @params = TSC::Dataset.new(DEFAULT_PARAMS).update(normalize_params(params))
+        @launcher = TSC::Launcher.new
 
         @repositories = find_repository_folders(@params.location).map { |_folder|
           Repository.new self, :name => _folder.basename.to_s, :path => _folder
@@ -73,19 +75,11 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'test/unit'
   require 'mocha'
 
-  depot = SK::Svn::Depot.new
+  depot = SK::Svn::Depot.new '~svn/depots'
   spo = depot.repository('spo')
 
   p spo.local_url
   p spo.head_revision.number
-
-  m = spo.revision(3).reload.message
-  p spo.revision(3).reload.message
-
-  spo.revision(3).reload.message = m * 2
-  p spo.revision(3).reload.message
-
-  spo.revision(3).reload.message = m 
   p spo.revision(3).reload.message
 
   tools = depot.repository('tools')
