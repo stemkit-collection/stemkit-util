@@ -43,24 +43,24 @@ module SK
       def launch(*args)
         with TSC::Launcher.normalize_command_args(args) do |_args|
           begin
-            TSC::Error.ignore {
-              @params.listener.svn_command_started(_args)
-            }
+            @params.listener.svn_command_started(_args)
             with @launcher.launch(_args).first do |_result|
-              TSC::Error.ignore {
-                @params.listener.svn_command_finished(_args, 0)
-              }
+              @params.listener.svn_command_finished(_args, 0)
               _result
             end
           rescue TSC::Launcher::TerminateError => error
-            TSC::Error.ignore {
-              @params.listener.svn_command_finished(_args, error.exited? ? error.status : -(error.signal))
-            }
+            @params.listener.svn_command_finished(_args, error.exited? ? error.status : -(error.signal))
             raise error.errors.first
           end
         end
       end
       
+      def svn_command_started(args)
+      end
+
+      def svn_command_finished(args, status)
+      end
+
       private
       #######
 
@@ -98,7 +98,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     end
   end 
 
-  depot = SK::Svn::Depot.new :location => '~svn/depots', :listener => Listener
+  depot = SK::Svn::Depot.new :location => '~svn/depots' #, :listener => Listener
   spo = depot.repository('spo')
 
   p spo.local_url

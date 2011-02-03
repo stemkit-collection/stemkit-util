@@ -50,13 +50,15 @@ module SK
 
       def message=(content)
         @values[:message] = content.to_s
+      end
 
+      def save_message(bypass = false)
         Tempfile.open("sk_") { |_tempfile|
           begin
             _tempfile.write(message)
             _tempfile.close
 
-            @repository.svnadmin 'setlog', '-r', number, '--bypass-hooks', _tempfile.path
+            @repository.svnadmin 'setlog', '-r', number, ('--bypass-hooks' if bypass), _tempfile.path
           ensure
             _tempfile.unlink
           end
