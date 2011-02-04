@@ -84,7 +84,7 @@ module SK
               DRb.start_service(service_uri, server)
               DRb.thread.join
             }
-            exit
+            exit!
           end
         end
 

@@ -1,4 +1,5 @@
 # Copyright (c) 2006, Gennady Bystritsky <bystr@mac.com>
+# vim: sw=2:
 # 
 # Distributed under the MIT Licence.
 # This is free software. See 'LICENSE' for details.
@@ -16,7 +17,7 @@ module SK
   module Svn
     module Hook
       class Server
-        attr_reader :name, :config, :repository, :manager
+        attr_reader :name, :config, :repository, :manager, :processor, :queue
 
         include ErrorMailer
 
@@ -46,7 +47,7 @@ module SK
                 rescue TSC::OperationFailed
                 end
               }
-              exit
+              exit!
             ensure
               $stderr.puts "#{Time.now} - FINISHED (pid=#{::Process.pid})"
             end
@@ -55,6 +56,10 @@ module SK
 
         def handshake
           repository
+        end
+
+        def run(string)
+          instance_eval(string.to_s).inspect
         end
 
         def process(revision)
