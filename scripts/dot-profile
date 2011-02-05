@@ -1,4 +1,4 @@
-# vim: ft=sh
+# vim: ft=sh: ts=8:
 
 eval <<'RUBY'
   $VERBOSE = nil
@@ -268,13 +268,6 @@ act_as_rc()
       ;;
     esac
 
-    PS1="[${SYSID}.${SERVER}:!]${PROMPT:-${USER}}${SHELLDEPTH:+_${SHELLDEPTH}}> "                          
-    [ "${TERM}" = xterm ] && {
-      PS1=`printf "\033]0;${PROMPT:-${USER}}@${SYSID}-${SERVER}\07\r"`"${PS1}"
-    }
-    export SHELLDEPTH=`expr "${SHELLDEPTH:-0}" + 1`
-    PS2="(cont) "                                             
-
     update_columns() {
       columns=`stty -a|sed -n 's/^.*columns[^0-9]* \([0-9][0-9]*\).*$/\1/p'`
       [ "${columns:+set}" = set ] || {
@@ -352,6 +345,13 @@ act_as_rc()
 
     PROFILE_LOCAL="${HOME}/.profile-local"
     [ -f "${PROFILE_LOCAL}" ] && . "${PROFILE_LOCAL}"
+
+    PS1="[${SYSID}.${SERVER}:!]${PROMPT:-${USER}}${SHELLDEPTH:+_${SHELLDEPTH}}> "                          
+    [ "${TERM}" = xterm ] && {
+      PS1=`printf "\033]0;${PROMPT:-${USER}}@${SYSID}-${SERVER}\07\r"`"${PS1}"
+    }
+    export SHELLDEPTH=`expr "${SHELLDEPTH:-0}" + 1`
+    PS2="(cont) "                                             
 
     update_columns
 
