@@ -10,7 +10,6 @@
 =end
 
 require 'tsc/dataset.rb'
-require 'sk/ruby.rb'
 
 require 'time'
 require 'tempfile'
@@ -18,8 +17,6 @@ require 'tempfile'
 module SK
   module Svn
     class Revision
-      include SK::Ruby
-
       DEFAULT_PARAMS = { :log => nil }
 
       def initialize(repository, params = {})
@@ -67,13 +64,11 @@ module SK
 
       def items
         @values[:items] ||= begin 
-          with Hash.new do |_result|
+          Hash.new.tap { |_result|
             getlog('-v').first.fetch('paths').first.fetch('path').each do |_item|
               (_result[normalize_path_action(_item['action'])] ||= []) << _item['content']
             end
-
-            _result
-          end
+          }
         end
       end
 
@@ -105,10 +100,10 @@ module SK
       end
 
       def translate_xml_time(line)
-        with line.scan(%r{^(.*)T(.*)[.](.*)Z$}).first do |_items|
+        line.scan(%r{^(.*)T(.*)[.](.*)Z$}).first.tap { |_items|
           raise "Wrong time for revision #{number}" unless _items.size == 3
-          gmt_to_local *_items
-        end
+          return gmt_to_local *_items
+        }
       end
 
       def gmt_to_local(date, time, ms)

@@ -13,14 +13,11 @@ require 'forwardable'
 require 'xmlsimple'
 
 require 'tsc/dataset.rb'
-require 'sk/ruby.rb'
-
 require 'sk/svn/revision.rb'
 
 module SK
   module Svn
     class Repository
-      include SK::Ruby
       extend Forwardable
 
       DEFAULT_PARAMS = { :path => nil, :name => nil }
@@ -36,17 +33,17 @@ module SK
       end
 
       def revision(number)
-        with normalize_revision_number(number) do |_number|
-          @revisions[_number] || begin 
+        normalize_revision_number(number).tap { |_number|
+          return @revisions[_number] || begin 
             _number.zero? ? revision_0 : revision_from_log(getlog('-r', _number).first)
           end
-        end
+        }
       end
 
       def head_revision
-        with getlog('-r', 'HEAD') do |_entries|
-          _entries.empty? ? revision(0) : revision_from_log(_entries.first)
-        end
+        getlog('-r', 'HEAD').tap { |_entries|
+          return _entries.empty? ? revision(0) : revision_from_log(_entries.first)
+        }
       end
 
       def tail_revision(*args)
@@ -81,10 +78,10 @@ module SK
       end
 
       def normalize_revision_number(number)
-        with number.to_s.scan(%r{^\s*(\d+)\s*$}).flatten.first do |_number|
-          raise "Not a revision number - #{number.inspect}" unless _number
-          _number.to_i
-        end
+        number.to_s.scan(%r{^\s*(\d+)\s*$}).flatten.first.tap { |_number|
+          return _number.to_i if _number
+          raise "Not a revision number - #{number.inspect}"
+        }
       end
 
       def revision_from_log(entry)

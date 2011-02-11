@@ -13,12 +13,10 @@ require 'pathname'
 require 'sk/svn/repository.rb'
 require 'tsc/dataset.rb'
 require 'tsc/launch.rb'
-require 'sk/ruby.rb'
 
 module SK
   module Svn
     class Depot
-      include SK::Ruby
       attr_reader :repositories
 
       DEFAULT_PARAMS = { :location => "~/depots", :listener => nil }
@@ -37,22 +35,22 @@ module SK
       def repository(name)
         @repositories.detect { |_repo|
           _repo.name == name
-        }
+        } or raise "Repository #{name.inspect} not available"
       end
 
       def launch(*args)
-        with TSC::Launcher.normalize_command_args(args) do |_args|
+        TSC::Launcher.normalize_command_args(args).tap { |_args|
           begin
             @params.listener.svn_command_started(_args)
-            with @launcher.launch(_args).first do |_result|
+            @launcher.launch(_args).first.tap { |_result|
               @params.listener.svn_command_finished(_args, 0)
-              _result
-            end
+              return _result
+            }
           rescue TSC::Launcher::TerminateError => error
             @params.listener.svn_command_finished(_args, error.exited? ? error.status : -(error.signal))
             raise error.errors.first
           end
-        end
+        }
       end
       
       def svn_command_started(args)
@@ -98,15 +96,15 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
     end
   end 
 
-  depot = SK::Svn::Depot.new :location => '~svn/depots' #, :listener => Listener
-  spo = depot.repository('spo')
+  depot = SK::Svn::Depot.new :location => '~/depots' #, :listener => Listener
+  spo = depot.repository('stemkit')
 
   p spo.local_url
   p spo.head_revision.number
   p spo.revision(3).reload.message
 
-  tools = depot.repository('tools')
-  p tools.head_revision
+  tools = depot.repository('tsc-tpm')
+  p tools.head_revision.number
 
   module SK
     module Svn
