@@ -1,1 +1,1 @@
-default: :suffixes=c,m,mm,h,y,s,S,java,c++,cc,cpp,cxx,hxx,hpp,C,H,rb,php,php3,phtml,scss,js,haml
+default: :suffixes=c,m,mm,h,y,s,S,java,c++,cc,cpp,cxx,hxx,hpp,C,H,rb,php,php3,phtml,scss,js,haml,erb,css
