@@ -17,13 +17,15 @@ module SK
       module Helpers
         include SK::Rails::Helpers
 
-        def render_update_flash_for(area, options = {}, &block)
-          render_flash_for area, options.merge(:js => true) do |element, content|
-            <<-EOS
-              $('.#{element}').hide('slow');
-              $('.#{element}').html('#{content}');
-              $('.#{element}').show('slow');
-            EOS
+        def render_flash_update_for(area, options = {}, &block)
+          render_flash_for area, options.merge(:js => true) do |_class, _content|
+            [].tap { |_array|
+              _array << "$('.#{_class}').hide('slow')"
+              _array << "$('.#{_class}').html('#{_content}')"
+              _array << "$('.#{_class}').show('slow')" if _content
+
+              break _array.push('').join(";\n")
+            }
           end
         end
       end
@@ -41,7 +43,12 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         class HelpersTest < Test::Unit::TestCase
           include SK::Rails::JS::Helpers
 
-          def render(options = {})
+          def render(*args)
+            args.inspect
+          end
+
+          def escape_javascript(content)
+            content
           end
 
           def content_tag(name, options = {}, &block)
@@ -49,7 +56,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
           end
 
           def test_invocation
-            assert_equal "", render_update_flash_for(:abc)
+            assert_equal "", render_flash_update_for(:abc, :partial => :zzz)
           end
 
           def test_nothing

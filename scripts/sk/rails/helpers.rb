@@ -12,14 +12,22 @@
 module SK
   module Rails
     module Helpers
-      def render_flash_for(area, locals = {}, &block)
+      def render_flash_for(area, options = {}, &block)
         area_tag_class = "#{area}-area"
         block ||= proc { |_class, _content|
-          content_tag :div, :class => _class {
+          content_tag(:div, :class => _class) {
             _content
           }
         }
-        block.call area_tag_class, render(:partial => "shared/flashing", :object => area.to_sym, :locals => locals).to_s
+        renderer = proc { |_partial|
+          render(:partial => "shared/#{_partial}", :object => area.to_sym, :locals => options).to_s.tap { |_content|
+            break if _content.strip.empty?
+            break escape_javascript _content if options[:js]
+          }
+        }
+        block.call area_tag_class, options[:partial].tap { |_partial|
+          break renderer.call _partial unless _partial.nil?
+        }
       end
     end
   end
@@ -32,6 +40,23 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Rails
       class HelpersTest < Test::Unit::TestCase
+          include SK::Rails::Helpers
+
+          def render(*args)
+            args.inspect
+          end
+
+          def escape_javascript(content)
+            content
+          end
+
+          def content_tag(name, options = {}, &block)
+            "<#{name}>#{block.call}</#{name}>"
+          end
+
+          def test_invocation
+            assert_equal "", render_flash_for(:abc, :partial => :zzz)
+          end
         def test_nothing
         end
 
