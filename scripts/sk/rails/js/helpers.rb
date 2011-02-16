@@ -20,9 +20,9 @@ module SK
         def render_flash_update_for(area, options = {}, &block)
           render_flash_for area, options.merge(:js => true) do |_class, _content|
             [].tap { |_array|
-              _array << "$('.#{_class}').hide('slow')"
+              _array << "$('.#{_class}').hide('fast')"
               _array << "$('.#{_class}').html('#{_content}')"
-              _array << "$('.#{_class}').show('slow')" if _content
+              _array << "$('.#{_class}').show('fast')" if _content
 
               break _array.push('').join(";\n")
             }
