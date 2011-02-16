@@ -11,7 +11,16 @@
 
 module SK
   module Rails
-    def render_flash_for(area, &block)
+    module Helpers
+      def render_flash_for(area, locals = {}, &block)
+        area_tag_class = "#{area}-area"
+        block ||= proc { |_class, _content|
+          content_tag :div, :class => _class {
+            _content
+          }
+        }
+        block.call area_tag_class, render(:partial => "shared/flashing", :object => area.to_sym, :locals => locals).to_s
+      end
     end
   end
 end
@@ -19,11 +28,13 @@ end
 if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   require 'test/unit'
   require 'mocha'
-  require 'stubba'
 
   module SK
     module Rails
       class HelpersTest < Test::Unit::TestCase
+        def test_nothing
+        end
+
         def setup
         end
       end
