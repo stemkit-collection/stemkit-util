@@ -15,9 +15,7 @@ module SK
       def render_flash_for(area, options = {}, &block)
         area_tag_class = "#{area}-area"
         block ||= proc { |_class, _content|
-          content_tag(:div, :class => _class) {
-            _content
-          }
+          content_tag :div, _content.to_s, :class => _class
         }
         renderer = proc { |_partial|
           render(:partial => "shared/#{_partial}", :object => area.to_sym, :locals => options).to_s.tap { |_content|
@@ -40,23 +38,37 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
   module SK
     module Rails
       class HelpersTest < Test::Unit::TestCase
-          include SK::Rails::Helpers
+        include SK::Rails::Helpers
 
-          def render(*args)
-            args.inspect
-          end
+        def render(*args)
+          args.inspect
+        end
 
-          def escape_javascript(content)
-            content
-          end
+        def escape_javascript(content)
+          content
+        end
 
-          def content_tag(name, options = {}, &block)
-            "<#{name}>#{block.call}</#{name}>"
-          end
+        def content_tag(name, content_or_options = {}, options = {}, &block)
+          {}.tap { |_options, _content|
+            if Hash === content_or_options
+              _options.update content_or_options 
+              _content = block.call if block
+            else
+              _content = content_or_options
+            end
 
-          def test_invocation
-            assert_equal "", render_flash_for(:abc, :partial => :zzz)
-          end
+            params = _options.merge(options).map { |_key, _value|
+              "#{_key}=#{_value.inspect}"
+            }.join(" ")
+
+            break "<#{name} #{params}>#{_content}</#{name}>"
+          }
+        end
+
+        def test_invocation
+          assert_equal "", render_flash_for(:abc, :partial => :zzz)
+        end
+
         def test_nothing
         end
 
