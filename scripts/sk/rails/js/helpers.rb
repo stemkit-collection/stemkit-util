@@ -53,7 +53,9 @@ module SK
         def sk_render_js_update_for_area(area, options = {})
           sk_render_for_area area, options.merge(:js => true) do |_area, _class, _content|
             content = _content ? "'#{escape_javascript(_content)}'" : 'null';
-            raw "updateAreaElement('#{_class}', #{content});"
+            SK::Rails::JS::Helpers.normalize_js_block %{
+              | updateAreaElement('#{_class}', #{content});
+            }
           end
         end
       end
