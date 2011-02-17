@@ -77,6 +77,10 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
             args.inspect
           end
 
+          def raw(content)
+            content
+          end
+
           def escape_javascript(content)
             content
           end

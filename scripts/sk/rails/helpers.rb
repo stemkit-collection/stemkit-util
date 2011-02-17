@@ -13,10 +13,13 @@ module SK
   module Rails
     module Helpers
       class << self
-        def with_options_for_partial_or_nil(options, &block)
-          options[:partial].tap { |_partial|
-            break block.call _partial, options unless _partial.nil?
+        def with_locals_for_partial_or_nil(options, &block)
+          locals = options.dup
+          partial = locals.delete(:partial).tap { |_partial|
+            shared = locals.delete(:shared_partial)
+            break "shared/#{shared}" if shared and _partial.nil?
           }
+          block.call partial, locals unless partial.nil?
         end
       end
 
@@ -26,8 +29,8 @@ module SK
           block ||= proc { |_area, _class, _content|
             content_tag :div, _content.to_s, :class => _class
           }
-          block.call _area, area_tag_class, SK::Rails::Helpers.with_options_for_partial_or_nil(options) { |_partial, _options|
-            render(:partial => _partial.to_s, :object => _area.to_sym, :locals => _options).to_s.tap { |_content|
+          block.call _area, area_tag_class, SK::Rails::Helpers.with_locals_for_partial_or_nil(options) { |_partial, _locals|
+            render(:partial => _partial.to_s, :object => _area.to_sym, :locals => _locals).to_s.tap { |_content|
               break if _content.strip.empty?
             }
           }
@@ -72,7 +75,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         end
 
         def test_invocation
-          assert_equal "", sk_render_for_area(:abc, :partial => :zzz)
+          assert_equal "", sk_render_for_area(:abc, :o => 23, :shared_partial => :uuu)
         end
 
         def test_nothing
