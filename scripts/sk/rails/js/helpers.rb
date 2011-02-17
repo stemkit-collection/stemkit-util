@@ -43,7 +43,7 @@ module SK
         def sk_render_js_functions_for_area(area, options = {})
           sk_render_for_area area do |_area, _class, _content|
             SK::Rails::JS::Helpers.normalize_js_block %{
-              | function update#{_area.to_s.capitalize}(content) { 
+              | function update#{_area.to_s.capitalize}Area(content) { 
               |   updateAreaElement('#{_class}', content);
               | }
             }
