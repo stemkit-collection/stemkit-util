@@ -14,16 +14,15 @@ module SK
     module Helpers
       def render_flash_for(area, options = {}, &block)
         area_tag_class = "#{area}-area"
-        block ||= proc { |_class, _content|
+        block ||= proc { |_area, _class, _content|
           content_tag :div, _content.to_s, :class => _class
         }
         renderer = proc { |_partial|
           render(:partial => "shared/#{_partial}", :object => area.to_sym, :locals => options).to_s.tap { |_content|
             break if _content.strip.empty?
-            break escape_javascript _content if options[:js]
           }
         }
-        block.call area_tag_class, options[:partial].tap { |_partial|
+        block.call area, area_tag_class, options[:partial].tap { |_partial|
           break renderer.call _partial unless _partial.nil?
         }
       end
@@ -42,10 +41,6 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
         def render(*args)
           args.inspect
-        end
-
-        def escape_javascript(content)
-          content
         end
 
         def content_tag(name, content_or_options = {}, options = {}, &block)

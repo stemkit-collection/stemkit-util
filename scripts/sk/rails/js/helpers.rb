@@ -17,11 +17,27 @@ module SK
       module Helpers
         include SK::Rails::Helpers
 
+        def render_flash_with_js_for(area, options = {}, &block)
+          render_flash_for area do |_area, _class, _content|
+            content_for _class do
+              javascript_tag do
+                %{
+                  function flash#{_area.to_s.capitalize}() { 
+                     alert('#{_area.inspect}'); 
+                  }
+                }
+              end
+            end
+          end
+
+          render_flash_for(area, options)
+        end
+
         def render_flash_update_for(area, options = {}, &block)
-          render_flash_for area, options.merge(:js => true) do |_class, _content|
+          render_flash_for area, options.merge(:js => true) do |_area, _class, _content|
             [].tap { |_array|
               _array << "$('.#{_class}').hide('fast')"
-              _array << "$('.#{_class}').html('#{_content}')"
+              _array << "$('.#{_class}').html('#{escape_javascript(_content)}')"
               _array << "$('.#{_class}').show('fast')" if _content
 
               break _array.push('').join(";\n")
