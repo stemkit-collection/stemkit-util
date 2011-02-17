@@ -18,7 +18,7 @@ module SK
           content_tag :div, _content.to_s, :class => _class
         }
         renderer = proc { |_partial|
-          render(:partial => "shared/#{_partial}", :object => area.to_sym, :locals => options).to_s.tap { |_content|
+          render(:partial => _partial.to_s, :object => area.to_sym, :locals => options).to_s.tap { |_content|
             break if _content.strip.empty?
           }
         }
