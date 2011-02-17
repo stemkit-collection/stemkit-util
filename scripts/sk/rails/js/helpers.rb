@@ -17,30 +17,35 @@ module SK
       module Helpers
         include SK::Rails::Helpers
 
-        def render_flash_with_js_for(area, options = {}, &block)
-          render_flash_for area do |_area, _class, _content|
-            content_for _class do
-              javascript_tag do
-                %{
-                  function flash#{_area.to_s.capitalize}() { 
-                     alert('#{_area.inspect}'); 
-                  }
-                }
-              end
-            end
+        class << self
+          def normalize_js_block(content)
+            Array(content).map { |_line|
+              _line.slice %r{^(\s*\| )(.*$)}, 2
+            }.compact.join("\n")
           end
-
-          render_flash_for(area, options)
         end
 
-        def render_flash_update_for(area, options = {}, &block)
-          render_flash_for area, options.merge(:js => true) do |_area, _class, _content|
-            [].tap { |_array|
-              _array << "$('.#{_class}').hide('fast')"
-              _array << "$('.#{_class}').html('#{escape_javascript(_content)}')"
-              _array << "$('.#{_class}').show('fast')" if _content
+        def render_js_common_functions
+        end
 
-              break _array.push('').join(";\n")
+        def render_flash_functions_for(area, options = {})
+          render_flash_for area do |_area, _class, _content|
+            SK::Rails::JS::Helpers.normalize_js_block %{
+              | function flash#{_area.to_s.capitalize}(content) { 
+              |   $('.#{_class}').hide();
+              |   $('.#{_class}').html(content == null ? '' : content);
+              |   $('.#{_class}').show('fast');
+              | }
+            }
+          end
+        end
+
+        def render_flash_update_for(area, options = {})
+          render_flash_for area, options.merge(:js => true) do |_area, _class, _content|
+            SK::Rails::JS::Helpers.normalize_js_block %{
+              | $('.#{_class}').hide('fast');
+              | $('.#{_class}').html('#{escape_javascript(_content)}');
+              | $('.#{_class}').show('fast');
             }
           end
         end
@@ -71,8 +76,18 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
             "<#{name}>#{block.call}</#{name}>"
           end
 
-          def test_invocation
+          def OFF_test_invocation
             assert_equal "", render_flash_update_for(:abc, :partial => :zzz)
+          end
+
+          def test_normalize
+            assert_equal '', SK::Rails::JS::Helpers.normalize_js_block(%{
+              | aaa
+              |   bbb
+              |ccc
+
+
+            })
           end
 
           def test_nothing
