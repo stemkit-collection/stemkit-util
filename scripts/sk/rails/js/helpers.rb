@@ -25,27 +25,31 @@ module SK
           end
         end
 
-        def render_js_common_functions
+        def sk_render_js_common_functions
+          SK::Rails::JS::Helpers.normalize_js_block %{
+            | function updateAreaElement(element, content) { 
+            |   var target = $('.' + element);
+            |   target.hide();
+            |   target.html(content == null ? '' : content);
+            |   target.show('fast');
+            | }
+          }
         end
 
-        def render_flash_functions_for(area, options = {})
-          render_flash_for area do |_area, _class, _content|
+        def sk_render_js_functions_for_area(area, options = {})
+          sk_render_for_area area do |_area, _class, _content|
             SK::Rails::JS::Helpers.normalize_js_block %{
-              | function flash#{_area.to_s.capitalize}(content) { 
-              |   $('.#{_class}').hide();
-              |   $('.#{_class}').html(content == null ? '' : content);
-              |   $('.#{_class}').show('fast');
+              | function update#{_area.to_s.capitalize}(content) { 
+              |   updateAreaElement('#{_class}', content);
               | }
             }
           end
         end
 
-        def render_flash_update_for(area, options = {})
-          render_flash_for area, options.merge(:js => true) do |_area, _class, _content|
+        def sk_render_js_update_for_area(area, options = {})
+          sk_render_for_area area, options.merge(:js => true) do |_area, _class, _content|
             SK::Rails::JS::Helpers.normalize_js_block %{
-              | $('.#{_class}').hide('fast');
-              | $('.#{_class}').html('#{escape_javascript(_content)}');
-              | $('.#{_class}').show('fast');
+              | updateAreaElement('#{_class}', '#{escape_javascript(_content)}');
             }
           end
         end
@@ -76,16 +80,16 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
             "<#{name}>#{block.call}</#{name}>"
           end
 
-          def OFF_test_invocation
-            assert_equal "", render_flash_update_for(:abc, :partial => :zzz)
+          def test_invocation
+            assert_equal "", sk_render_js_update_for_area(:abc, :partial => :zzz)
           end
 
           def test_normalize
             assert_equal '', SK::Rails::JS::Helpers.normalize_js_block(%{
+
               | aaa
               |   bbb
-              |ccc
-
+              |  ccc
 
             })
           end

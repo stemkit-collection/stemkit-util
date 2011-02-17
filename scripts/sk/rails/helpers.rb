@@ -12,7 +12,7 @@
 module SK
   module Rails
     module Helpers
-      def render_flash_for(area, options = {}, &block)
+      def sk_render_for_area(area, options = {}, &block)
         area_tag_class = "#{area}-area"
         block ||= proc { |_area, _class, _content|
           content_tag :div, _content.to_s, :class => _class
@@ -61,7 +61,7 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
         end
 
         def test_invocation
-          assert_equal "", render_flash_for(:abc, :partial => :zzz)
+          assert_equal "", sk_render_for_area(:abc, :partial => :zzz)
         end
 
         def test_nothing
