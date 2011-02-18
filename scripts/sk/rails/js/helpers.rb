@@ -23,6 +23,15 @@ module SK
               _line.slice %r{^(\s*\| )(.*$)}, 2
             }.compact.join("\n")
           end
+
+          def capitalize_components(area)
+            area.to_s.split(%r{[\W_]}).map { |_component|
+              _component.strip.tap { |_item|
+                break if _item.empty?
+                break _item.capitalize
+              }
+            }.join
+          end
         end
 
         def sk_render_js_common_functions
@@ -43,7 +52,7 @@ module SK
         def sk_render_js_functions_for_area(area, options = {})
           sk_render_for_area area do |_area, _class, _content|
             SK::Rails::JS::Helpers.normalize_js_block %{
-              | function update#{_area.to_s.capitalize}Area(content) { 
+              | function update#{SK::Rails::JS::Helpers.capitalize_components(_area)}Area(content) { 
               |   updateAreaElement('#{_class}', content);
               | }
             }
@@ -101,6 +110,10 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
               |  ccc
 
             })
+          end
+
+          def test_js_functions
+            assert_equal "", sk_render_js_functions_for_area(".message-_.request.  zzz")
           end
 
           def test_nothing
