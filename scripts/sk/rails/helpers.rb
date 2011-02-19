@@ -19,7 +19,7 @@ module SK
             shared = locals.delete(:shared_partial)
             break "shared/#{shared}" if shared and _partial.nil?
           }
-          block.call partial, locals unless partial.nil?
+          block.call partial, locals.merge(:partial => locals) unless partial.nil?
         end
       end
 
