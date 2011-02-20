@@ -17,6 +17,8 @@ require 'tempfile'
 module SK
   module Svn
     class Revision
+      attr_reader :repository
+
       DEFAULT_PARAMS = { :log => nil }
 
       def initialize(repository, params = {})
@@ -59,6 +61,15 @@ module SK
           ensure
             _tempfile.unlink
           end
+        }
+      end
+
+      def invoke_hook_for(name)
+        repository.path.join('hooks').join(name).tap { |_hook|
+          "Hook for #{name} is not configured in repository #{repository.name.inspect}".tap { |_message|
+            raise _message unless _hook.executable?
+          }
+          repository.launch _hook, repository.path, number
         }
       end
 

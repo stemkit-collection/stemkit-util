@@ -55,7 +55,7 @@ module SK
             }
           rescue TSC::Launcher::TerminateError => error
             @params.listener.svn_command_finished(_args, error.exited? ? error.status : -(error.signal))
-            raise error.errors.first
+            raise error.errors.first || "#{File.basename(_args.first)} terminated with code #{error.status}"
           end
         }
       end

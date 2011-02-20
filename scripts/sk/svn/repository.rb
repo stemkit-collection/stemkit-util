@@ -70,12 +70,12 @@ module SK
         launch 'svnadmin', command, path.to_s, args
       end
 
-      private
-      #######
-
       def launch(*args)
         @depot.launch(*args)
       end
+
+      private
+      #######
 
       def normalize_revision_number(number)
         number.to_s.scan(%r{^\s*(\d+)\s*$}).flatten.first.tap { |_number|
