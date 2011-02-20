@@ -19,7 +19,7 @@ module SK
     class Depot
       attr_reader :repositories
 
-      DEFAULT_PARAMS = { :location => "~/depots", :listener => nil }
+      DEFAULT_PARAMS = { :location => "~/depots", :config => "~/conf", :listener => nil }
 
       def initialize(params = {})
         @params = TSC::Dataset.new(DEFAULT_PARAMS).update(normalize_params(params))
@@ -29,6 +29,13 @@ module SK
 
         @repositories = find_repository_folders(@params.location).map { |_folder|
           Repository.new self, :name => _folder.basename.to_s, :path => _folder
+        }
+      end
+
+      def authenticate(name, password)
+        users.find { |_user|
+          next unless _user.name == name
+          return password.to_s.crypt(_user.password) == _user.password
         }
       end
 
@@ -76,6 +83,19 @@ module SK
         path = Pathname.new(folder).expand_path.realpath
         path.directory? ? path : raise("Not a folder")
       end
+
+      def users
+        @users ||= begin
+          normalize_folder(@params.config).join('passwords').readlines.map { |_line|
+            _line.split(':').tap { |_entries|
+              break unless _entries.size > 1
+              break TSC::Dataset[ :name => _entries[0], :password => _entries[1] ]
+            }
+          }.compact
+        rescue 
+          []
+        end
+      end
     end
   end
 end
@@ -105,6 +125,8 @@ if $0 == __FILE__ or defined?(Test::Unit::TestCase)
 
   tools = depot.repository('tsc-tpm')
   p tools.head_revision.number
+
+  p depot.authenticate("aaa", "bbb")
 
   module SK
     module Svn
