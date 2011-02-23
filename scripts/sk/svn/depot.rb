@@ -87,7 +87,7 @@ module SK
       def users
         @users ||= begin
           normalize_folder(@params.config).join('passwords').readlines.map { |_line|
-            _line.split(':').tap { |_entries|
+            _line.chomp.split(':').tap { |_entries|
               break unless _entries.size > 1
               break TSC::Dataset[ :name => _entries[0], :password => _entries[1] ]
             }
@@ -126,7 +126,7 @@ if $0 == __FILE__
   tools = depot.repository('tsc-tpm')
   p tools.head_revision.number
 
-  p depot.authenticate("aaa", "bbb")
+  p depot.authenticate("aaa", "aaa")
 
   module SK
     module Svn
