@@ -77,7 +77,9 @@ module SK
       end
 
       def normalize_params(params)
-        Hash === params ? params : Hash[ :location => params ]
+        (Hash === params ? params : Hash[ :location => params ]).delete_if { |_key, _value|
+          _value.nil?
+        }
       end
 
       def find_repository_folders(location)
