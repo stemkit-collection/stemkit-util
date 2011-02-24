@@ -13,6 +13,7 @@ require 'pathname'
 require 'sk/svn/repository.rb'
 require 'tsc/dataset.rb'
 require 'tsc/launch.rb'
+require 'htauth'
 
 module SK
   module Svn
@@ -35,7 +36,7 @@ module SK
       def authenticate(name, password)
         users.find { |_user|
           next unless _user.name == name
-          return password.to_s.crypt(_user.password) == _user.password
+          return encode_password(password, _user.password) == _user.password
         }
       end
 
@@ -68,6 +69,12 @@ module SK
 
       private
       #######
+
+      def encode_password(password, salt)
+        HTAuth::Algorithm.algorithms_from_field(salt).last.tap { |_algorithm|
+          break _algorithm.encode(password) if _algorithm
+        }
+      end
 
       def normalize_params(params)
         Hash === params ? params : Hash[ :location => params ]
@@ -127,6 +134,8 @@ if $0 == __FILE__
   p tools.head_revision.number
 
   p depot.authenticate("aaa", "aaa")
+  p depot.authenticate("bbb", "bbb")
+  p depot.authenticate("ccc", "ccc")
 
   module SK
     module Svn
