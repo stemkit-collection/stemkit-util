@@ -89,7 +89,7 @@ module SK
       end
 
       def normalize_folder(folder)
-        path = Pathname.new(folder).expand_path.realpath
+        path = Pathname.new(folder).expand_path
         path.directory? ? path : raise("Not a folder")
       end
 
