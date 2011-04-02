@@ -1,0 +1,19 @@
+--k-and-r-style
+--line-length 132
+--no-tabs
+--dont-cuddle-else
+--swallow-optional-blank-lines
+--case-indentation 4
+--indent-level 4
+--continuation-indentation 4
+--break-before-boolean-operator
+--no-space-after-function-call-names
+--no-space-after-parentheses
+--no-space-after-for
+--no-space-after-if
+--no-space-after-while
+--no-space-after-casts
+--ignore-newlines
+--dont-line-up-parentheses
+--continue-at-parentheses
+-ppi3
