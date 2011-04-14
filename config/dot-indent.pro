@@ -16,4 +16,5 @@
 --ignore-newlines
 --dont-line-up-parentheses
 --continue-at-parentheses
+ --case-brace-indentation 0
 -ppi3
