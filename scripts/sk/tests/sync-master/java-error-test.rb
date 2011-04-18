@@ -9,7 +9,7 @@
   Author: Gennady Bystritsky (gennady.bystritsky@quest.com)
 =end
 
-if $0 == __FILE__ or defined?(Test::Unit::TestCase)
+if $0 == __FILE__ 
   require 'sk/sync-master.rb'
   require 'sk/tests/sync-master/sync-master-fixture.rb'
 
