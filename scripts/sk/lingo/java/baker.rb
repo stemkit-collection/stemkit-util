@@ -63,7 +63,6 @@ end
 if $0 == __FILE__ 
   require 'test/unit'
   require 'mocha'
-  require 'stubba'
   
   module SK
     module Lingo

@@ -84,7 +84,6 @@ end
 if $0 == __FILE__ 
   require 'test/unit'
   require 'mocha'
-  require 'stubba'
   
   module SK
     module Lingo
@@ -127,7 +126,6 @@ ruby:
             content: |-
               require 'test/unit'
               require 'mocha'
-              require 'stubba'
           -
             namespace: true
             content: |-
@@ -199,9 +197,7 @@ ruby:
 
       require 'rubygems'
       require 'test/unit'
-
       require 'mocha'
-      require 'stubba'
 
       class ApplicationTest < Test::Unit::TestCase
         attr_reader :app

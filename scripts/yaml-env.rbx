@@ -100,9 +100,7 @@ end
 
 require 'rubygems'
 require 'test/unit'
-
 require 'mocha'
-require 'stubba'
 
 class ApplicationTest < Test::Unit::TestCase
   attr_reader :app

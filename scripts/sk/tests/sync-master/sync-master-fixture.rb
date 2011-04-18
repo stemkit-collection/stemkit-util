@@ -14,7 +14,6 @@ require 'sk/executor.rb'
 require 'enumerator'
 require 'test/unit'
 require 'mocha'
-require 'stubba'
 
 module SK
   module Tests

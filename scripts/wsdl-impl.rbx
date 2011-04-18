@@ -113,7 +113,6 @@ end
 
 require 'test/unit'
 require 'mocha'
-require 'stubba'
 
 class ApplicationTest < Test::Unit::TestCase
   def test_nothing

@@ -76,9 +76,7 @@ end
 
 require 'rubygems'
 require 'test/unit'
-
 require 'mocha'
-require 'stubba'
 
 require 'sk/lingo/bakery.rb'
 
