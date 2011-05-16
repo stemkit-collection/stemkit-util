@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/sh
 # vi: sw=2:
 
 OPTERR=0
@@ -34,7 +34,7 @@ while getopts "viqan:" option; do
     ;;
   esac
 done
-shift $(( ${OPTIND} - 1 ))
+shift `expr "${OPTIND}" - 1`
 
 [ "${#}" -eq 0 ] && {
   echo "USAGE: `basename ${0}` <location> [ <pattern> [ <extra find options> ...] ]"
