@@ -23,7 +23,6 @@ class Application < TSC::Application
     handle_errors {
       require 'rubygems'
       require 'tsc/config-locator.rb'
-      require 'tsc/launch'
       require 'yaml'
       require 'open3'
       require 'time'
@@ -91,9 +90,12 @@ class Application < TSC::Application
   def execute(*args)
     puts args.inspect if verbose?
     exec *args unless @translate_xml_time
-    launch(args) { |_stdout, _stderr|
-      $stderr.puts _stderr if _stderr
-      $stdout.puts translate_xml_time(_stdout) if _stdout
+    Open3.popen3(*args) { |_in, _out, _err|
+      _err.readlines.each do |_line|
+        $stderr.puts _line
+      end
+
+      $stdout.puts translate_xml_time(_out.readlines.join)
     }
   end
 
@@ -170,7 +172,7 @@ class Application < TSC::Application
 
   def locate_top(*components)
     upper = [ '..', *components ]
-    info(File.join(upper))[ROOT_INFO] == root ? locate_top(upper) : components
+    info(File.join(upper))[ROOT_INFO] ? locate_top(upper) : components
   end
 
   def top
