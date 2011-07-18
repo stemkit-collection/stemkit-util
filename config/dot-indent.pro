@@ -1,5 +1,5 @@
 --k-and-r-style
---line-length 132
+--line-length 168
 --no-tabs
 --dont-cuddle-else
 --swallow-optional-blank-lines
