@@ -19,6 +19,7 @@ eval <<'RUBY'
       #{userinfo.dir}/bin
       /opt/sk/platform/#{sysid}/bin
       /opt/quest/platform/#{sysid}/bin
+      #{userinfo.dir}/local/platform/#{sysid}/bin
       #{userinfo.dir}/local/#{sysid}/bin
       #{userinfo.dir}/local/bin
       #{userinfo.dir}/local/jruby/bin
@@ -401,7 +402,7 @@ act_as_profile()
   trap 'ruby '"${ENV}"' stop ${SECONDS:-0}' EXIT
 
   PATH="${HOME}/bin:${PATH}" export PATH
-  RUBY=`locate_ruby /opt/sk/platform/*/bin /opt/quest/platform/*/bin ${HOME}/local/*/bin /usr/local/bin /usr/bin`
+  RUBY=`locate_ruby /opt/sk/platform/*/bin /opt/quest/platform/*/bin ${HOME}/local/platform/*/bin ${HOME}/local/*/bin /usr/local/bin /usr/bin`
 
   tty -s || return 0
 
@@ -427,8 +428,6 @@ act_as_profile()
   mesg y
   stty intr ^c susp ^z kill ^u eol ^w erase ^h tostop 
   stty -tabs 2>/dev/null
-
-  ulimit -c unlimited
 
   case "${SHELL}" in
     */bash | */sh)
