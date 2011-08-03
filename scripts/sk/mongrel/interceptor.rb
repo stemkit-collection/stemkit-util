@@ -15,10 +15,10 @@ module SK
       ENVIRONMENT_MARKER = 'sk.mongrel.interceptor'
       class << self
         def intercept_unless_already(top)
-          return unless defined? Mongrel::Command::Base
+          return unless defined? ::Mongrel::Command::Base
           return if ENV[ENVIRONMENT_MARKER] == "active"
 
-          ObjectSpace.each_object(Mongrel::Command::Base) do |_object|
+          ObjectSpace.each_object(::Mongrel::Command::Base) do |_object|
             if _object.class.name.split("::").last == "Start"
               ENV[ENVIRONMENT_MARKER] = "active"
               self.new(top).start(_object.original_args)
@@ -44,7 +44,7 @@ module SK
       end
 
       def close_mongrel_listeners
-        ObjectSpace.each_object(TCPSocket) do |_object|
+        ObjectSpace.each_object(::TCPSocket) do |_object|
           _object.close
         end
       end
@@ -53,15 +53,18 @@ module SK
 end
 
 if $0 == __FILE__ 
-  require 'test/unit'
-  require 'mocha'
+  begin
+    require 'test/unit'
+    require 'mocha'
 
-  module SK
-    module Mongrel
-      class InterceptorTest < Test::Unit::TestCase
-        def setup
+    module SK
+      module Mongrel
+        class InterceptorTest < Test::Unit::TestCase
+          def setup
+          end
         end
       end
     end
+  rescue LoadError
   end
 end
