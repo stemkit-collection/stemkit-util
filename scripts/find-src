@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ksh
 # vi: sw=2:
 
 OPTERR=0
