@@ -26,6 +26,7 @@ class Application < TSC::Application
         [ '--key', 'Top level attribute key', 'key', '-k', '-T' ],
         [ '--upcase', 'Upcase all characters', nil, '-u' ],
         [ '--export', 'Generate output suitable for eval', nil, '-e' ],
+        [ '--batch', 'Generate output suitable for DOS batch files', nil, '-b' ],
         [ '--test', 'Run internal tests', nil ]
       ]
       _config.description = [
@@ -56,10 +57,14 @@ class Application < TSC::Application
   def print_env
     config.each do |_name, _value|
       name = make_name(_name)
-      puts *[
-        "#{name}=#{_value.to_s.inspect}",
-        ("export #{name};" if options.export?)
-      ].compact.join(' ')
+      if options.batch?
+        puts "set #{name}=#{_value.to_s}"
+      else
+        puts *[
+          "#{name}=#{_value.to_s.inspect}",
+          ("export #{name};" if options.export?)
+        ].compact.join(' ')
+      end
     end
   end
 
