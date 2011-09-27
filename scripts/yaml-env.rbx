@@ -55,17 +55,16 @@ class Application < TSC::Application
   end
 
   def print_env
-    config.each do |_name, _value|
-      name = make_name(_name)
-      if options.batch?
-        puts "set #{name}=#{_value.to_s}"
-      else
-        puts *[
-          "#{name}=#{_value.to_s.inspect}",
-          ("export #{name};" if options.export?)
-        ].compact.join(' ')
-      end
-    end
+    puts *config.map { |_name, _value|
+      make_env_entry(make_name(_name), _value.to_s).compact.join(' ')
+    }
+  end
+
+  def make_env_entry(name, value)
+    [
+      (options.batch? ? "set #{name}=#{value}" : "#{name}=#{value.inspect}"),
+      ("export #{name};" if options.export?)
+    ]
   end
 
   def exec_with_env
