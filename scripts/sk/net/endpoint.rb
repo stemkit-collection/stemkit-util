@@ -40,6 +40,14 @@ module SK
         raise NoPortError, @host if @port.zero?
       end
 
+      def to_s
+        [ host, port ].join(':')
+      end
+
+      def inspect
+        to_s.inspect
+      end
+
       private
       #######
 
@@ -75,12 +83,16 @@ if $0 == __FILE__
           endpoint = SK::Net::Endpoint.new "aaa", 45
           assert_equal "aaa", endpoint.host
           assert_equal 45, endpoint.port
+
+          assert_equal "aaa:45", endpoint.to_s
         end
 
         def test_simple_host_and_several_ports
           endpoint = SK::Net::Endpoint.new "aaa", "hohoho", "17", 45
           assert_equal "aaa", endpoint.host
           assert_equal 17, endpoint.port
+
+          assert_equal '"aaa:17"', endpoint.inspect
         end
 
         def test_simple_host_with_port
