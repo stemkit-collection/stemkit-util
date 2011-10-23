@@ -33,11 +33,15 @@ module SK
               define_method "log_#{_name}" do |_message|
                 log _name, _message
               end
+
+              define_method "#{_name}?" do 
+                enabled? _name
+              end
             end
           end
         end
 
-        define_log_methods :error, :stat, :warning, :info, :notice, :debug, :detail
+        define_log_methods :error, :stat, :warning, :info, :notice, :detail, :debug
 
         private
         #######

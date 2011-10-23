@@ -32,21 +32,25 @@ module SK
           return false
         end
 
-        make_singleton_method(name) { |*_args|
-          catch :break do
-            foreach_line_in _args do |_line|
-              adaptor.send(log_name, _line) or throw :break, false
-            end
+        if args.empty? == false or adaptor.send("#{name}?") == true
+          make_singleton_method(name) { |*_args|
+            output_lines_with(log_name, _args).tap { |_success|
+              next unless _success
+              next unless block_given?
 
-            true
-          end
-        }
-        send(name, *args, &block).tap { |_success|
-          next if _success
-          make_singleton_method(name) { |*_args| 
-            false 
+              StringIO.new.tap { |_io|
+                yield _io
+                output_lines_with(log_name, _io.string) unless _io.size == 0
+              }
+            }
           }
+          return true if send(name, *args, &block)
+        end
+
+        make_singleton_method(name) { |*_args| 
+          false 
         }
+        false
       end
 
       private
@@ -56,12 +60,14 @@ module SK
         @adaptor ||= logger
       end
 
-      def foreach_line_in(*args)
+      def output_lines_with(log_name, *args)
         args.flatten.each do |_item|
           _item.to_s.each do |_line|
-            yield _line.chomp
+            return false unless adaptor.send(log_name, _line.chomp)
           end
         end
+
+        true
       end
 
       def singleton_class
