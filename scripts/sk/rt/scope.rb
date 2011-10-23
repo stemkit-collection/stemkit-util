@@ -6,7 +6,10 @@
   You must read and accept the license prior to use.
 =end
 
-require 'sk/rt'
+# This separation is designed for substituting pure ruby implementation with
+# the C++ one from stemkit-cpp runtime library.
+# 
+require 'sk/rt/scope-implementation.rb' unless defined? SK::Rt::Scope
 
 module SK
   module Rt
