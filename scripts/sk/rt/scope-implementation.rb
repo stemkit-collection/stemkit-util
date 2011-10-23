@@ -37,13 +37,13 @@ module SK
           end
         end
 
-        define_log_methods :error, :stat, :warning, :notice, :info, :debug, :detail
+        define_log_methods :error, :stat, :warning, :info, :notice, :debug, :detail
 
         private
         #######
 
         def enabled?(level)
-          true
+          [ :error, :stat, :warning, :info ].include? level
         end
         
         def log(level, message)

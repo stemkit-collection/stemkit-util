@@ -27,22 +27,26 @@ module SK
 
       def method_missing(name, *args, &block)
         log_name = "log_#{name}"
-        if adaptor.respond_to?(log_name)
-          adaptor.warning "#{name}: Unsupported invocation with a block" if block
-          
-          make_singleton_method(name) { |*_args|
-            catch :break do
-              foreach_line_in _args do |_line|
-                adaptor.send(log_name, _line) or throw :break, false
-              end
-
-              true
-            end
-          }
-          send(name, *args) or make_singleton_method(name) { |*_args| }
-        else
+        unless adaptor.respond_to?(log_name)
           adaptor.log_error "#{name}: Unsupported log level: #{args.inspect} (block=#{block.inspect})"
+          return false
         end
+
+        make_singleton_method(name) { |*_args|
+          catch :break do
+            foreach_line_in _args do |_line|
+              adaptor.send(log_name, _line) or throw :break, false
+            end
+
+            true
+          end
+        }
+        send(name, *args, &block).tap { |_success|
+          next unless _success
+          make_singleton_method(name) { |*_args| 
+            false 
+          }
+        }
       end
 
       private
