@@ -42,7 +42,7 @@ module SK
           end
         }
         send(name, *args, &block).tap { |_success|
-          next unless _success
+          next if _success
           make_singleton_method(name) { |*_args| 
             false 
           }
