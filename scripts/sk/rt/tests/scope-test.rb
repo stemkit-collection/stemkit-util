@@ -11,13 +11,14 @@
 
 require 'test/unit'
 require 'mocha'
+require 'stringio'
 
 require 'sk/rt/scope.rb'
 
 module SK
   module Rt
     class ScopeTest < Test::Unit::TestCase
-      attr_reader :scope
+      attr_reader :scope, :stream
 
       def test_info
         assert false == scope.respond_to?(:info) 
@@ -34,6 +35,9 @@ module SK
 
       def setup
         @scope = SK::Rt::Scope.new "abc"
+        @stream = StringIO.new
+
+        SK::Rt::Scope.controller.destination = stream
       end
     end
   end

@@ -11,6 +11,7 @@
 # the C++ one from stemkit-cpp runtime library.
 # 
 require 'sk/rt/scope-implementation.rb' unless defined? SK::Rt::Scope
+require 'stringio'
 
 module SK
   module Rt

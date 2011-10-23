@@ -9,6 +9,8 @@
   Author: Gennady Bystritsky <bystr@mac.com>
 =end
 
+require 'sk/rt/controller.rb'
+
 module SK
   module Rt
     class Scope
@@ -17,6 +19,12 @@ module SK
       def initialize(name)
         @name = name
         @logger = Logger.new self
+      end
+
+      class << self
+        def controller
+          @controller ||= SK::Rt::Controller.new
+        end
       end
 
       private
@@ -46,13 +54,15 @@ module SK
         private
         #######
 
+        attr_reader :scope
+
         def enabled?(level)
           [ :error, :stat, :warning, :info ].include? level
         end
         
         def log(level, message)
           enabled?(level).tap { |_enabled|
-            puts "#{level.to_s.upcase}: #{@scope.name}: #{message}" if _enabled
+            scope.class.controller.output "#{level.to_s.upcase}: #{scope.name}: #{message}" if _enabled
           }
         end
       end
