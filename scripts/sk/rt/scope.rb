@@ -1,4 +1,5 @@
 =begin
+  vim: sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
   
   Distributed under the MIT Licence.
@@ -25,22 +26,22 @@ module SK
       end
 
       def method_missing(name, *args, &block)
-        if adaptor.respond_to?(name)
+        log_name = "log_#{name}"
+        if adaptor.respond_to?(log_name)
           adaptor.warning "#{name}: Unsupported invocation with a block" if block
           
-          make_singleton_method(name) { |*args|
+          make_singleton_method(name) { |*_args|
             catch :break do
-              foreach_line_in args do |_line|
-                adaptor.send(name, _line) or throw :break, false
+              foreach_line_in _args do |_line|
+                adaptor.send(log_name, _line) or throw :break, false
               end
 
               true
             end
           }
-          send(name, *args) or make_singleton_method(name) { |*args| 
-          }
+          send(name, *args) or make_singleton_method(name) { |*_args| }
         else
-          adaptor.error "#{name}: #{args.inspect} (block=#{block.inspect})"
+          adaptor.log_error "#{name}: Unsupported log level: #{args.inspect} (block=#{block.inspect})"
         end
       end
 
@@ -68,8 +69,6 @@ module SK
       def make_singleton_method(*args, &block)
         singleton_class.send :define_method, *args, &block
       end
-      
     end
   end
 end
-
