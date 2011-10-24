@@ -27,32 +27,37 @@ module SK
       end
 
       def method_missing(name, *args, &block)
-        log_name = "log_#{name}"
-        unless adaptor.respond_to?(log_name)
+        log_method_for_name = "log_#{name}"
+        unless adaptor.respond_to?(log_method_for_name)
           adaptor.log_error "#{name}: Unsupported log level: #{args.inspect} (block=#{block.inspect})"
           return false
         end
 
-        if args.empty? == false or adaptor.send("#{name}?") == true
-          make_delegating_logger(name, log_name)
+        if args.empty? == false or log_level_enabled?(name)
+          make_delegating_logger(name, log_method_for_name)
           return true if send(name, *args, &block)
         end
 
         make_do_nothing_logger(name)
+        false
       end
 
       private
       #######
 
-      def make_delegating_logger(name, log_name)
+      def log_level_enabled?(name)
+        adaptor.send("#{name}?") ? true : false
+      end
+
+      def make_delegating_logger(name, log_method_for_name)
         make_singleton_method(name) { |*_args, &_block|
-          output_lines_with(log_name, _args).tap { |_success|
+          output_lines_with(log_method_for_name, _args).tap { |_success|
             next unless _success
             next unless _block
 
             StringIO.new.tap { |_io|
               _block.call _io
-              output_lines_with(log_name, _io.string) unless _io.size == 0
+              output_lines_with(log_method_for_name, _io.string) unless _io.size == 0
             }
           }
         }
@@ -62,17 +67,16 @@ module SK
         make_singleton_method(name) { |*_args| 
           false 
         }
-        false
       end
 
       def adaptor
         @adaptor ||= logger
       end
 
-      def output_lines_with(log_name, *args)
+      def output_lines_with(log_method_for_name, *args)
         args.flatten.each do |_item|
           _item.to_s.each do |_line|
-            return false unless adaptor.send(log_name, _line.chomp)
+            return false unless adaptor.send(log_method_for_name, _line.chomp)
           end
         end
 
