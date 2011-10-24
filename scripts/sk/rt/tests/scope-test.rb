@@ -23,14 +23,47 @@ module SK
       def test_info
         assert false == scope.respond_to?(:info) 
         assert true == scope.info("aaa")
-        # assert true == scope.respond_to?(:info) 
+        assert true == scope.respond_to?(:info) 
+        assert true == scope.info("bbb")
+        assert true == scope.info("ccc")
+        assert true == scope.info
 
-        assert true == scope.info("aaa")
-        assert true == scope.info("aaa")
+        assert_equal "INFO: abc: aaa\nINFO: abc: bbb\nINFO: abc: ccc\n", stream.string
       end
 
       def test_notice
-        assert false == scope.notice
+        assert false == scope.notice("hello")
+        assert_equal 0, stream.size
+      end
+      
+      def test_info_block_no_message
+        value = false
+        scope.info { |_io|
+          value = true
+          _io.puts "Hello"
+        }
+        assert true == value
+        assert_equal "INFO: abc: Hello\n", stream.string
+      end
+
+      def test_info_block_with_message
+        value = false
+        scope.info("zzzzz") { |_io|
+          value = true
+          _io.puts "Hello"
+        }
+        assert true == value
+        assert_equal "INFO: abc: zzzzz\nINFO: abc: Hello\n", stream.string
+      end
+
+      def test_notice_block
+        value = false
+        scope.notice("uuu") {
+          value = true
+          _io.puts "Hehe"
+        }
+        assert false == value
+        assert_equal 0, stream.size
       end
 
       def setup
