@@ -37,6 +37,12 @@ module SK
       end
       
       def test_info_block_no_message
+        # Calling first time without block to test that the block passed to
+        # method missing does not get implicitly used by a method definition
+        # as was the case once.
+        #
+        scope.info
+
         value = false
         scope.info { |_io|
           value = true
@@ -47,6 +53,12 @@ module SK
       end
 
       def test_info_block_with_message
+        # Calling first time without block to test that the block passed to
+        # method missing does not get implicitly used by a method definition
+        # as was the case once.
+        #
+        scope.info
+
         value = false
         scope.info("zzzzz") { |_io|
           value = true

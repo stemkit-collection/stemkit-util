@@ -34,28 +34,36 @@ module SK
         end
 
         if args.empty? == false or adaptor.send("#{name}?") == true
-          make_singleton_method(name) { |*_args|
-            output_lines_with(log_name, _args).tap { |_success|
-              next unless _success
-              next unless block_given?
-
-              StringIO.new.tap { |_io|
-                yield _io
-                output_lines_with(log_name, _io.string) unless _io.size == 0
-              }
-            }
-          }
+          make_delegating_logger(name, log_name)
           return true if send(name, *args, &block)
         end
 
+        make_do_nothing_logger(name)
+      end
+
+      private
+      #######
+
+      def make_delegating_logger(name, log_name)
+        make_singleton_method(name) { |*_args, &_block|
+          output_lines_with(log_name, _args).tap { |_success|
+            next unless _success
+            next unless _block
+
+            StringIO.new.tap { |_io|
+              _block.call _io
+              output_lines_with(log_name, _io.string) unless _io.size == 0
+            }
+          }
+        }
+      end
+
+      def make_do_nothing_logger(name)
         make_singleton_method(name) { |*_args| 
           false 
         }
         false
       end
-
-      private
-      #######
 
       def adaptor
         @adaptor ||= logger
