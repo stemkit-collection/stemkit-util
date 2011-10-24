@@ -48,8 +48,11 @@ module SK
           value = true
           _io.puts "Hello"
         }
+        scope.info { |_io|
+          _io.puts "Goodbye"
+        }
         assert true == value
-        assert_equal "INFO: abc: Hello\n", stream.string
+        assert_equal "INFO: abc: Hello\nINFO: abc: Goodbye\n", stream.string
       end
 
       def test_info_block_with_message
