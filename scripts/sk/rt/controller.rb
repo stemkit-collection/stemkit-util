@@ -14,6 +14,13 @@ module SK
     class Controller
       def initialize
         @destination = $stderr
+        @levels = [ :error, :stat, :warning, :info, :notice, :detail, :debug ]
+        @scope_to_level = Hash.new :info
+      end
+
+      def set_scope_level(scope, level)
+        raise "Unsupported log level" unless @levels.include? level
+        @scope_to_level[scope.to_s] = level
       end
 
       def destination=(io)
@@ -21,19 +28,21 @@ module SK
       end
 
       def enabled?(level, scope)
-        [ :error, :stat, :warning, :info ].include? level
+        first, second = [ level, @scope_to_level[scope] ].map { |_item|
+          @levels.index(_item) or -1
+        }
+        first <= second
       end
 
       def output(level, scope, message)
         enabled?(level, scope).tap { |_enabled|
-          destination.puts "#{level.to_s.upcase}: #{scope}: #{message}" if _enabled
+          _enabled and @destination.puts "#{level.to_s.upcase}: #{scope}: #{message}"
         }
       end
 
       private
       #######
 
-      attr_reader :destination
     end
   end
 end
