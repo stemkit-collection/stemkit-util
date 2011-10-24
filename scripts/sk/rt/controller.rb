@@ -20,8 +20,14 @@ module SK
         @destination = io
       end
 
-      def output(*args)
-        destination.puts *args
+      def enabled?(level, scope)
+        [ :error, :stat, :warning, :info ].include? level
+      end
+
+      def output(level, scope, message)
+        enabled?(level, scope).tap { |_enabled|
+          destination.puts "#{level.to_s.upcase}: #{scope}: #{message}" if _enabled
+        }
       end
 
       private

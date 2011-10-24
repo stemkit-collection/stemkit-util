@@ -32,39 +32,24 @@ module SK
       
       class Logger
         def initialize(scope)
-          @scope = scope
+          @scope_name = scope.name
+          @controller = scope.class.controller
         end
 
         class << self
           def define_log_methods(*args)
             args.each do |_name|
-              define_method "log_#{_name}" do |_message|
-                log _name, _message
-              end
-
-              define_method "#{_name}?" do 
-                enabled? _name
-              end
+              define_method("log_#{_name}") { |_message|
+                @controller.output _name, @scope_name, _message
+              }
+              define_method("#{_name}?") {
+                @controller.enabled? _name, @scope_name
+              }
             end
           end
         end
 
         define_log_methods :error, :stat, :warning, :info, :notice, :detail, :debug
-
-        private
-        #######
-
-        attr_reader :scope
-
-        def enabled?(level)
-          [ :error, :stat, :warning, :info ].include? level
-        end
-        
-        def log(level, message)
-          enabled?(level).tap { |_enabled|
-            scope.class.controller.output "#{level.to_s.upcase}: #{scope.name}: #{message}" if _enabled
-          }
-        end
       end
     end
   end
