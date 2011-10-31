@@ -244,12 +244,14 @@ cpp:
     cc:
       indent: 0
       content: |-
+        #include #{class_reference(:h)}
+
         #include <sk/util/Class.h>
         #include <sk/util/String.h>
 
-        #include #{class_reference(:h)}
-
-        static const sk::util::String __className("#{full_class_name}");
+        namespace {
+          const sk::util::String __className("#{full_class_name}");
+        }
 
         #{full_class_name}::
         #{class_name}()
