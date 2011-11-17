@@ -79,8 +79,20 @@ module SK
       private
       #######
 
+      def normalize_path_list(list)
+        list.flatten.compact.map { |_item|
+          case _item
+            when TSC::Dataset
+              [ _item.before, _item.content, _item.after ]
+
+            else
+              _item
+          end
+        }
+      end
+
       def build_path(*list)
-        list.flatten.compact.map { |_dir| 
+        normalize_path_list(list).flatten.map { |_dir| 
           Dir[ eval '%Q{' + _dir + '}' ].select { |_item|
             _item if File.directory? _item
           }
@@ -224,7 +236,49 @@ module SK
       end
 
       def config 
-        @config ||= TSC::Dataset[ :path => [], :manpath => [] ]
+        @config ||= TSC::Dataset[ 
+          :path => TSC::Dataset[
+            :before => [],
+            :after => [],
+            :content => %w{
+              #{home}/bin/#{sysid} 
+              #{home}/bin
+              #{home}/local/platform/#{sysid}/bin
+              #{home}/local/#{sysid}/bin
+              #{home}/local/bin
+              /opt/*/platform/#{sysid}/bin
+              /sbin 
+              /opt/ansic/bin
+              /usr/vac/bin
+              /opt/SUNWspro/bin 
+              /usr/local/bin 
+              /usr/ccs/bin 
+              /bin /usr/bin /usr/sbin 
+              /usr/ucb /usr/bsd 
+              /etc /usr/etc /usr/java1.2/bin /c/jdk1.2.2/bin
+              /usr/bin/X11 /usr/X11/bin /usr/openwin/bin
+              /usr/X11/demo /usr/openwin/demo
+              /opt/imake/bin
+              /usr/contrib/bin
+              /usr/contrib/win32/bin
+              /dev/fs/C/SFU-ROOT/common
+              /dev/fs/C/WINDOWS/system32
+            }
+          ],
+          :manpath => TSC::Dataset[
+            :before => [],
+            :after => [],
+            :content => %w{
+              /usr/man
+              /usr/share/man
+              /usr/openwin/share/man
+              /opt/SUNWspro/man
+              /usr/local/man
+              /usr/local/samba/man
+              /usr/local/fvwm95/man
+            }
+          ] 
+        ]
       end
     end
   end

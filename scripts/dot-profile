@@ -9,41 +9,11 @@ eval <<'RUBY'
   require 'sk/shell/profile.rb'
 
   exit SK::Shell::Profile.new.send(*ARGV) { |_config|
-    _config.path = %w{
+    _config.path.before = %w{
       #{home}/projects/runtime/*/scripts
-      #{home}/bin/#{sysid} 
-      #{home}/bin
-      /opt/sk/platform/#{sysid}/bin
-      /opt/quest/platform/#{sysid}/bin
-      #{home}/local/platform/#{sysid}/bin
-      #{home}/local/#{sysid}/bin
-      #{home}/local/bin
-      /sbin 
-      /opt/ansic/bin
-      /usr/vac/bin
-      /opt/SUNWspro/bin 
-      /usr/local/bin 
-      /usr/ccs/bin 
-      /bin /usr/bin /usr/sbin 
-      /usr/ucb /usr/bsd 
-      /etc /usr/etc /usr/java1.2/bin /c/jdk1.2.2/bin
-      /usr/bin/X11 /usr/X11/bin /usr/openwin/bin
-      /usr/X11/demo /usr/openwin/demo
-      /opt/imake/bin
-      /usr/contrib/bin
-      /usr/contrib/win32/bin
-      /dev/fs/C/SFU-ROOT/common
-      /dev/fs/C/WINDOWS/system32
     }
-
-    _config.manpath = %w{
-      /usr/man
-      /usr/share/man
-      /usr/openwin/share/man
-      /opt/SUNWspro/man
-      /usr/local/man
-      /usr/local/samba/man
-      /usr/local/fvwm95/man
+    _config.manpath.after = %w{
+      #{home}/man
     }
   }
 RUBY
