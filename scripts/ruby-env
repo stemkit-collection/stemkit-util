@@ -52,7 +52,12 @@ main()
     export PATH="${REQUESTED_RUBY_TOP}/bin:${PATH}"
   }
 
-  exec "${@}"
+
+  if [ "${#}" -eq 0 ]; then
+    print_env PATH SYSID
+  else
+    exec "${@}"
+  fi
 }
 
 figure_requested_version()
@@ -87,6 +92,13 @@ figure_current_environment()
     print_program_error "Ruby is not from platform location"
     exit 3
   }
+}
+
+print_env()
+{
+  for v in "${@}"; do
+    echo `eval echo "${v}"'=${'"${v}"'}'` export `eval echo "${v}"`';'
+  done
 }
 
 :<<:
