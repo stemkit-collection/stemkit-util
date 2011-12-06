@@ -10,7 +10,7 @@
 =end
 
 require 'etc'
-require 'ftools'
+require 'fileutils'
 require 'tsc/dataset.rb'
 
 module SK
@@ -120,7 +120,7 @@ module SK
       end
 
       def save_lastlog_time(time)
-        File.makedirs File.dirname(lastlog_file)
+        FileUtils.makedirs File.dirname(lastlog_file)
         File.open(lastlog_file,"w") do |_io| 
           _io.puts time.strftime('%X %x')
         end
@@ -156,7 +156,7 @@ module SK
       end
 
       def logged_users
-        @logged_users ||= `who`.map { |_entry|
+        @logged_users ||= `who`.lines.map { |_entry|
           array = _entry.split
           user = array[0]
           pty = array[1]
