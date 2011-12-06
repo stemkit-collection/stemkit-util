@@ -55,7 +55,7 @@ module SK
 
       def lines(content)
         unit = nil
-        content.to_s.map { |_line| 
+        content.to_s.lines.map { |_line| 
           # Here the line gets re-indented to the value specified 
           # either in the config file or on the command line (-i).
           #
