@@ -194,7 +194,7 @@ sh:
       figure_full_path()
       {
         [ "${1:+set}" = set ] && {
-          echo `absolute_location "${1}"`/`basename "${1}"`
+          _echo `absolute_location "${1}"`/`basename "${1}"`
         }
       }
 
@@ -222,7 +222,7 @@ sh:
       resolve_symlink()
       {
         set entry `resolve_symlink_chain "${@}"`
-        echo "${2}"
+        _echo "${2}"
       }
 
       resolve_symlink_chain()
@@ -238,10 +238,10 @@ sh:
             is_absolute_path "${link}" || {
               link=`dirname "${file}"`/${link}
             }
-            echo `resolve_symlink_chain "${link}"` "${file}"
+            _echo `resolve_symlink_chain "${link}"` "${file}"
           ;;
           *)
-            echo "${file}"
+            _echo "${file}"
           ;;
         esac
       }
