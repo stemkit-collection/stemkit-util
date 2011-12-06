@@ -193,7 +193,9 @@ sh:
 
       figure_full_path()
       {
-        echo `absolute_location "${1}"`/`basename "${1}"`
+        [ "${1:+set}" = set ] && {
+          echo `absolute_location "${1}"`/`basename "${1}"`
+        }
       }
 
       find_file_in_path()
@@ -312,6 +314,11 @@ sh:
         _echo "${@}" | sed '/^[ \t]*$/d;s/^[ \t]*|//' 1>&3 
       }
 
+      print_program_error()
+      {
+        print_error "${progname}:" "${@}"
+      }
+
       print_error()
       {
         print_message "${@}" 3>&4
@@ -319,12 +326,12 @@ sh:
 
       suppress_output()
       {
-        "${@}" >/dev/null 2>&1
+        eval "${@}" >/dev/null 2>&1
       }
 
       suppress_error_output()
       {
-        "${@}" 2>/dev/null
+        eval "${@}" 2>/dev/null
       }
 
       trace_and_run()
@@ -332,7 +339,7 @@ sh:
         [ "${TRACE}" = yes ] && {
           print_error "=> ${@}"
         }
-        "${@}"
+        eval "${@}"
       }
 
       cleanup_list=
