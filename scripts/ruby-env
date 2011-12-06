@@ -1,0 +1,336 @@
+#!/bin/sh
+# vim: sw=2:
+# Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
+# 
+# Distributed under the MIT Licence.
+# This is free software. See 'LICENSE' for details.
+# You must read and accept the license prior to use.
+# 
+# Author: Gennady Bystritsky
+
+TRACE=no
+
+print_usage()
+{
+  print_error "USAGE: ${progname} [-v] [<ruby-version>] [<commnad-line>]"
+}
+
+main()
+{
+  trap "cleanup_and_exit 5" HUP INT QUIT TERM
+  trap "cleanup" EXIT 
+
+  unset OPTION ARGUMENT
+
+  while getopts ":hv" option; do
+    case "${option}" in
+      v)
+        TRACE=yes
+      ;;
+      h)
+        print_usage_and_exit 0
+      ;;
+      *)
+        print_usage_and_exit
+      ;;
+    esac
+  done
+
+  shift `expr "${OPTIND}" - 1`
+
+  figure_current_environment
+
+  REQUESTED_RUBY_VERSION=`figure_requested_version "${1}"`
+  [ "${REQUESTED_RUBY_VERSION:+set}" = set ] && {
+    shift
+
+    REQUESTED_RUBY_TOP="${PLATFORM_TOP}/ruby-${REQUESTED_RUBY_VERSION}"
+    [ -d "${REQUESTED_RUBY_TOP}" ] || {
+      print_program_error "Requested Ruby version ${REQUESTED_RUBY_VERSION} not available"
+      exit 4
+    }
+    export PATH="${REQUESTED_RUBY_TOP}/bin:${PATH}"
+  }
+
+  exec "${@}"
+}
+
+figure_requested_version()
+{
+  IFS="."
+  for c in ${1}; do
+    suppress_output expr "${c}" + 0 || {
+      return
+    }
+  done
+
+  _echo "${1}"
+}
+
+figure_current_environment()
+{
+  RUBY=`figure_full_program_path ruby`
+  [ "${RUBY:+set}" != "set" ] && {
+    print_program_error "Ruby not found"
+    exit 3
+  }
+  : ${SYSID:=`tsc-platform`}
+  [ "${SYSID:+set}" != set ] && {
+    print_progam_error "Cannot determine current platform"
+    exit 3
+  }
+  PLATFORM_TOP=`echo ${RUBY} | sed -n 's%^\(/.*/'"${SYSID}"'\)/.*$%\1%p'`
+  [ "${PLATFORM_TOP:+set}" != set ] && {
+    print_program_error "Ruby is not from platform location"
+    exit 3
+  }
+}
+
+:<<:
+Variables:
+  progpath - This script file full path
+  progname - Name of this script file
+
+Functions:
+  _echo() - Most suitable echo command (echo or echo -e).
+  _awk() - Most suitable awk command (awk or nawk)
+  print_message() - Echo parameters to the original stdout (| for start line)
+  print_error() - print_message() to the original stderr
+  print_usage_and_exit() - Print usage and exit with argument or 2
+  register_for_cleanup() - Add entries to be cleaned up. Variables OK.
+  suppress_error_output() - Redirect stderr to /dev/null for cmdline.
+  suppress_output() - Redirect stdout and stderr to /dev/null for cmdline.
+  trace_and_run() - Print cmdline if TRACE is yes, then execute.
+
+  figure_full_program_path()
+  figure_full_path()
+  find_file_in_path()
+  resolve_symlink()
+  resolve_symlink_chain()
+
+  is_list_member()
+  is_path()
+  is_absolute_path()
+  is_regular_file()
+  is_program()
+:
+
+figure_full_program_path()
+{
+  file="${1}"
+  is_path "${file}" || {
+    file=`find_file_in_path "${file}" "${PATH}"`
+  }
+  figure_full_path "${file}"
+}
+
+figure_full_path()
+{
+  [ "${1:+set}" = set ] && {
+    echo `absolute_location "${1}"`/`basename "${1}"`
+  }
+}
+
+find_file_in_path()
+{
+  file="${1}"
+  path="${2}"
+
+  ifs="${IFS}"
+  IFS=:
+  set entry ${path}
+  shift
+  IFS="${ifs}"
+
+  for directory in "${@}"; do
+    path="${directory}/${file}"
+    is_regular_file "${path}" && {
+      _echo "${path}"
+      return 0
+    }
+  done
+  return 1
+}
+
+resolve_symlink()
+{
+  set entry `resolve_symlink_chain "${@}"`
+  echo "${2}"
+}
+
+resolve_symlink_chain()
+{
+  file="${1}"
+  set entry `suppress_error_output "ls -ld '${file}'"`
+
+  case "${2}" in
+    l*)
+      shift `expr "${#}" - 1`
+
+      link="${1}"
+      is_absolute_path "${link}" || {
+        link=`dirname "${file}"`/${link}
+      }
+      echo `resolve_symlink_chain "${link}"` "${file}"
+    ;;
+    *)
+      echo "${file}"
+    ;;
+  esac
+}
+
+absolute_location()
+{
+  (cd `dirname "${1}"` && pwd)
+}
+
+is_list_member()
+{
+  item="${1}"
+  shift
+
+  for entry in "${@}"; do
+    [ "${entry}" = "${item}" ] && return 0
+  done
+
+  return 1
+}
+
+is_path()
+{
+  case "${1}" in
+    /* | */* | */ )
+      return 0
+    ;;
+  esac
+
+  return 1
+}
+
+is_absolute_path()
+{
+  case "${1}" in
+    /*)
+      return 0
+    ;;
+  esac
+
+  return 1
+}
+
+is_regular_file()
+{
+  suppress_output "ls -ldL '${1}' | grep '^-'"
+}
+
+invoke_file_command()
+{
+  file `resolve_symlink "${1}"`
+}
+
+is_program()
+{
+  file="${1}"
+  is_regular_file "${file}" && {
+    suppress_output "invoke_file_command '${file}' | grep 'executable'"
+  }
+}
+
+print_usage_and_exit()
+{
+  print_usage
+  exit "${1:-2}"
+}
+
+print_message()
+{
+  _echo "${@}" | sed '/^[ \t]*$/d;s/^[ \t]*|//' 1>&3 
+}
+
+print_program_error()
+{
+  print_error "${progname}:" "${@}"
+}
+
+print_error()
+{
+  print_message "${@}" 3>&4
+}
+
+suppress_output()
+{
+  eval "${@}" >/dev/null 2>&1
+}
+
+suppress_error_output()
+{
+  eval "${@}" 2>/dev/null
+}
+
+trace_and_run()
+{
+  [ "${TRACE}" = yes ] && {
+    print_error "=> ${@}"
+  }
+  eval "${@}"
+}
+
+cleanup_list=
+register_for_cleanup()
+{
+  for item in "${@}"; do
+    cleanup_list="${item}<:>${cleanup_list}"
+  done
+}
+
+cleanup()
+{
+  ifs="${IFS}"
+  IFS="<:>"
+  set entry ${cleanup_list}
+  shift
+  IFS="${ifs}"
+
+  for entry in "${@}"; do
+    eval entry="${entry}"
+    [ "${entry:+set}" = set ] && {
+      trace_and_run rm -rf "${entry}"
+    }
+  done
+
+  cleanup_list=
+}
+
+cleanup_and_exit()
+{
+  cleanup
+  exit "${1:-1}"
+}
+
+if [ "`echo -e`" = "-e" ]; then
+  _echo() {
+    echo "${@}"
+  }
+else
+  _echo() {
+    echo -e "${@}"
+  }
+fi
+
+if ( nawk 'BEGIN { exit 0 }' ) >/dev/null 2>&1; then
+  _awk() {
+    nawk "${@}"
+  }
+else
+  _awk() {
+    awk "${@}"
+  }
+fi
+
+progpath=`figure_full_program_path "${0}"`
+progname=`basename "${progpath}"`
+
+exec 3>&1 4>&2
+
+main "${@}"
+exit "${?}"
