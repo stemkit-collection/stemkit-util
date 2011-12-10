@@ -40,16 +40,16 @@ main()
 
   figure_current_environment
 
-  REQUESTED_RUBY_VERSION=`figure_requested_version "${1}"`
-  [ "${REQUESTED_RUBY_VERSION:+set}" = set ] && {
+  REQUESTED_VERSION=`figure_requested_version "${1}"`
+  [ "${REQUESTED_VERSION:+set}" = set ] && {
     shift
 
-    REQUESTED_RUBY_TOP="${PLATFORM_TOP}/ruby-${REQUESTED_RUBY_VERSION}"
-    [ -d "${REQUESTED_RUBY_TOP}" ] || {
-      print_program_error "Requested Ruby version ${REQUESTED_RUBY_VERSION} not available (${REQUESTED_RUBY_TOP})"
+    REQUESTED_TOP="${PLATFORM_TOP}/ruby-${REQUESTED_VERSION}"
+    [ -d "${REQUESTED_TOP}" ] || {
+      print_program_error "Version ${REQUESTED_VERSION} not available as ${REQUESTED_TOP}"
       exit 4
     }
-    export PATH="${REQUESTED_RUBY_TOP}/bin:${PATH}"
+    export PATH="${REQUESTED_TOP}/bin:${PATH}"
   }
 
 
