@@ -147,6 +147,10 @@ act_as_rc()
       __showdir__ -al "${@}" | ${PAGER:-cat}
     }
 
+    __original_cd__() {
+      cd "${@}" 
+    }
+
     __cd__() { 
       cd "${@}" && __dir__
     }
@@ -255,8 +259,8 @@ act_as_rc()
 
 profile_main "${@}"
 
-[ "${SHELLDEPTH:+set}" = set ] && {
-  trap 'ruby '"${ENV}"' stop ${SECONDS:-0}' EXIT
+[ "${SHELLDEPTH:-1}" = 1 ] && {
+  trap '__original_cd__ '"${HOME}"' && ruby '"${ENV}"' stop ${SECONDS:-0}' EXIT
 }
 
 true
