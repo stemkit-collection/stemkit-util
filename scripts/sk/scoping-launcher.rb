@@ -10,31 +10,11 @@
 =end
 
 require 'tsc/application.rb'
-require 'sk/config/uproot-locator.rb'
+require 'sk/config/uproot-path-collector.rb'
 require 'tsc/path.rb'
 
 module SK
   class ScopingLauncher < TSC::Application
-    class CollectingLocator < SK::Config::UprootLocator
-      def find
-        self.invoke self
-        depot
-      end
-
-      def process(content, spot)
-        depot << spot
-      end
-
-      def content(path)
-        File.open(path) {}
-        []
-      end
-
-      def depot
-        @depot ||= []
-      end
-    end
-
     def start
       handle_errors {
         require 'rubygems'
@@ -43,16 +23,16 @@ module SK
       }
     end
 
-    private
-    #######
-
     def top
       @top ||= find_top 
     end
 
+    private
+    #######
+
     def find_top
       Array(top_selectors).each { |_selector|
-        CollectingLocator[_selector].find.tap { |_locations|
+        SK::Config::UprootPathCollector[_selector].find_locations.tap { |_locations|
           return _locations.last unless _locations.empty?
         }
       }
