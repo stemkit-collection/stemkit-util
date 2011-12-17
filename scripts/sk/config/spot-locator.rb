@@ -27,7 +27,7 @@ module SK
         super
 
         begin
-          processor.process content(self.class.expand_path(item, spot)).join, spot
+          processor.process content(self.class.expand_path(item, spot)), spot
         rescue Errno::ENOENT
           raise if options[:required]
         end
@@ -58,7 +58,7 @@ module SK
               result.size != 2 ? _line : content(self.class.expand_path(result.last, File.dirname(path))).map { |_line|
                 result.first + _line
               }
-            }.flatten
+            }.flatten.join
           }
         end
       end
