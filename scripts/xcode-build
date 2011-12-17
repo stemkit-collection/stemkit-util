@@ -38,10 +38,8 @@ class Application < TSC::Application
 
       throw :TEST if options.test?
 
-      require 'sk/config/uproot-locator.rb'
-
-      locator = SK::Config::UprootLocator.new(:item => '*.xcodeproj', :spot => '.', :pathonly => true)
-      locator.invoke self
+      require 'sk/config/uproot-path-collector.rb'
+      projects = SK::Config::UprootPathCollecor['*.xcodeproj'].items
 
       raise "No Xcode projects found" if projects.empty?
       raise "Multiple Xcode projects found" if projects.size > 1
@@ -64,14 +62,6 @@ class Application < TSC::Application
     else
       exec *command
     end
-  end
-
-  def projects
-    @projects ||= []
-  end
-
-  def process(path, spot)
-    projects.concat Dir[path]
   end
 
   in_generator_context do |_content|
