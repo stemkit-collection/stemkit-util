@@ -19,24 +19,33 @@ module SK
       handle_errors {
         require 'rubygems'
 
-        p top
+        p local_scope_top
       }
     end
 
-    def top
-      @top ||= find_top 
+    def local_scope_top
+      @local_scope_top ||= figure_local_scope_top 
+    end
+
+    protected
+    #########
+
+    def local_scope_selectors
+    end
+
+    def global_scope_selectors
     end
 
     private
     #######
 
-    def find_top
-      Array(top_selectors).each { |_selector|
-        SK::Config::UprootPathCollector[_selector].find_locations.tap { |_locations|
+    def figure_local_scope_top
+      Array(local_scope_selectors).each { |_selector|
+        SK::Config::UprootPathCollector.new(:item => _selector, :spot => '.').locations.tap { |_locations|
           return _locations.last unless _locations.empty?
         }
       }
-      raise 'Scope top not found'
+      raise 'Local scope top not found'
     end
   end
 end
