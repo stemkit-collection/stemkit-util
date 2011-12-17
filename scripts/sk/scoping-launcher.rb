@@ -18,17 +18,47 @@ module SK
     def start
       handle_errors {
         require 'rubygems'
+        require 'pathname'
 
-        p local_scope_top
+        setup
       }
     end
 
     def local_scope_top
-      @local_scope_top ||= figure_local_scope_top 
+      @local_scope_top ||= Pathname.new(figure_local_scope_top)
+    end
+
+    def root
+      @root ||= begin
+        local_scope_top.split.tap { |_root, _component|
+          break _root if _component.to_s == 'src'
+          raise 'Not under src'
+        }
+      end
+    end
+
+    def srctop
+      root.join 'src'
+    end
+
+    def bintop
+      root.join  'bin'
+    end
+
+    def gentop
+      root.join  'gen'
+    end
+
+    def pkgtop
+      root.join  'pkg'
     end
 
     protected
     #########
+
+    def setup
+      raise TSC::NotImplementedError, :setup
+    end
 
     def local_scope_selectors
     end
