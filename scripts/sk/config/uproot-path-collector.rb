@@ -15,8 +15,8 @@ module SK
   module Config
     class UprootPathCollector < SK::Config::UprootLocator
       class Collector
-        def process(path, spot)
-          depot << [ path, spot ] unless path.empty?
+        def process(paths, spot)
+          depot << [ paths, spot ] unless paths.empty?
         end
 
         def depot
@@ -24,27 +24,31 @@ module SK
         end
       end
 
-      def find
+      def items_with_location
         Collector.new.tap { |_collector|
           self.invoke _collector
           break _collector.depot
         }
       end
 
-      def find_items
-        find.map { |_item, _location|
+      def items
+        normalize items_with_location.map { |_item, _location|
           _item
         }
       end
 
-      def find_locations
-        find.map { |_item, _location|
+      def locations
+        items_with_location.map { |_item, _location|
           _location
         }
       end
 
       private
       #######
+
+      def normalize(*args)
+        args.flatten.compact
+      end
       
       def content(path)
         Dir[path]
