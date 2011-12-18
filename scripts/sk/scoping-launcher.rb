@@ -168,6 +168,22 @@ if $0 == __FILE__
           assert_equal 'Local scope top not found (no selectors aaa/bbb/ccc, zzz/uuu/bbb)', error.message
         }
       end
+      
+      def test_returns_closest_local_top_if_scope_determined
+        SK::ScopingLauncher.any_instance.expects(:local_scope_selectors).returns 'aaa/bbb/ccc'
+
+        top = Pathname.new(Dir.pwd).parent
+        path = top.join('aaa').join('bbb').join('ccc').to_s
+        upper_path = top.parent.join('aaa').join('bbb').join('ccc').to_s
+
+        Dir.expects('[]').with(anything).at_least_once.returns []
+        Dir.expects('[]').with(path).at_least_once.returns path
+        Dir.expects('[]').with(upper_path).at_least_once.returns upper_path
+
+        SK::ScopingLauncher.new.tap { |_app|
+          assert_equal top, _app.local_scope_top
+        }
+      end
 
       def setup
       end
