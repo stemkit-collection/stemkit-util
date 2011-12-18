@@ -65,7 +65,7 @@ module SK
       @root ||= begin
         local_scope_top.split.tap { |_root, _component|
           break _root if _component.to_s == 'src'
-          raise 'Not under src'
+          raise SK::SourceScopeError, local_scope_top
         }
       end
     end
@@ -182,6 +182,29 @@ if $0 == __FILE__
 
         SK::ScopingLauncher.new.tap { |_app|
           assert_equal top, _app.local_scope_top
+        }
+      end
+
+      def test_root_fails_if_not_under_src
+        SK::ScopingLauncher.any_instance.expects(:local_scope_top).at_least_once.returns Pathname.new('/aaa/bbb/ccc')
+
+        SK::ScopingLauncher.new.tap { |_app|
+          error = assert_raises SK::SourceScopeError do
+            _app.srctop
+          end
+
+          assert_equal "Scope top not under src (/aaa/bbb/ccc)", error.message
+        }
+      end
+
+      def test_tops_for_src_bin_gen_pkg
+        SK::ScopingLauncher.any_instance.expects(:local_scope_top).at_least_once.returns Pathname.new('/aaa/bbb/ccc/src')
+
+        SK::ScopingLauncher.new.tap { |_app|
+          assert_equal "/aaa/bbb/ccc/src", _app.srctop.to_s
+          assert_equal "/aaa/bbb/ccc/bin", _app.bintop.to_s
+          assert_equal "/aaa/bbb/ccc/gen", _app.gentop.to_s
+          assert_equal "/aaa/bbb/ccc/pkg", _app.pkgtop.to_s
         }
       end
 
