@@ -39,7 +39,7 @@ class Application < TSC::Application
       throw :TEST if options.test?
 
       require 'sk/config/uproot-path-collector.rb'
-      projects = SK::Config::UprootPathCollecor['*.xcodeproj'].items
+      projects = SK::Config::UprootPathCollector['*.xcodeproj'].items
 
       raise "No Xcode projects found" if projects.empty?
       raise "Multiple Xcode projects found" if projects.size > 1
