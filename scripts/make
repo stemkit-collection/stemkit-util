@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+=begin
+  vim: sw=2:
+  Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
+  
+  Distributed under the MIT Licence.
+  This is free software. See 'LICENSE' for details.
+  You must read and accept the license prior to use.
+  
+  Author: Gennady Bystritsky
+=end
+
+$:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
+require 'sk/scoping-launcher.rb'
+
+class Application < SK::ScopingLauncher
+  MAKE_CORE = 'config/Make.core'
+
+  protected
+  #########
+
+  def setup
+    puts "L: #{local_scope_top}"
+    puts "R: #{root}"
+    puts "S: #{srctop}"
+  end
+  
+  def command_parameters
+  end
+
+  def local_scope_selectors
+    MAKE_CORE
+  end
+end
+
+Application.new.start
