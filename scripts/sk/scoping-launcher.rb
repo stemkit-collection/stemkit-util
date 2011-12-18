@@ -12,8 +12,29 @@
 require 'tsc/application.rb'
 require 'sk/config/uproot-path-collector.rb'
 require 'tsc/path.rb'
+require 'tsc/errors.rb'
 
 module SK
+  class ScopeError < TSC::Error
+  end
+
+  class SelectableScopeError < SK::ScopeError
+    def initialize(args)
+      label, selectors = *args
+      super "#{label.capitalize} scope top not found (#{reason(selectors)})"
+    end
+
+    def reason(selectors)
+      [ 'no', (selectors.join(', ') unless selectors.empty?) ].compact.join(' ')
+    end
+  end
+
+  class SourceScopeError < SK::ScopeError
+    def initialize(top)
+      super "Scope top not under src (#{top})"
+    end
+  end
+
   class ScopingLauncher < TSC::Application
     def start
       handle_errors {
@@ -25,7 +46,11 @@ module SK
     end
 
     def local_scope_top
-      @local_scope_top ||= Pathname.new(figure_local_scope_top)
+      @local_scope_top ||= Pathname.new figure_scope_top('local', '.', local_scope_selectors)
+    end
+
+    def global_scope_top
+      @global_scope_top ||= Pathname.new figure_scope_top('global', script_location, global_scope_selectors)
     end
 
     def root
@@ -69,13 +94,19 @@ module SK
     private
     #######
 
-    def figure_local_scope_top
-      Array(local_scope_selectors).each { |_selector|
-        SK::Config::UprootPathCollector.new(:item => _selector, :spot => '.').locations.tap { |_locations|
-          return _locations.last unless _locations.empty?
-        }
-      }
-      raise 'Local scope top not found'
+    def figure_scope_top(label, origin, selectors)
+      with_selectors selectors do |_selectors|
+        _selectors.each do |_selector|
+          SK::Config::UprootPathCollector.new(:item => _selector, :spot => origin).locations.tap { |_locations|
+            return _locations.last unless _locations.empty?
+          }
+        end
+        raise SK::SelectableScopeError, [ label, _selectors ]
+      end
+    end
+
+    def with_selectors(selectors)
+      yield Array(selectors).flatten.compact
     end
   end
 end
