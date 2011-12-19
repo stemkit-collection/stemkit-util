@@ -66,6 +66,14 @@ module SK
       }
     end
 
+    def environment
+      @environment ||= {}
+    end
+
+    def update_environment(env)
+      environment.update(env)
+    end
+
     def myself?(path)
       program_file_realpath == Pathname.new(path).realpath if path
     end
@@ -80,8 +88,32 @@ module SK
 
     def invoke(*cmdline)
       with_normalized_array cmdline do |_cmdline|
-        $stderr.puts [ '###', _cmdline ].join(' ') if verbose?
+        trace _cmdline.join(' ')
+        populate_environment
         Process.exec *_cmdline
+      end
+    end
+
+    def populate_environment
+      return if environment.empty?
+
+      environment.each_pair do |_key, _value|
+        setenv [ :sk, script_name, _key ].join('_').upcase, _value.to_s
+      end
+    end
+
+    def setenv(key, value)
+      ENV[key] = value
+      trace "#{key} => #{value.inspect}"
+    end
+
+    def trace(*args)
+      return unless verbose?
+
+      with_normalized_array(args) do |_item|
+        _item.to_s.lines do |_line|
+          $stderr.puts '### ' + _line
+        end
       end
     end
 
@@ -89,8 +121,26 @@ module SK
       @local_scope_top ||= Pathname.new figure_scope_top('local', '.', local_scope_selectors)
     end
 
+    def local_scope?
+      @local_scope ||= begin
+        local_scope_top
+        true
+      rescue SK::ScopeError
+        false
+      end
+    end
+
     def global_scope_top
       @global_scope_top ||= Pathname.new figure_scope_top('global', script_location, global_scope_selectors)
+    end
+
+    def global_scope?
+      @global_scope ||= begin
+        global_scope_top
+        true
+      rescue SK::ScopeError
+        false
+      end
     end
 
     def root
@@ -99,6 +149,15 @@ module SK
           break _root if _component.to_s == 'src'
           raise SK::SourceScopeError, local_scope_top
         }
+      end
+    end
+
+    def source_scope?
+      @source_scope ||= begin
+        root
+        true
+      rescue SK::ScopeError, SK::SourceScopeError
+        false
       end
     end
 
@@ -229,6 +288,24 @@ if $0 == __FILE__
         }
       end
 
+      def test_not_in_source_scope
+        SK::ScopingLauncher.any_instance.expects(:local_scope_top).at_least_once.returns Pathname.new('/aaa/bbb/ccc')
+
+        SK::ScopingLauncher.new.tap { |_app|
+          assert _app.source_scope? == false
+        }
+      end
+
+      def test_queries
+        SK::ScopingLauncher.any_instance.expects(:local_scope_top).at_least_once.returns Pathname.new('/aaa/bbb/ccc/src')
+        SK::ScopingLauncher.any_instance.expects(:global_scope_top).at_least_once.returns Pathname.new('/zzz')
+
+        SK::ScopingLauncher.new.tap { |_app|
+          assert _app.global_scope? == true
+          assert _app.source_scope? == true
+        }
+      end
+
       def test_tops_for_src_bin_gen_pkg
         SK::ScopingLauncher.any_instance.expects(:local_scope_top).at_least_once.returns Pathname.new('/aaa/bbb/ccc/src')
 
@@ -254,7 +331,7 @@ if $0 == __FILE__
         end
       end
 
-      def test_fails_if_onlhy_self_in_path
+      def test_fails_if_only_self_in_path
         SK::ScopingLauncher.any_instance.expects(:setup)
         SK::ScopingLauncher.any_instance.expects(:invoke).never
         SK::ScopingLauncher.any_instance.expects(:find_in_path).with(anything).returns [ $0 ]
