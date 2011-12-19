@@ -43,6 +43,12 @@ module SK
     end
   end
 
+  class NotInPathError < TSC::Error
+    def initialize(name)
+      super "No #{name.inspect} in PATH"
+    end
+  end
+
   class ScopingLauncher < TSC::Application
     def start
       handle_errors {
@@ -50,7 +56,33 @@ module SK
         require 'pathname'
 
         setup
+
+        find_in_path(os.exe(script_name)).tap { |_commands|
+          _commands.shift while myself?(_commands.first) 
+          raise NotInPathError, script_name if _commands.empty?
+
+          invoke _commands.first, command_line_arguments(ARGV)
+        }
       }
+    end
+
+    def myself?(path)
+      program_file_realpath == Pathname.new(path).realpath if path
+    end
+
+    def program_file_realpath
+      @program_file_realpath ||= Pathname.new($0).realpath
+    end
+
+    def command_line_arguments(args)
+      args
+    end
+
+    def invoke(*cmdline)
+      with_normalized_array cmdline do |_cmdline|
+        $stderr.puts [ '###', _cmdline ].join(' ') if verbose?
+        Process.exec *_cmdline
+      end
     end
 
     def local_scope_top
@@ -103,7 +135,7 @@ module SK
     #######
 
     def figure_scope_top(label, origin, selectors)
-      with_selectors selectors do |_selectors|
+      with_normalized_array selectors do |_selectors|
         _selectors.each do |_selector|
           SK::Config::UprootPathCollector.new(:item => _selector, :spot => origin).locations.tap { |_locations|
             return _locations.last unless _locations.empty?
@@ -113,8 +145,8 @@ module SK
       end
     end
 
-    def with_selectors(selectors)
-      yield Array(selectors).flatten.compact
+    def with_normalized_array(array)
+      yield Array(array).flatten.compact
     end
   end
 end
@@ -206,6 +238,68 @@ if $0 == __FILE__
           assert_equal "/aaa/bbb/ccc/gen", _app.gentop.to_s
           assert_equal "/aaa/bbb/ccc/pkg", _app.pkgtop.to_s
         }
+      end
+
+      def test_fails_if_nothing_in_path
+        SK::ScopingLauncher.any_instance.expects(:setup)
+        SK::ScopingLauncher.any_instance.expects(:invoke).never
+        SK::ScopingLauncher.any_instance.expects(:find_in_path).with(anything).returns []
+        SK::ScopingLauncher.any_instance.expects(:print_error).with instance_of(SK::NotInPathError)
+
+        assert_raises SystemExit do
+          SK::ScopingLauncher.new.tap { |_app|
+            _app.verbose = true
+            _app.start
+          }
+        end
+      end
+
+      def test_fails_if_onlhy_self_in_path
+        SK::ScopingLauncher.any_instance.expects(:setup)
+        SK::ScopingLauncher.any_instance.expects(:invoke).never
+        SK::ScopingLauncher.any_instance.expects(:find_in_path).with(anything).returns [ $0 ]
+        SK::ScopingLauncher.any_instance.expects(:print_error).with instance_of(SK::NotInPathError)
+
+        assert_raises SystemExit do
+          SK::ScopingLauncher.new.tap { |_app|
+            _app.verbose = true
+            _app.start
+          }
+        end
+      end
+
+      def test_invokes_if_another_in_path
+        SK::ScopingLauncher.any_instance.expects(:setup)
+        SK::ScopingLauncher.any_instance.expects(:find_in_path).with(anything).returns [ Dir.pwd ]
+        SK::ScopingLauncher.any_instance.expects(:print_error).never
+        SK::ScopingLauncher.any_instance.expects(:command_line_arguments).returns %w{ aaa bbb ccc }
+
+        Process.expects(:exec).with(Dir.pwd, 'aaa', 'bbb', 'ccc')
+        $stderr.expects(:puts).never
+
+        assert_nothing_raised do
+          SK::ScopingLauncher.new.tap { |_app|
+            _app.verbose = false
+            _app.start
+          }
+        end
+      end
+
+      def test_invokes_if_another_in_path_with_command_printout_when_verbose
+        SK::ScopingLauncher.any_instance.expects(:setup)
+        SK::ScopingLauncher.any_instance.expects(:find_in_path).with(anything).returns [ Dir.pwd ]
+        SK::ScopingLauncher.any_instance.expects(:print_error).never
+        SK::ScopingLauncher.any_instance.expects(:command_line_arguments).returns %w{ aaa bbb ccc }
+
+        Process.expects(:exec).with(Dir.pwd, 'aaa', 'bbb', 'ccc')
+        $stderr.expects(:puts).with("### #{Dir.pwd} aaa bbb ccc")
+
+        assert_nothing_raised do
+          SK::ScopingLauncher.new.tap { |_app|
+            _app.verbose = true
+            _app.start
+          }
+        end
       end
 
       def setup
