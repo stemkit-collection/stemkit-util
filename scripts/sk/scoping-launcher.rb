@@ -90,7 +90,9 @@ module SK
       with_normalized_array cmdline do |_cmdline|
         trace _cmdline.join(' ')
         populate_environment
-        Process.exec *_cmdline
+        Process.exec *_cmdline.map { |_item|
+          _item.to_s
+        }
       end
     end
 
@@ -110,9 +112,11 @@ module SK
     def trace(*args)
       return unless verbose?
 
-      with_normalized_array(args) do |_item|
-        _item.to_s.lines do |_line|
-          $stderr.puts '### ' + _line
+      with_normalized_array(args) do |_items|
+        _items.each do |_item|
+          _item.to_s.lines do |_line|
+            $stderr.puts '### ' + _line
+          end
         end
       end
     end
