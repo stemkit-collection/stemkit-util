@@ -122,7 +122,19 @@ module SK
     end
 
     def local_scope_top
-      @local_scope_top ||= Pathname.new figure_scope_top('local', '.', local_scope_selectors)
+      @local_scope_top ||= begin
+        figure_scope_top('local', '.', local_scope_selectors).tap { |_location, _item|
+          top = Pathname.new _location
+          @local_scope_trigger = top.join(_item)
+
+          break top
+        }
+      end
+    end
+
+    def local_scope_trigger
+      local_scope_top
+      @local_scope_trigger
     end
 
     def local_scope?
@@ -135,7 +147,19 @@ module SK
     end
 
     def global_scope_top
-      @global_scope_top ||= Pathname.new figure_scope_top('global', script_location, global_scope_selectors)
+      @global_scope_top ||= begin
+        figure_scope_top('global', script_location, global_scope_selectors).tap { |_location, _item|
+          top = Pathname.new _location
+          @global_scope_trigger = top.join(_item)
+
+          break top
+        }
+      end
+    end
+
+    def global_scope_trigger
+      global_scope_top
+      @global_scope_trigger
     end
 
     def global_scope?
@@ -201,7 +225,7 @@ module SK
       with_normalized_array selectors do |_selectors|
         _selectors.each do |_selector|
           SK::Config::UprootPathCollector.new(:item => _selector, :spot => origin).locations.tap { |_locations|
-            return _locations.last unless _locations.empty?
+            return [ _locations.last, _selector ] unless _locations.empty?
           }
         end
         raise SK::SelectableScopeError, [ label, _selectors ]
@@ -277,6 +301,7 @@ if $0 == __FILE__
 
         SK::ScopingLauncher.new.tap { |_app|
           assert_equal top, _app.local_scope_top
+          assert_equal path, _app.local_scope_trigger.to_s
         }
       end
 
@@ -381,6 +406,31 @@ if $0 == __FILE__
             _app.start
           }
         end
+      end
+
+      def test_invokes_if_another_in_path_with_command_and_environment_printout_when_verbose
+        SK::ScopingLauncher.any_instance.expects(:setup)
+        SK::ScopingLauncher.any_instance.expects(:find_in_path).with(anything).returns [ Dir.pwd ]
+        SK::ScopingLauncher.any_instance.expects(:print_error).never
+        SK::ScopingLauncher.any_instance.expects(:command_line_arguments).returns %w{ aaa bbb ccc }
+        SK::ScopingLauncher.any_instance.expects(:script_name).at_least_once.returns "bca"
+
+        Process.expects(:exec).with(Dir.pwd, 'aaa', 'bbb', 'ccc')
+        $stderr.expects(:puts).with("### #{Dir.pwd} aaa bbb ccc")
+        $stderr.expects(:puts).with('### SK_BCA_V1 => "333"')
+        $stderr.expects(:puts).with('### SK_BCA_V2 => "456"')
+
+        assert_nothing_raised do
+          SK::ScopingLauncher.new.tap { |_app|
+            _app.verbose = true
+            _app.update_environment :v1 => 333, :v2 => 456
+
+            _app.start
+          }
+        end
+
+        assert_equal "333", ENV['SK_BCA_V1']
+        assert_equal "456", ENV['SK_BCA_V2']
       end
 
       def setup
