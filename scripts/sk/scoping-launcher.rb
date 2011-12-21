@@ -132,6 +132,24 @@ module SK
       end
     end
 
+    def local_scope_top_path_info
+      @local_scope_top_path_info ||= begin
+        Dir.pwd.scan(%r{^(#{Regexp.quote(local_scope_top)})(?:[/]*)(.*)$}).flatten.tap { |_result|
+          raise "Wrong path info" unless _result
+          break [ '.', '.' ] if _result.last.empty?
+          break [ _result.last, ([ '..' ] * _result.last.count('/').next).join('/') ]
+        }
+     end
+    end
+
+    def path_to_local_scope_top
+      local_scope_top_path_info.last
+    end
+
+    def path_from_local_scope_top
+      local_scope_top_path_info.first
+    end
+
     def local_scope_trigger
       local_scope_top
       @local_scope_trigger
@@ -431,6 +449,36 @@ if $0 == __FILE__
 
         assert_equal "333", ENV['SK_BCA_V1']
         assert_equal "456", ENV['SK_BCA_V2']
+      end
+
+      def test_path_to_and_from_local_scope_top_in_the_middle
+        SK::ScopingLauncher.any_instance.expects(:local_scope_top).at_least_once.returns "/a/b/c"
+        Dir.expects(:pwd).at_least_once.returns "/a/b/c/d/e"
+
+        SK::ScopingLauncher.new.tap { |_app|
+          assert_equal '../..', _app.path_to_local_scope_top
+          assert_equal 'd/e', _app.path_from_local_scope_top
+        }
+      end
+
+      def test_path_to_and_from_local_scope_top_at_the_end
+        SK::ScopingLauncher.any_instance.expects(:local_scope_top).at_least_once.returns "/a/b/c"
+        Dir.expects(:pwd).at_least_once.returns "/a/b/c"
+
+        SK::ScopingLauncher.new.tap { |_app|
+          assert_equal '.', _app.path_to_local_scope_top
+          assert_equal '.', _app.path_from_local_scope_top
+        }
+      end
+
+      def test_path_to_and_from_local_scope_top_in_the_root
+        SK::ScopingLauncher.any_instance.expects(:local_scope_top).at_least_once.returns "/"
+        Dir.expects(:pwd).at_least_once.returns "/a/b/c"
+
+        SK::ScopingLauncher.new.tap { |_app|
+          assert_equal '../../..', _app.path_to_local_scope_top
+          assert_equal 'a/b/c', _app.path_from_local_scope_top
+        }
       end
 
       def setup
