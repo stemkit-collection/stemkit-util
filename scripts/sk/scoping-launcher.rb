@@ -243,7 +243,7 @@ module SK
 
     def local_scope_top_path_info
       @local_scope_top_path_info ||= begin
-        Dir.pwd.scan(%r{^(#{Regexp.quote(local_scope_top)})(?:[/]*)(.*)$}).flatten.tap { |_result|
+        Dir.pwd.scan(%r{^(#{Regexp.quote(local_scope_top.to_s)})(?:[/]*)(.*)$}).flatten.tap { |_result|
           raise "Wrong path info" unless _result
           break [ '.', '.' ] if _result.last.empty?
           break [ _result.last, ([ '..' ] * _result.last.count('/').next).join('/') ]
