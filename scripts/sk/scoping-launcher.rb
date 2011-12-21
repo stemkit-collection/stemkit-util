@@ -50,6 +50,13 @@ module SK
   end
 
   class ScopingLauncher < TSC::Application
+    class << self
+      def generate_path_sequence(path)
+        return [ path ] if path == '.'
+        generate_path_sequence(File.dirname(path)) + [ path ]
+      end
+    end
+
     def start
       handle_errors {
         require 'rubygems'
@@ -78,6 +85,17 @@ module SK
 
           break top
         }
+      end
+    end
+
+    def scope_descriptors_to_top(*args)
+      @scope_descriptors_to_top ||= begin
+        self.class.generate_path_sequence(path_to_local_scope_top).map { |_path|
+          args.map { |_name|
+            descriptor = File.join(_path, _name.to_s)
+            break descriptor if File.exists?(descriptor)
+          }
+        }.flatten.compact
       end
     end
 
@@ -478,6 +496,25 @@ if $0 == __FILE__
         SK::ScopingLauncher.new.tap { |_app|
           assert_equal '../../..', _app.path_to_local_scope_top
           assert_equal 'a/b/c', _app.path_from_local_scope_top
+        }
+      end
+
+      def test_generate
+        assert_equal [ '.' ], SK::ScopingLauncher.generate_path_sequence('.')
+        assert_equal [ '.', '..' ], SK::ScopingLauncher.generate_path_sequence('..')
+        assert_equal [ '.', '..', '../..' ], SK::ScopingLauncher.generate_path_sequence('../..')
+        assert_equal [ '.', '..', '../..', '../../..' ], SK::ScopingLauncher.generate_path_sequence('../../..')
+      end
+
+      def test_scope_descriptors_from_top
+        SK::ScopingLauncher.any_instance.expects(:path_to_local_scope_top).at_least_once.returns "../../.."
+        File.expects(:exists?).with(anything).at_least_once.returns false
+        File.expects(:exists?).with('./zzz').returns true
+        File.expects(:exists?).with('../../../uuu').returns true
+        File.expects(:exists?).with('../../../zzz').at_most_once.returns true
+
+        SK::ScopingLauncher.new.tap { |_app|
+          assert_equal [ './zzz', '../../../uuu' ], _app.scope_descriptors_to_top('uuu', 'zzz')
         }
       end
 
