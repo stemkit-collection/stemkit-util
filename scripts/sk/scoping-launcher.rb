@@ -66,59 +66,8 @@ module SK
       }
     end
 
-    def environment
-      @environment ||= {}
-    end
-
     def update_environment(env)
       environment.update(env)
-    end
-
-    def myself?(path)
-      program_file_realpath == Pathname.new(path).realpath if path
-    end
-
-    def program_file_realpath
-      @program_file_realpath ||= Pathname.new($0).realpath
-    end
-
-    def command_line_arguments(args)
-      args
-    end
-
-    def invoke(*cmdline)
-      with_normalized_array cmdline do |_cmdline|
-        trace _cmdline.join(' ')
-        populate_environment
-        Process.exec *_cmdline.map { |_item|
-          _item.to_s
-        }
-      end
-    end
-
-    def populate_environment
-      return if environment.empty?
-
-      environment.each_pair do |_key, _value|
-        setenv [ :sk, script_name, _key ].join('_').upcase, _value.to_s
-      end
-    end
-
-    def setenv(key, value)
-      ENV[key] = value
-      trace "#{key} => #{value.inspect}"
-    end
-
-    def trace(*args)
-      return unless verbose?
-
-      with_normalized_array(args) do |_items|
-        _items.each do |_item|
-          _item.to_s.lines do |_line|
-            $stderr.puts '### ' + _line
-          end
-        end
-      end
     end
 
     def local_scope_top
@@ -130,16 +79,6 @@ module SK
           break top
         }
       end
-    end
-
-    def local_scope_top_path_info
-      @local_scope_top_path_info ||= begin
-        Dir.pwd.scan(%r{^(#{Regexp.quote(local_scope_top)})(?:[/]*)(.*)$}).flatten.tap { |_result|
-          raise "Wrong path info" unless _result
-          break [ '.', '.' ] if _result.last.empty?
-          break [ _result.last, ([ '..' ] * _result.last.count('/').next).join('/') ]
-        }
-     end
     end
 
     def path_to_local_scope_top
@@ -230,14 +169,48 @@ module SK
       raise TSC::NotImplementedError, :setup
     end
 
+    def command_line_arguments(args)
+      args
+    end
+
     def local_scope_selectors
     end
 
     def global_scope_selectors
     end
 
+    def invoke(*cmdline)
+      with_normalized_array cmdline do |_cmdline|
+        trace _cmdline.join(' ')
+        populate_environment
+        Process.exec *_cmdline.map { |_item|
+          _item.to_s
+        }
+      end
+    end
+
     private
     #######
+
+    def trace(*args)
+      return unless verbose?
+
+      with_normalized_array(args) do |_items|
+        _items.each do |_item|
+          _item.to_s.lines do |_line|
+            $stderr.puts '### ' + _line
+          end
+        end
+      end
+    end
+
+    def myself?(path)
+      program_file_realpath == Pathname.new(path).realpath if path
+    end
+
+    def program_file_realpath
+      @program_file_realpath ||= Pathname.new($0).realpath
+    end
 
     def figure_scope_top(label, origin, selectors)
       with_normalized_array selectors do |_selectors|
@@ -248,6 +221,33 @@ module SK
         end
         raise SK::SelectableScopeError, [ label, _selectors ]
       end
+    end
+
+    def local_scope_top_path_info
+      @local_scope_top_path_info ||= begin
+        Dir.pwd.scan(%r{^(#{Regexp.quote(local_scope_top)})(?:[/]*)(.*)$}).flatten.tap { |_result|
+          raise "Wrong path info" unless _result
+          break [ '.', '.' ] if _result.last.empty?
+          break [ _result.last, ([ '..' ] * _result.last.count('/').next).join('/') ]
+        }
+      end
+    end
+
+    def environment
+      @environment ||= {}
+    end
+
+    def populate_environment
+      return if environment.empty?
+
+      environment.each_pair do |_key, _value|
+        setenv [ :sk, script_name, _key ].join('_').upcase, _value.to_s
+      end
+    end
+
+    def setenv(key, value)
+      ENV[key] = value
+      trace "#{key} => #{value.inspect}"
     end
 
     def with_normalized_array(array)
