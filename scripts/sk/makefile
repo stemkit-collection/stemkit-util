@@ -1,2 +1,1 @@
 ${call core.trace-current-location}
-${call core.load-plugin,ruby}

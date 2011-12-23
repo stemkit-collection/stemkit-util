@@ -64,6 +64,9 @@ if $0 == __FILE__
   module SK
     module Config
       class UprootPathCollectorTest < Test::Unit::TestCase
+        def test_nothing
+        end
+
         def setup
         end
       end

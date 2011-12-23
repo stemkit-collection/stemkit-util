@@ -1,4 +1,5 @@
 =begin
+  vim: sw=2:
   Copyright (c) 2007, Gennady Bystritsky <bystr@mac.com>
   
   Distributed under the MIT Licence.
@@ -55,6 +56,9 @@ if $0 == __FILE__
   module SK
     module Svn
       class AccessModeratorTest < Test::Unit::TestCase
+        def test_nothing
+        end
+
         def setup
         end
         

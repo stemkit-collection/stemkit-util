@@ -291,6 +291,9 @@ if $0 == __FILE__
   module SK
     module Shell
       class ProfileTest < Test::Unit::TestCase
+        def test_nothing
+        end
+
         def setup
         end
       end
