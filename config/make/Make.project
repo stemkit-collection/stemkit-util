@@ -1,2 +1,3 @@
 ${call core.show-current-location}
 ${call core.load-plugin,ruby}
+${call ruby.add-path-to-loadpath}
