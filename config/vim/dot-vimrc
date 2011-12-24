@@ -65,6 +65,9 @@ command -nargs=* RTest execute "!ruby -rubygems -I${PATH} <args> % 2>&1 | less"
 command -nargs=* JTest execute "!jruby -rubygems -I${PATH} -I lib -r java <args> % 2>&1 | less"
 command -nargs=* RSpec execute "!ruby -rubygems -I${PATH} -S spec --require sk/spec/config -fs <args> % 2>&1 | less"
 
+command -nargs=* MLocal execute "make ITEMS=%:t <args> local-test"
+command -nargs=* MUnit execute "make OFFSET=true ITEMS=%:t:r_test.%:e <args> local-test"
+
 "set shellpipe=2>&1\|sed\ \'s/:\ warning:/\ [WARNING]/g\'\|tee
 
 command Syntax if exists("syntax_on") <Bar> syntax off <Bar> else <Bar> syntax on <Bar> endif
@@ -105,6 +108,22 @@ set foldlevel=10
 set fillchars=fold:\ " note the whitespace after   
 " not neccessary but useful (so you can use the TAB key to fold/unfold):
 map <TAB> za
+
+fun! <SID>StripTrailingWhitespaces()
+    let l = line(".")
+    let c = col(".")
+    %s/\s\+$//e
+    call cursor(l, c)
+endfun
+
+" autocmd BufWritePre *.rb,*.cc,*.cpp,*.h,*.xml :call <SID>StripTrailingWhitespaces()
+command Strip call <SID>StripTrailingWhitespaces()
+
+highlight ExtraWhitespace ctermbg=red guibg=red
+au ColorScheme * highlight ExtraWhitespace guibg=red
+au BufEnter * match ExtraWhitespace /\s\+$/
+au InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
+au InsertLeave * match ExtraWhiteSpace /\s\+$/
 
 if has("autocmd")
  augroup cprog
