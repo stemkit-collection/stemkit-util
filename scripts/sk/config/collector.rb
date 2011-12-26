@@ -9,6 +9,7 @@
   Author: Gennady Bystritsky
 =end
 
+require 'yaml'
 require 'tsc/dataset.rb'
 
 require 'sk/config/data.rb'
@@ -38,7 +39,7 @@ module SK
       def process(content, location)
         registry[location] ||= begin
           Hash[ (YAML.parse(content) || self).transform ].tap { |_hash|
-            config.update SK::Config::DataInterpolator.new(location, @attributor).transform(_hash)
+            config.update interpolator(location).transform(_hash)
           }
         end
       end
@@ -53,6 +54,10 @@ module SK
 
       private
       #######
+
+      def interpolator(location)
+        SK::Config::DataInterpolator.new(location, @attributor && @attributor.config_attributes(location))
+      end
 
       def registry
         @registry ||= {}

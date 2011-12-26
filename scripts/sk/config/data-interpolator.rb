@@ -14,8 +14,8 @@ require 'tsc/dataset.rb'
 module SK
   module Config
     class DataInterpolator
-      def initialize(location, attributor = nil)
-        @attributor, @location = attributor, location
+      def initialize(location, attributes = nil)
+        @location, @attributes = location, attributes
       end
 
       def transform(data)
@@ -23,7 +23,7 @@ module SK
           when String
             data.gsub(%r{(%[Rr])|(?:[#][{]\s*(\w+)\s*[}])}) { |_match|
               next @location if $1
-              next @attributor.send($2) if @attributor and $2
+              next @attributes.send($2) if @attributes and $2
 
               _match
             }
@@ -60,23 +60,23 @@ if $0 == __FILE__
         end
 
         def test_attributes_transformed_in_strings
-          attributor = TSC::Dataset.new :fff => 'v1', :abc => 'v2'
-          interpolator = SK::Config::DataInterpolator.new '/aaa/bbb/ccc', attributor
+          attributes = TSC::Dataset.new :fff => 'v1', :abc => 'v2'
+          interpolator = SK::Config::DataInterpolator.new '/aaa/bbb/ccc', attributes
 
           assert_equal 'v1', interpolator.transform('#{fff}')
           assert_equal '--v1--v2--v1--', interpolator.transform('--#{fff}--#{abc}--#{fff}--')
         end
 
         def test_arrays_transformed
-          attributor = TSC::Dataset.new :fff => 'v1', :abc => 'v2'
-          interpolator = SK::Config::DataInterpolator.new '/a/b/c', attributor
+          attributes = TSC::Dataset.new :fff => 'v1', :abc => 'v2'
+          interpolator = SK::Config::DataInterpolator.new '/a/b/c', attributes
 
           assert_equal [ [ '/a/b/c', 'v1' ], '/a/b/c--v1--v2' ], interpolator.transform([ [ '%r', '#{fff}' ], '%r--#{fff}--#{abc}' ])
         end
 
         def test_hashes_transformed
-          attributor = TSC::Dataset.new :fff => 'v1', :abc => 'v2'
-          interpolator = SK::Config::DataInterpolator.new '/a/b/c', attributor
+          attributes = TSC::Dataset.new :fff => 'v1', :abc => 'v2'
+          interpolator = SK::Config::DataInterpolator.new '/a/b/c', attributes
 
           assert_equal Hash[ :aaa => [ '/a/b/c', 'v1' ], :bbb => '/a/b/c--v1--v2' ], interpolator.transform( :aaa => [ '%r', '#{fff}' ], :bbb => '%r--#{fff}--#{abc}' )
         end
