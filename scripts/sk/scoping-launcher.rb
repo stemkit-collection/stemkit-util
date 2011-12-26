@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -65,7 +65,7 @@ module SK
         setup
 
         find_in_path(os.exe(script_name)).tap { |_commands|
-          _commands.shift while myself?(_commands.first) 
+          _commands.shift while myself?(_commands.first)
           raise NotInPathError, script_name if _commands.empty?
 
           invoke _commands.first, command_line_arguments(ARGV)
@@ -310,7 +310,7 @@ if $0 == __FILE__
       end
 
       def test_fails_if_multiple_scope_selectors_not_found
-        SK::ScopingLauncher.any_instance.expects(:local_scope_selectors).returns [ 
+        SK::ScopingLauncher.any_instance.expects(:local_scope_selectors).returns [
           'aaa/bbb/ccc',
           'zzz/uuu/bbb'
         ]
@@ -323,7 +323,7 @@ if $0 == __FILE__
           assert_equal 'Local scope top not found (no selectors aaa/bbb/ccc, zzz/uuu/bbb)', error.message
         }
       end
-      
+
       def test_returns_closest_local_top_if_scope_determined
         SK::ScopingLauncher.any_instance.expects(:local_scope_selectors).returns 'aaa/bbb/ccc'
 
