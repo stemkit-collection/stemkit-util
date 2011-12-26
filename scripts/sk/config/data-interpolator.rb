@@ -37,6 +37,9 @@ module SK
             data.update(data) { |_key, _value, _other|
               transform _value
             }
+
+          else
+            data
         end
       end
     end
@@ -79,6 +82,11 @@ if $0 == __FILE__
           interpolator = SK::Config::DataInterpolator.new '/a/b/c', attributes
 
           assert_equal Hash[ :aaa => [ '/a/b/c', 'v1' ], :bbb => '/a/b/c--v1--v2' ], interpolator.transform( :aaa => [ '%r', '#{fff}' ], :bbb => '%r--#{fff}--#{abc}' )
+        end
+
+        def test_other_types_stay_intact
+          interpolator = SK::Config::DataInterpolator.new '/a/b/c'
+          assert_equal Hash[ :abc => 333 ], interpolator.transform(:abc => 333)
         end
 
         def setup
