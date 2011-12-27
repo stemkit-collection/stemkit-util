@@ -236,7 +236,7 @@ module SK
 
       def normalize(properties)
         properties.each_pair do |_key, _value|
-          @properties[upcase(prefix(_key))] = _value.to_s
+          @properties[upcase(prefix(_key.to_s))] = _value.to_s
         end
 
         @properties
