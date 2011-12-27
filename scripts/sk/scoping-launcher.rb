@@ -184,7 +184,7 @@ module SK
     end
 
     def config(name, options = {})
-      collector.collect(name, options)
+      SK::Config::Collector.new(self).collect(name, options)
     end
 
     def config_attributes(location)
@@ -193,10 +193,6 @@ module SK
 
     protected
     #########
-
-    def collector
-      @collector ||= SK::Config::Collector.new self
-    end
 
     def setup
       raise TSC::NotImplementedError, :setup
