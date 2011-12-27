@@ -59,16 +59,17 @@ module SK
 
       def properties(*args)
         args.empty? ? to_hash : args.inject(self.class.new) { |_memo, _item|
-          _memo.update find(_item.to_s.downcase)
+          _memo.update(attribute(_item) || {})
         }
       end
 
-      def find(item)
-        self.each_pair do |_key, _value|
-          return _value if _key.to_s.downcase == item
-        end
-
-        return {}
+      def attribute(item)
+        item.to_s.downcase.tap { |_item|
+          self.each_pair do |_key, _value|
+            return _value if _key.to_s.downcase == _item
+          end
+        }
+        nil
       end
 
       def [](path)
@@ -388,6 +389,13 @@ if $0 == __FILE__
         def test_fetch_on_meshed
           a = Data.mesh_array [ 1, 2, Hash[ 7=>8, 1 => { :a => { :b => :c } }, 3 => { 9 => "uu" } ], 3 ]
           assert_equal :c, a.fetch("1/a/b")
+        end
+
+        def test_attributes
+          Data.new("HellO" => 23, :zzz => 'aaa').tap { |_data|
+            assert_equal 23, _data.attribute(:hello)
+            assert_equal 'aaa', _data.attribute('ZZZ')
+          }
         end
 
         def setup
