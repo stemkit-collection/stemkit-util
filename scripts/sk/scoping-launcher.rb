@@ -67,12 +67,7 @@ module SK
 
         setup
 
-        find_in_path(os.exe(script_name)).tap { |_commands|
-          _commands.shift while myself?(_commands.first)
-          raise NotInPathError, script_name if _commands.empty?
-
-          invoke _commands.first, command_line_arguments(ARGV)
-        }
+        invoke original_command, command_line_arguments(ARGV)
       }
     end
 
@@ -196,6 +191,15 @@ module SK
 
     def setup
       raise TSC::NotImplementedError, :setup
+    end
+
+    def original_command
+      find_in_path(os.exe(script_name)).tap { |_commands|
+        _commands.shift while myself?(_commands.first)
+
+        return _commands.first unless _commands.empty?
+        raise NotInPathError, script_name
+      }
     end
 
     def command_line_arguments(args)
