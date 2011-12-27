@@ -76,8 +76,8 @@ module SK
       }
     end
 
-    def update_environment(env)
-      environment.update(env)
+    def update_environment(env, options = {})
+      environments << PropertiesNormalizer.new(script_name, options).normalize(env)
     end
 
     def local_scope_top
@@ -191,17 +191,6 @@ module SK
       ConfigAttributes.new(self, location)
     end
 
-    class ConfigAttributes
-      attr_reader :location
-
-      extend Forwardable
-      def_delegators :@master, :local_scope_top, :global_scope_top, :srctop, :bintop, :pkgtop, :gentop
-
-      def initialize(master, location)
-        @master, @location = master, location
-      end
-    end
-
     protected
     #########
 
@@ -235,6 +224,51 @@ module SK
 
     private
     #######
+
+    class PropertiesNormalizer
+      DEFAULTS = {
+        :prefix => true,
+        :upcase => true
+      }
+      attr_reader :options, :app
+
+      def initialize(app, options)
+        @app = app
+        @options = TSC::Dataset.new(DEFAULTS).update(options)
+        @properties = {}
+      end
+
+      def normalize(properties)
+        properties.each_pair do |_key, _value|
+          @properties[upcase(prefix(_key))] = _value.to_s
+        end
+
+        @properties
+      end
+
+      private
+      #######
+
+      def upcase(string)
+        @options.upcase ? string.upcase : string
+      end
+
+      def prefix(string)
+        return string unless options.prefix
+        [ (options.prefix == true ? [ 'sk', app ] : options.prefix), string ].join('_')
+      end
+    end
+
+    class ConfigAttributes
+      attr_reader :location
+
+      extend Forwardable
+      def_delegators :@master, :local_scope_top, :global_scope_top, :srctop, :bintop, :pkgtop, :gentop
+
+      def initialize(master, location)
+        @master, @location = master, location
+      end
+    end
 
     def trace(*args)
       return unless verbose?
@@ -277,21 +311,19 @@ module SK
       end
     end
 
-    def environment
-      @environment ||= {}
+    def environments
+      @environments ||= []
     end
 
     def populate_environment
-      return if environment.empty?
+      return if environments.empty?
 
-      environment.each_pair do |_key, _value|
-        setenv [ :sk, script_name, _key ].join('_').upcase, _value.to_s
+      environments.each do |_environment|
+        _environment.each_pair do |_key, _value|
+          trace "#{_key} => #{_value.inspect}"
+          ENV[_key] = _value
+        end
       end
-    end
-
-    def setenv(key, value)
-      ENV[key] = value
-      trace "#{key} => #{value.inspect}"
     end
 
     def with_normalized_array(array)
