@@ -212,10 +212,15 @@ module SK
       with_normalized_array cmdline do |_cmdline|
         trace _cmdline.join(' ')
         populate_environment
-        Process.exec *_cmdline.map { |_item|
+
+        launch *_cmdline.map { |_item|
           _item.to_s
         }
       end
+    end
+
+    def launch(command, *args)
+      Process.exec command, *args
     end
 
     private

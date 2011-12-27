@@ -24,6 +24,10 @@ class Application < SK::ScopingLauncher
       }
     }
   end
+
+  def launch(command, *args)
+    super
+  end
 end
 
 Application.new.start
