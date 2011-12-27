@@ -57,6 +57,20 @@ module SK
         @hash
       end
 
+      def properties(*args)
+        args.empty? ? to_hash : args.inject(self.class.new) { |_memo, _item|
+          _memo.update find(_item.to_s.downcase)
+        }
+      end
+
+      def find(item)
+        self.each_pair do |_key, _value|
+          return _value if _key.to_s.downcase == item
+        end
+
+        return {}
+      end
+
       def [](path)
         begin
           locate(path, false) { |_key, _data|
