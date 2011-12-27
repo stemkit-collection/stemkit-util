@@ -194,12 +194,14 @@ module SK
     end
 
     def original_command
-      find_in_path(os.exe(script_name)).tap { |_commands|
-        _commands.shift while myself?(_commands.first)
+      @original_command ||= begin
+        find_in_path(os.exe(script_name)).tap { |_commands|
+          _commands.shift while myself?(_commands.first)
+          raise NotInPathError, script_name if _commands.empty?
 
-        return _commands.first unless _commands.empty?
-        raise NotInPathError, script_name
-      }
+          break _commands.first
+        }
+      end
     end
 
     def command_line_arguments(args)
