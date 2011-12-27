@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 # vim: set sw=2:
 # Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
-# 
+#
 # Distributed under the MIT Licence.
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
 $:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
 
-require 'tsc/application.rb'
+require 'sk/scoping-launcher.rb'
 require 'tsc/path.rb'
 
 # This is a Subversion front-end that transforms its arguments as follows:
@@ -18,27 +18,7 @@ require 'tsc/path.rb'
 #   %u is replaced by the current URL, handy in 'svn log %u' command.
 #   %t is replaced by the top working directory.
 #
-class Application < TSC::Application
-  def start
-    handle_errors {
-      require 'rubygems'
-      require 'tsc/config-locator.rb'
-      require 'yaml'
-      require 'open3'
-      require 'time'
-
-      if defined? SVN_ORIGINAL
-        invoke SVN_ORIGINAL
-      else
-        commands = find_in_path(os.exe(script_name))
-        commands.shift while commands.first == $0
-
-        raise "No #{script_name.inspect} in PATH" if commands.empty?
-        invoke commands.first
-      end
-    }
-  end
-
+class Application < SK::ScopingLauncher
   in_generator_context do |_content|
     file = File.basename(target)
     directory = File.join(self.class.installation_top, 'bin')
@@ -50,20 +30,25 @@ class Application < TSC::Application
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
 
-  private
-  #######
+  protected
+  #########
 
   ROOT_INFO = 'Repository Root'
   URL_INFO = 'URL'
 
-  def invoke(command)
-    @command = find_original(command)
-    setup_library_path_for(@command)
+  def setup
+    require 'yaml'
+    require 'open3'
+    require 'time'
+  end
 
-    $stderr.puts "#{script_name}: Using #{@command}>" if verbose?
+  def original_command
+    defined?(SVN_ORIGINAL) ? SVN_ORIGINAL : super
+  end
 
-    argv = ARGV.map { |_item|
-      case _item 
+  def command_line_arguments(args)
+    args.map { |_item|
+      case _item
         when '-S'
           '--stop-on-copy'
 
@@ -84,13 +69,12 @@ class Application < TSC::Application
           }
       end
     }
-    execute command, *argv
   end
 
-  def execute(*args)
-    puts args.inspect if verbose?
-    exec *args unless @translate_xml_time
-    Open3.popen3(*args) { |_in, _out, _err|
+  def launch(command, *args)
+    return super(command, *args) unless @translate_xml_time
+
+    Open3.popen3(command, *args) { |_in, _out, _err|
       _err.readlines.each do |_line|
         $stderr.puts _line
       end
@@ -98,6 +82,9 @@ class Application < TSC::Application
       $stdout.puts translate_xml_time(_out.readlines.join)
     }
   end
+
+  private
+  #######
 
   def translate_xml_time(line)
     line.gsub(%r{(<date>)(.*)T(.*)[.](.*)Z(</date>)}) { |*_match|
@@ -109,47 +96,12 @@ class Application < TSC::Application
     Time.parse("#{date} #{time} GMT").strftime("%Y-%m-%dT%H:%M:%S.#{ms}Z%Z")
   end
 
-  def find_original(command)
-    return command unless File.symlink?(command)
-    find_original File.expand_path(File.readlink(command), File.dirname(command))
-  end
-
-  def setup_library_path_for(command, depth = 3)
-    return if depth.zero?
-
-    location = File.dirname(command)
-    path = File.join(location, 'lib')
-    
-    if File.directory?(path)
-      TSC::LD_LIBRARY_PATH.current.front(path).install
-    else
-      setup_library_path_for(location, depth - 1)
-    end
-  end
-
-  def process_resource(directory, resource)
-    resource_path = File.join directory, resource
-    if File.exists? resource_path
-      begin
-        File.open(resource_path) { |_io|
-          YAML.parse(_io).transform
-        }
-      rescue Exception => exception
-        raise TSC::Error.new("Error parsing #{resource_path.inspect}", exception)
-      end
-    else
-      process_resource(File.dirname(directory), resource) unless directory == '/'
-    end
-  end
-
   def config
-    @config ||= begin 
-      TSC::ConfigLocator.new('.svnrc').merge_all_above_with_personal(20)
-    end
+    @config ||= super('.svnrc', :uproot => true, :home => true)
   end
 
   def info(location)
-    Open3.popen3("#{@command} info #{location}") do |_in, _out, _err|
+    Open3.popen3("#{original_command} info #{location}") do |_in, _out, _err|
       YAML.parse(_out).transform rescue Hash.new
     end
   end
@@ -164,7 +116,7 @@ class Application < TSC::Application
 
   def root
     @root ||= begin
-      ENV['SVN_ROOT'] or config.hash['Root'] or dot_info[ROOT_INFO] or begin
+      ENV['SVN_ROOT'] or config.attribute(:root) or dot_info[ROOT_INFO] or begin
         raise 'Cannot figure out the root (check for .svnrc or working copy)'
       end
     end
@@ -182,20 +134,4 @@ class Application < TSC::Application
   end
 end
 
-unless defined? Test::Unit::TestCase
-  catch :TEST do
-    Application.new.start
-    exit 0
-  end
-end
-
-require 'test/unit'
-
-class ApplicationTest < Test::Unit::TestCase
-  def test_nothing
-  end
-
-  def setup
-    @app = Application.new
-  end
-end
+Application.new.start
