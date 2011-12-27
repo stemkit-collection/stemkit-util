@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky (gennady.bystritsky@quest.com)
 =end
 
@@ -50,7 +50,7 @@ module SK
       end
 
       def ==(other)
-        other == @hash 
+        other == @hash
       end
 
       def to_hash
@@ -74,7 +74,7 @@ module SK
           }
         rescue
           raise MissingPathError, path if fallback.object_id == self.object_id
-          fallback 
+          fallback
         end
       end
 
@@ -116,7 +116,7 @@ module SK
           control.update(options)
 
           loop do
-            case receiver 
+            case receiver
               when Hash
                 receiver = self.new receiver
                 next
@@ -136,7 +136,7 @@ module SK
                     return merge(receiver, { item => self.new }, options) unless receiver.key?(item)
                 end
 
-              when Array 
+              when Array
                 case item
                   when Hash, self, Array
                     return item unless control.consolidate
@@ -193,7 +193,7 @@ module SK
 
         yield key, keys.inject(self) { |_data, _key|
           raise "Not #{self.class.name.inspect}" unless self.class === _data
-          if _data.to_hash.key?(_key) == false 
+          if _data.to_hash.key?(_key) == false
             raise MissingPathError, keys.join('/') unless create
             _data.to_hash[_key] = self.class.new
           end
@@ -358,17 +358,17 @@ if $0 == __FILE__
 
         def test_mesh_array
           a = Data.mesh_array [ 1, 2, 3 ]
-          assert_equal Hash[ "1"=>{}, "2"=>{}, "3"=>{} ], a 
+          assert_equal Hash[ "1"=>{}, "2"=>{}, "3"=>{} ], a
         end
 
         def test_mesh_array_with_hash_inside
           a = Data.mesh_array [ 1, 2, Hash[ 7=>8 ], 3 ]
-          assert_equal Hash[ "7"=>8, "1"=>{}, "2"=>{}, "3"=>{} ], a 
+          assert_equal Hash[ "7"=>8, "1"=>{}, "2"=>{}, "3"=>{} ], a
         end
 
         def test_mesh_array_with_hash_inside_override
           a = Data.mesh_array [ 1, 2, Hash[ 7=>8, 1 => { :a => { :b => :c } }, 3 => { 9 => "uu" } ], 3 ]
-          assert_equal Hash[ "7"=>8, "1"=>{ "a" => { "b" => :c } }, "2"=>{}, "3" => { "9" => "uu" } ], a 
+          assert_equal Hash[ "7"=>8, "1"=>{ "a" => { "b" => :c } }, "2"=>{}, "3" => { "9" => "uu" } ], a
         end
 
         def test_fetch_on_meshed
