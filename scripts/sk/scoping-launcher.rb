@@ -219,7 +219,7 @@ module SK
         trace _cmdline.join(' ')
         populate_environment
 
-        launch *_cmdline.map { |_item|
+        launch *_cmdline.flatten.compact.map { |_item|
           _item.to_s
         }
       end
