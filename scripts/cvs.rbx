@@ -111,6 +111,17 @@ class Application < SK::ScopingLauncher
     require 'sk/cvs/cli/update-tuner.rb'
     @tuner = SK::Cvs::Cli::UpdateTuner.new(self)
   end
+
+  public
+  ######
+
+  def output_info(info)
+    $stdout.puts info
+  end
+
+  def output_errors(*args)
+    $stderr.puts *args.flatten.compact
+  end
 end
 
 Application.new.start
