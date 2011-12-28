@@ -9,10 +9,26 @@
   Author: EMC Gennady Bystritsky
 =end
 
+require 'sk/cvs/cli/tuner.rb'
+
 module SK
   module Cvs
     module Cli
-      class StatusTuner
+      class StatusTuner < SK::Cvs::Cli::Tuner
+        def check_option(option)
+          case option
+            when '-u'
+              @updates = true
+
+            else
+              return super
+          end
+
+          nil
+        end
+
+        def process(io)
+        end
       end
     end
   end
