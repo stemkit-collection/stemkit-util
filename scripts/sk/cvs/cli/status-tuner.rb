@@ -124,11 +124,17 @@ if $0 == __FILE__
         class StatusTunerTest < Test::Unit::TestCase
           attr_reader :tuner, :error_depot, :info_depot
 
-          def test_overall
+          def test_output_without_updates
             tuner.process [
               '? aaa/bbb/ccc',
               'File: aaa.c Status: Locally Modified',
               'cvs status: Examining d1/d2/d3',
+              'File: zzz.rb Status: Up-to-date',
+              '   Working revision: 1.4',
+              '   Repository revision: 7.5 /home/a/b/c/uuu.rb',
+              'File: bbb.rb Status: Needs Patch',
+              '   Working revision: 1.4',
+              '   Repository revision: 7.5 /home/a/b/c/uuu.rb',
               'File: uuu.rb Status: Needs Merge',
               '   Working revision: 1.4',
               '   Repository revision: 7.5 /home/a/b/c/uuu.rb',
@@ -139,6 +145,36 @@ if $0 == __FILE__
             assert_equal '?    aaa/bbb/ccc', info_depot[0]
             assert_equal 'M    aaa.c', info_depot[1]
             assert_equal 'G    d1/d2/d3/uuu.rb ... 1.4 -> 7.5', info_depot[2]
+
+
+            assert_equal 2, error_depot.size
+            assert_equal 'Errors or not recognized:', error_depot[0]
+            assert_equal '  > zzzzzzzzzzzzzzzz', error_depot[1]
+          end
+
+          def test_output_with_updates
+            tuner.check_option('-u')
+            tuner.process [
+              '? aaa/bbb/ccc',
+              'File: aaa.c Status: Locally Modified',
+              'cvs status: Examining d1/d2/d3',
+              'File: zzz.rb Status: Up-to-date',
+              '   Working revision: 1.4',
+              '   Repository revision: 7.5 /home/a/b/c/uuu.rb',
+              'File: bbb.rb Status: Needs Patch',
+              '   Working revision: 1.4',
+              '   Repository revision: 7.5 /home/a/b/c/uuu.rb',
+              'File: uuu.rb Status: Needs Merge',
+              '   Working revision: 1.4',
+              '   Repository revision: 7.5 /home/a/b/c/uuu.rb',
+              'zzzzzzzzzzzzzzzz'
+            ]
+
+            assert_equal 4, info_depot.size
+            assert_equal '?    aaa/bbb/ccc', info_depot[0]
+            assert_equal 'M    aaa.c', info_depot[1]
+            assert_equal '*    d1/d2/d3/bbb.rb ... 1.4 -> 7.5', info_depot[2]
+            assert_equal 'G    d1/d2/d3/uuu.rb ... 1.4 -> 7.5', info_depot[3]
 
 
             assert_equal 2, error_depot.size
