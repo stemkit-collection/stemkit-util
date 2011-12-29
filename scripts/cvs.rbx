@@ -29,6 +29,9 @@ class Application < SK::ScopingLauncher
       option
     end
 
+    def extra_cvs_options
+    end
+
     def ready?
       false
     end
@@ -74,7 +77,7 @@ class Application < SK::ScopingLauncher
         else
           tuner.check_option(_item)
       end
-    }
+    } + Array(tuner.extra_cvs_options)
   end
 
   def launch(command, *args)

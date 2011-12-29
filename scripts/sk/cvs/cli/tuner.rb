@@ -19,6 +19,9 @@ module SK
           @app = app
         end
 
+        def extra_cvs_options
+        end
+
         def check_option(option)
           option
         end
