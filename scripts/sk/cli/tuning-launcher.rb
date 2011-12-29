@@ -44,11 +44,20 @@ module SK
         rails TSC::NotImplementedError, :check_option
       end
 
+      def redirect_stderr_to_stdout
+        @redirect = true
+      end
+
       def launch(command, *args)
         return super(command, *args) unless tuner.ready?
         require 'open3'
 
-        Open3.popen3($0, 'join-output', command, *args) do |_in, _out, |
+        cmdline = [
+          @redirect ? [ $0, 'join-output' ] : [],
+          command,
+          args
+        ]
+        Open3.popen3(*cmdline.flatten) do |_in, _out, |
           tuner.process _out
         end
       end
