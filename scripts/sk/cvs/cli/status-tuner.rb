@@ -105,7 +105,7 @@ module SK
         def dump_file
           return unless @file
 
-          app.output_info @file.to_s if @file.updated? or (@file.outdated? and @updated)
+          app.output_info @file.to_s if @file.updated? or (@file.outdated? and @updates)
 
           @file = nil
         end
