@@ -63,7 +63,7 @@ module SK
                 file.repository_path = $2
 
               else
-                errors << _line
+                register_error _line
             end
           end
 
@@ -73,17 +73,6 @@ module SK
 
         private
         #######
-
-        def errors
-          @errors ||= []
-        end
-
-        def display_errors_if_any
-          return if errors.empty?
-          app.output_errors 'Errors or not recognized:', errors.map { |_line|
-            '  > ' + _line
-          }
-        end
 
         def set_folder(folder)
           @folder = Pathname.new(folder)

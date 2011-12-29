@@ -20,10 +20,15 @@ module SK
             case _line
               when %r{^cvs\s+update:\s+Updating\s+(.*?)\s*$}
 
+              when %r{^cvs\s+update:}, %r{^cvs\s+\[update\s+aborted\]:}
+                register_error _line
+
               else
                 app.output_info _line
             end
           end
+
+          display_errors_if_any
         end
       end
     end

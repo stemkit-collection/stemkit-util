@@ -24,12 +24,17 @@ module SK
             case _line
               when %r{^cvs\s+diff:\s+Diffing\s+(.*?)\s*$}
 
+              when %r{^cvs\s+diff:}, %r{^cvs\s+\[diff\s+aborted\]:}
+                register_error _line
+
               when %r{^[?]\s+(.*)$}
 
               else
                 app.output_info _line
             end
           end
+
+          display_errors_if_any
         end
       end
     end
