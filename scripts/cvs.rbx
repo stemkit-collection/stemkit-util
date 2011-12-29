@@ -77,7 +77,7 @@ class Application < SK::Cli::TuningLauncher
 
   def configure_neat_update
     require 'sk/cli/cvs/update-tuner.rb'
-    set_tuner = SK::Cli::Cvs::UpdateTuner.new(self)
+    set_tuner SK::Cli::Cvs::UpdateTuner.new(self)
   end
 end
 
