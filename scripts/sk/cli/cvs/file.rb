@@ -12,8 +12,8 @@
 require 'pathname'
 
 module SK
-  module Cvs
-    module Cli
+  module Cli
+    module Cvs
       class File
         attr_reader :path, :status
 
@@ -92,11 +92,11 @@ if $0 == __FILE__
   require 'mocha'
 
   module SK
-    module Cvs
-      module Cli
+    module Cli
+      module Cvs
         class FileTest < Test::Unit::TestCase
           def test_current
-            Cli::File.new('fff', Pathname.new('d1').join('d2'), 'Up-to-date').tap { |_file|
+            Cvs::File.new('fff', Pathname.new('d1').join('d2'), 'Up-to-date').tap { |_file|
               assert_equal true, _file.current?
               assert_equal false, _file.updated?
               assert_equal false, _file.outdated?
@@ -105,7 +105,7 @@ if $0 == __FILE__
           end
 
           def test_locally_added
-            Cli::File.new('fff', Pathname.new('d1').join('d2'), 'Locally Added').tap { |_file|
+            Cvs::File.new('fff', Pathname.new('d1').join('d2'), 'Locally Added').tap { |_file|
               assert_equal true, _file.added?
               assert_equal true, _file.updated?
               assert_equal false, _file.outdated?
@@ -114,7 +114,7 @@ if $0 == __FILE__
           end
 
           def test_needs_patch
-            Cli::File.new('fff', Pathname.new('d1').join('d2'), 'Needs Patch').tap { |_file|
+            Cvs::File.new('fff', Pathname.new('d1').join('d2'), 'Needs Patch').tap { |_file|
               _file.working_revision = '1.1'
               _file.repository_revision = '2.3'
 
@@ -126,7 +126,7 @@ if $0 == __FILE__
           end
 
           def test_needs_merge
-            Cli::File.new('fff', Pathname.new('d1').join('d2'), 'Needs Merge').tap { |_file|
+            Cvs::File.new('fff', Pathname.new('d1').join('d2'), 'Needs Merge').tap { |_file|
               _file.working_revision = '1.1'
               _file.repository_revision = '2.3'
 
@@ -138,7 +138,7 @@ if $0 == __FILE__
           end
 
           def test_locally_modified
-            Cli::File.new('fff', Pathname.new('d1').join('d2'), 'Locally Modified').tap { |_file|
+            Cvs::File.new('fff', Pathname.new('d1').join('d2'), 'Locally Modified').tap { |_file|
               assert_equal true, _file.modified?
               assert_equal true, _file.updated?
               assert_equal false, _file.outdated?
@@ -147,7 +147,7 @@ if $0 == __FILE__
           end
 
           def test_missing
-            Cli::File.new('no file fff', Pathname.new('d1').join('d2'), 'Needs Checkout').tap { |_file|
+            Cvs::File.new('no file fff', Pathname.new('d1').join('d2'), 'Needs Checkout').tap { |_file|
               assert_equal false, _file.modified?
               assert_equal true, _file.updated?
               assert_equal false, _file.outdated?
@@ -156,7 +156,7 @@ if $0 == __FILE__
           end
 
           def test_local_only
-            Cli::File.new('aaa/bbb/fff', Pathname.new('.'), '?').tap { |_file|
+            Cvs::File.new('aaa/bbb/fff', Pathname.new('.'), '?').tap { |_file|
               assert_equal true, _file.local_only?
               assert_equal true, _file.updated?
               assert_equal false, _file.outdated?

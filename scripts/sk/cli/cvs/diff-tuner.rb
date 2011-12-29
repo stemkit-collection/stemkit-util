@@ -9,12 +9,12 @@
   Author: Gennady Bystritsky
 =end
 
-require 'sk/cvs/cli/tuner.rb'
+require 'sk/cli/cvs/tuner.rb'
 
 module SK
-  module Cvs
-    module Cli
-      class DiffTuner < SK::Cvs::Cli::Tuner
+  module Cli
+    module Cvs
+      class DiffTuner < SK::Cli::Cvs::Tuner
         def extra_cvs_options
           [ '-u', '-N' ]
         end
@@ -41,8 +41,8 @@ if $0 == __FILE__
   require 'mocha'
 
   module SK
-    module Cvs
-      module Cli
+    module Cli
+      module Cvs
         class DiffTunerTest < Test::Unit::TestCase
           def test_nothing
           end

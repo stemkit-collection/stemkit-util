@@ -9,12 +9,12 @@
   Author: Gennady Bystritsky
 =end
 
-require 'sk/cvs/cli/tuner.rb'
+require 'sk/cli/cvs/tuner.rb'
 
 module SK
-  module Cvs
-    module Cli
-      class UpdateTuner < SK::Cvs::Cli::Tuner
+  module Cli
+    module Cvs
+      class UpdateTuner < SK::Cli::Cvs::Tuner
         def process(io)
           io.each do |_line|
             case _line
@@ -35,8 +35,8 @@ if $0 == __FILE__
   require 'mocha'
 
   module SK
-    module Cvs
-      module Cli
+    module Cli
+      module Cvs
         class UpdateTunerTest < Test::Unit::TestCase
           def test_nothing
           end

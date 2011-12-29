@@ -9,13 +9,13 @@
   Author: EMC Gennady Bystritsky
 =end
 
-require 'sk/cvs/cli/tuner.rb'
-require 'sk/cvs/cli/file.rb'
+require 'sk/cli/cvs/tuner.rb'
+require 'sk/cli/cvs/file.rb'
 
 module SK
-  module Cvs
-    module Cli
-      class StatusTuner < SK::Cvs::Cli::Tuner
+  module Cli
+    module Cvs
+      class StatusTuner < SK::Cli::Cvs::Tuner
         def check_option(option)
           case option
             when '-u'
@@ -119,8 +119,8 @@ if $0 == __FILE__
   require 'mocha'
 
   module SK
-    module Cvs
-      module Cli
+    module Cli
+      module Cvs
         class StatusTunerTest < Test::Unit::TestCase
           attr_reader :tuner, :error_depot, :info_depot
 
@@ -194,7 +194,7 @@ if $0 == __FILE__
             @error_depot = []
             @info_depot = []
 
-            @tuner = SK::Cvs::Cli::StatusTuner.new(self)
+            @tuner = SK::Cli::Cvs::StatusTuner.new(self)
           end
         end
       end

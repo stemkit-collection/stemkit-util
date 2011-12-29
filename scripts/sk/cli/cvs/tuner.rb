@@ -10,8 +10,8 @@
 =end
 
 module SK
-  module Cvs
-    module Cli
+  module Cli
+    module Cvs
       class Tuner
         attr_reader :app
 

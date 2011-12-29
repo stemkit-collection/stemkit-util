@@ -101,18 +101,18 @@ class Application < SK::ScopingLauncher
   end
 
   def configure_short_status
-    require 'sk/cvs/cli/status-tuner.rb'
-    @tuner = SK::Cvs::Cli::StatusTuner.new(self)
+    require 'sk/cli/cvs/status-tuner.rb'
+    @tuner = SK::Cli::Cvs::StatusTuner.new(self)
   end
 
   def configure_neat_diff
-    require 'sk/cvs/cli/diff-tuner.rb'
-    @tuner = SK::Cvs::Cli::DiffTuner.new(self)
+    require 'sk/cli/cvs/diff-tuner.rb'
+    @tuner = SK::Cli::Cvs::DiffTuner.new(self)
   end
 
   def configure_neat_update
-    require 'sk/cvs/cli/update-tuner.rb'
-    @tuner = SK::Cvs::Cli::UpdateTuner.new(self)
+    require 'sk/cli/cvs/update-tuner.rb'
+    @tuner = SK::Cli::Cvs::UpdateTuner.new(self)
   end
 
   public
