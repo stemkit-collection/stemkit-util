@@ -9,13 +9,13 @@
   Author: Gennady Bystritsky
 =end
 
-require 'sk/cli/cvs/tuner.rb'
+require 'sk/cli/tuner.rb'
 
 module SK
   module Cli
     module Cvs
-      class DiffTuner < SK::Cli::Cvs::Tuner
-        def extra_cvs_options
+      class DiffTuner < SK::Cli::Tuner
+        def extra_cli_options
           [ '-u', '-N' ]
         end
 

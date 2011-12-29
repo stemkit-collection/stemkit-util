@@ -9,13 +9,13 @@
   Author: EMC Gennady Bystritsky
 =end
 
-require 'sk/cli/cvs/tuner.rb'
+require 'sk/cli/tuner.rb'
 require 'sk/cli/cvs/file.rb'
 
 module SK
   module Cli
     module Cvs
-      class StatusTuner < SK::Cli::Cvs::Tuner
+      class StatusTuner < SK::Cli::Tuner
         def check_option(option)
           case option
             when '-u'

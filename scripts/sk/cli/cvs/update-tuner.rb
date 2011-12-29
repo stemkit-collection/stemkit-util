@@ -9,12 +9,12 @@
   Author: Gennady Bystritsky
 =end
 
-require 'sk/cli/cvs/tuner.rb'
+require 'sk/cli/tuner.rb'
 
 module SK
   module Cli
     module Cvs
-      class UpdateTuner < SK::Cli::Cvs::Tuner
+      class UpdateTuner < SK::Cli::Tuner
         def process(io)
           io.each do |_line|
             case _line

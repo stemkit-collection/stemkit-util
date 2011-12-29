@@ -11,24 +11,22 @@
 
 module SK
   module Cli
-    module Cvs
-      class Tuner
-        attr_reader :app
+    class Tuner
+      attr_reader :app
 
-        def initialize(app)
-          @app = app
-        end
+      def initialize(app)
+        @app = app
+      end
 
-        def extra_cvs_options
-        end
+      def extra_cli_options
+      end
 
-        def check_option(option)
-          option
-        end
+      def check_option(option)
+        option
+      end
 
-        def ready?
-          true
-        end
+      def ready?
+        true
       end
     end
   end
