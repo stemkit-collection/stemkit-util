@@ -22,7 +22,7 @@ module SK
 
         def process(io)
           io.each do |_line|
-            app.output_info _line unless !@noignore and _line =~ %r{CVS(/\w+?([.]\w+?)?)?\s*$}
+            app.output_info _line unless !@noignore and _line =~ %r{\bCVS(/\w+?([.]\w+?)?)?\s*$}
           end
         end
       end
