@@ -24,7 +24,7 @@ module SK
         def process(io)
           io.each do |_line|
             unless @noignore
-              @noshow = ($2 ? true : false) if _line =~ %r{^Index:\s+(.*?)(CVS/Entries)?\s*$}
+              @noshow = ($2 ? true : false) if _line =~ %r{^Index:\s+(.*?)(\bCVS(?:/\w+?(?:[.]\w+?)?)?)?\s*$}
             end
 
             app.output_info _line unless @noshow
