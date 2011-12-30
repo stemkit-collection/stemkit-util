@@ -8,7 +8,7 @@
 
 $:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
 
-require 'sk/scoping-launcher.rb'
+require 'sk/cli/tuning-launcher.rb'
 require 'tsc/path.rb'
 
 # This is a Subversion front-end that transforms its arguments as follows:
@@ -18,7 +18,7 @@ require 'tsc/path.rb'
 #   %u is replaced by the current URL, handy in 'svn log %u' command.
 #   %t is replaced by the top working directory.
 #
-class Application < SK::ScopingLauncher
+class Application < SK::Cli::TuningLauncher
   in_generator_context do |_content|
     file = File.basename(target)
     directory = File.join(self.class.installation_top, 'bin')
@@ -39,61 +39,65 @@ class Application < SK::ScopingLauncher
   def setup
     require 'yaml'
     require 'open3'
-    require 'time'
+
+    redirect_stderr_to_stdout
   end
 
   def original_command
     defined?(SVN_ORIGINAL) ? SVN_ORIGINAL : super
   end
 
-  def command_line_arguments(args)
-    args.map { |_item|
-      case _item
-        when '-S'
-          '--stop-on-copy'
+  def check_option(item)
+    case item
+      when '-S'
+        '--stop-on-copy'
 
-        when '-I'
-          '--no-ignore'
+      when '-I', '--no-ignore'
+        tuner.check_option('--no-ignore')
 
-        when '--xml-local-time'
-          @translate_xml_time = true
-          '--xml'
+      when '--xml-local-time'
+        require 'sk/cli/svn/local-time-tuner.rb'
+        set_tuner SK::Cli::Svn::LocalTimeTuner.new(self)
+        '--xml'
 
-        else
-          _item.gsub(%r{%[rtu]}i) { |_match|
-            case _match.downcase
-              when '%r' then root
-              when '%u' then url
-              when '%t' then top
-            end
-          }
-      end
-    }
-  end
+      when 'status'
+        configure_status_no_cvs if config.attribute('status-no-cvs') == true
+        item
 
-  def launch(command, *args)
-    return super(command, *args) unless @translate_xml_time
+      when 'diff'
+        configure_diff_no_cvs if config.attribute('diff-no-cvs') == true
+        item
 
-    Open3.popen3(command, *args) { |_in, _out, _err|
-      _err.readlines.each do |_line|
-        $stderr.puts _line
-      end
+      when 'status-no-cvs'
+        configure_status_no_cvs
+        'status'
 
-      $stdout.puts translate_xml_time(_out.readlines.join)
-    }
+      when 'diff-no-cvs'
+        configure_diff_no_cvs
+        'diff'
+
+      else
+        item.gsub(%r{%[rtu]}i) { |_match|
+          case _match.downcase
+            when '%r' then root
+            when '%u' then url
+            when '%t' then top
+          end
+        }
+    end
   end
 
   private
   #######
 
-  def translate_xml_time(line)
-    line.gsub(%r{(<date>)(.*)T(.*)[.](.*)Z(</date>)}) { |*_match|
-      $1 + gmt_to_local($2, $3, $4) + $5
-    }
+  def configure_status_no_cvs
+    require 'sk/cli/svn/cvs-entries-status-tuner.rb'
+    set_tuner SK::Cli::Svn::CvsEntriesStatusTuner.new(self)
   end
 
-  def gmt_to_local(date, time, ms)
-    Time.parse("#{date} #{time} GMT").strftime("%Y-%m-%dT%H:%M:%S.#{ms}Z%Z")
+  def configure_diff_no_cvs
+    require 'sk/cli/svn/cvs-entries-diff-tuner.rb'
+    set_tuner SK::Cli::Svn::CvsEntriesDiffTuner.new(self)
   end
 
   def config
