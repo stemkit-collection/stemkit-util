@@ -24,8 +24,6 @@ module SK
           io.each do |_line|
             app.output_info _line unless !@noignore and _line =~ %r{CVS/Entries$}
           end
-
-          display_errors_if_any
         end
       end
     end
@@ -40,6 +38,9 @@ if $0 == __FILE__
     module Cli
       module Svn
         class CvsEntriesStatusTunerTest < Test::Unit::TestCase
+          def test_nothing
+          end
+
           def setup
           end
         end

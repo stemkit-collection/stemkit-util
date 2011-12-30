@@ -21,14 +21,12 @@ module SK
               when %r{^cvs\s+update:\s+Updating\s+(.*?)\s*$}
 
               when %r{^cvs\s+update:}, %r{^cvs\s+\[update\s+aborted\]:}
-                register_error _line
+                app.register_errors _line
 
               else
                 app.output_info _line
             end
           end
-
-          display_errors_if_any
         end
       end
     end

@@ -25,7 +25,7 @@ module SK
               when %r{^cvs\s+diff:\s+Diffing\s+(.*?)\s*$}
 
               when %r{^cvs\s+diff:}, %r{^cvs\s+\[diff\s+aborted\]:}
-                register_error _line
+                app.register_errors _line
 
               when %r{^[?]\s+(.*)$}
 
@@ -33,8 +33,6 @@ module SK
                 app.output_info _line
             end
           end
-
-          display_errors_if_any
         end
       end
     end

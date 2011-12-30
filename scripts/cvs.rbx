@@ -18,7 +18,7 @@ class Application < SK::Cli::TuningLauncher
   #########
 
   def setup
-    redirect_stderr_to_stdout
+    join_output_when_tuning
 
     config.attribute(:root).tap { |_root|
       update_environment Hash[ :CVSROOT => _root ], :prefix => false, :upcase => true if _root

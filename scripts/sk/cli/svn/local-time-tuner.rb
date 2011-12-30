@@ -20,8 +20,6 @@ module SK
           io.each do |_line|
             app.output_info translate_xml_time(_line)
           end
-
-          display_errors_if_any
         end
 
         private

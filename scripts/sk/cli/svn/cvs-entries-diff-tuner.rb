@@ -29,8 +29,6 @@ module SK
 
             app.output_info _line unless @noshow
           end
-
-          display_errors_if_any
         end
       end
     end
@@ -45,6 +43,9 @@ if $0 == __FILE__
     module Cli
       module Svn
         class CvsEntriesDiffTunerTest < Test::Unit::TestCase
+          def test_nothing
+          end
+
           def setup
           end
         end

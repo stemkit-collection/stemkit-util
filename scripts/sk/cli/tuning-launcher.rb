@@ -25,8 +25,8 @@ module SK
         $stdout.puts info
       end
 
-      def output_errors(*args)
-        $stderr.puts *args.flatten.compact
+      def register_errors(*args)
+        errors.concat args.flatten.compact
       end
 
       protected
@@ -44,8 +44,8 @@ module SK
         rails TSC::NotImplementedError, :check_option
       end
 
-      def redirect_stderr_to_stdout
-        @redirect = true
+      def join_output_when_tuning
+        @join = true
       end
 
       def launch(command, *args)
@@ -53,12 +53,20 @@ module SK
         require 'open3'
 
         cmdline = [
-          @redirect ? [ $0, 'join-output' ] : [],
+          @join ? [ $0, 'join-output' ] : [],
           command,
           args
         ]
-        Open3.popen3(*cmdline.flatten) do |_in, _out, |
-          tuner.process _out
+        Open3.popen3(*cmdline.flatten) do |_in, _out, _err, |
+          process_error_stream _err do
+            tuner.process _out
+          end
+
+          break if errors.empty?
+
+          $stderr.puts 'Errors or not recognized:', *errors.map { |_line|
+            '  > ' + _line
+          }
         end
       end
 
@@ -76,6 +84,24 @@ module SK
 
       private
       #######
+
+      def errors
+        @errors ||= []
+      end
+
+      def process_error_stream(stream)
+        return yield() if @join
+
+        begin
+          thread = Thread.new do
+            register_errors stream.readlines
+          end
+
+          yield
+        ensure
+          thread.join
+        end
+      end
 
       class NoopTuner
         def check_option(option)

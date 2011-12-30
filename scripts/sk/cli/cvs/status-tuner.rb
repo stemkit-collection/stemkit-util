@@ -63,12 +63,11 @@ module SK
                 file.repository_path = $2
 
               else
-                register_error _line
+                app.register_errors _line
             end
           end
 
           dump_file
-          display_errors_if_any
         end
 
         private
@@ -111,7 +110,7 @@ if $0 == __FILE__
     module Cli
       module Cvs
         class StatusTunerTest < Test::Unit::TestCase
-          attr_reader :tuner, :error_depot, :info_depot
+          attr_reader :tuner, :errors, :infos
 
           def test_output_without_updates
             tuner.process [
@@ -120,6 +119,7 @@ if $0 == __FILE__
               'cvs status: Examining d1/d2/d3',
               'File: zzz.rb Status: Up-to-date',
               '   Working revision: 1.4',
+              'some line',
               '   Repository revision: 7.5 /home/a/b/c/uuu.rb',
               'File: bbb.rb Status: Needs Patch',
               '   Working revision: 1.4',
@@ -130,15 +130,15 @@ if $0 == __FILE__
               'zzzzzzzzzzzzzzzz'
             ]
 
-            assert_equal 3, info_depot.size
-            assert_equal '?    aaa/bbb/ccc', info_depot[0]
-            assert_equal 'M    aaa.c', info_depot[1]
-            assert_equal 'G    d1/d2/d3/uuu.rb ... 1.4 -> 7.5', info_depot[2]
+            assert_equal 3, infos.size
+            assert_equal '?    aaa/bbb/ccc', infos[0]
+            assert_equal 'M    aaa.c', infos[1]
+            assert_equal 'G    d1/d2/d3/uuu.rb ... 1.4 -> 7.5', infos[2]
 
 
-            assert_equal 2, error_depot.size
-            assert_equal 'Errors or not recognized:', error_depot[0]
-            assert_equal '  > zzzzzzzzzzzzzzzz', error_depot[1]
+            assert_equal 2, errors.size
+            assert_equal 'some line', errors[0]
+            assert_equal 'zzzzzzzzzzzzzzzz', errors[1]
           end
 
           def test_output_with_updates
@@ -159,29 +159,28 @@ if $0 == __FILE__
               'zzzzzzzzzzzzzzzz'
             ]
 
-            assert_equal 4, info_depot.size
-            assert_equal '?    aaa/bbb/ccc', info_depot[0]
-            assert_equal 'M    aaa.c', info_depot[1]
-            assert_equal '*    d1/d2/d3/bbb.rb ... 1.4 -> 7.5', info_depot[2]
-            assert_equal 'G    d1/d2/d3/uuu.rb ... 1.4 -> 7.5', info_depot[3]
+            assert_equal 4, infos.size
+            assert_equal '?    aaa/bbb/ccc', infos[0]
+            assert_equal 'M    aaa.c', infos[1]
+            assert_equal '*    d1/d2/d3/bbb.rb ... 1.4 -> 7.5', infos[2]
+            assert_equal 'G    d1/d2/d3/uuu.rb ... 1.4 -> 7.5', infos[3]
 
 
-            assert_equal 2, error_depot.size
-            assert_equal 'Errors or not recognized:', error_depot[0]
-            assert_equal '  > zzzzzzzzzzzzzzzz', error_depot[1]
+            assert_equal 1, errors.size
+            assert_equal 'zzzzzzzzzzzzzzzz', errors[0]
           end
 
           def output_info(info)
-            info_depot << info
+            infos << info
           end
 
-          def output_errors(*args)
-            error_depot.concat args.flatten.compact
+          def register_errors(*args)
+            errors.concat args.flatten.compact
           end
 
           def setup
-            @error_depot = []
-            @info_depot = []
+            @errors = []
+            @infos = []
 
             @tuner = SK::Cli::Cvs::StatusTuner.new(self)
           end

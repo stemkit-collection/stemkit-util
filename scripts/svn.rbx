@@ -39,8 +39,6 @@ class Application < SK::Cli::TuningLauncher
   def setup
     require 'yaml'
     require 'open3'
-
-    redirect_stderr_to_stdout
   end
 
   def original_command
