@@ -9,21 +9,16 @@
   Author: Gennady Bystritsky
 =end
 
-require 'sk/cli/tuner.rb'
+require 'sk/cli/svn/cvs-entries-status-tuner.rb'
 
 module SK
   module Cli
     module Svn
-      class CvsEntriesStatusTuner < SK::Cli::Tuner
+      class CvsEntriesLogTuner < SK::Cli::Svn::CvsEntriesStatusTuner
         def check_option(option)
-          @noignore = true if option == '--no-ignore'
-          option
-        end
-
-        def process(io)
-          io.each do |_line|
-            app.output_info _line unless !@noignore and _line =~ %r{CVS(/\w+?([.]\w+?)?)?\s*$}
-          end
+          return option unless [ '--no-ignore', '-I' ].include?(option)
+          @noignore = true
+          nil
         end
       end
     end
@@ -37,7 +32,7 @@ if $0 == __FILE__
   module SK
     module Cli
       module Svn
-        class CvsEntriesStatusTunerTest < Test::Unit::TestCase
+        class CvsEntriesLogTunerTest < Test::Unit::TestCase
           def test_nothing
           end
 

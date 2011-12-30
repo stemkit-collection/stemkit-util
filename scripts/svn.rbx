@@ -66,6 +66,10 @@ class Application < SK::Cli::TuningLauncher
         configure_diff_no_cvs if config.attribute('diff-no-cvs') == true
         item
 
+      when 'log'
+        configure_log_no_cvs if config.attribute('log-no-cvs') == true
+        item
+
       when 'status-no-cvs'
         configure_status_no_cvs
         'status'
@@ -73,6 +77,10 @@ class Application < SK::Cli::TuningLauncher
       when 'diff-no-cvs'
         configure_diff_no_cvs
         'diff'
+
+      when 'log-no-cvs'
+        configure_log_no_cvs
+        'log'
 
       else
         item.gsub(%r{%[rtu]}i) { |_match|
@@ -96,6 +104,11 @@ class Application < SK::Cli::TuningLauncher
   def configure_diff_no_cvs
     require 'sk/cli/svn/cvs-entries-diff-tuner.rb'
     set_tuner SK::Cli::Svn::CvsEntriesDiffTuner.new(self)
+  end
+
+  def configure_log_no_cvs
+    require 'sk/cli/svn/cvs-entries-log-tuner.rb'
+    set_tuner SK::Cli::Svn::CvsEntriesLogTuner.new(self)
   end
 
   def config
