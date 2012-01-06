@@ -91,10 +91,14 @@ module SK
         self.class.generate_path_sequence(path_to_local_scope_top).map { |_path|
           args.map { |_name|
             descriptor = File.join(_path, _name.to_s)
-            break descriptor if Pathname.new(current_location).join(descriptor).exist?
+            break descriptor if exists_in_current?(descriptor)
           }
         }.flatten.compact
       end
+    end
+
+    def exists_in_current?(filename)
+      current_location.join(filename.to_s).exist?
     end
 
     def path_to_local_scope_top
@@ -300,7 +304,7 @@ module SK
     def figure_scope_top(label, origin, selectors)
       with_normalized_array selectors do |_selectors|
         _selectors.each do |_selector|
-          SK::Config::UprootPathCollector.new(:item => _selector, :spot => origin).locations.tap { |_locations|
+          SK::Config::UprootPathCollector.new(:item => _selector, :spot => origin.to_s).locations.tap { |_locations|
             return [ _locations.last, _selector ] unless _locations.empty?
           }
         end
@@ -310,7 +314,7 @@ module SK
 
     def local_scope_top_path_info
       @local_scope_top_path_info ||= begin
-        current_location.scan(%r{^(#{Regexp.quote(local_scope_top.to_s)})(?:[/]*)(.*)$}).flatten.tap { |_result|
+        current_location.to_s.scan(%r{^(#{Regexp.quote(local_scope_top.to_s)})(?:[/]*)(.*)$}).flatten.tap { |_result|
           raise "Wrong path info" unless _result
           break [ '.', '.' ] if _result.last.empty?
           break [ _result.last, ([ '..' ] * _result.last.count('/').next).join('/') ]
@@ -319,7 +323,7 @@ module SK
     end
 
     def current_location
-      @current_location ||= Dir.pwd
+      @current_location ||= Pathname.new(Dir.pwd)
     end
 
     def environments
@@ -576,13 +580,13 @@ if $0 == __FILE__
       end
 
       def test_scope_descriptors_from_top
-        SK::ScopingLauncher.any_instance.expects(:path_to_local_scope_top).at_least_once.returns "../../.."
-        File.expects(:exists?).with(anything).at_least_once.returns false
-        File.expects(:exists?).with('./zzz').returns true
-        File.expects(:exists?).with('../../../uuu').returns true
-        File.expects(:exists?).with('../../../zzz').at_most_once.returns true
-
         SK::ScopingLauncher.new.tap { |_app|
+          _app.expects(:path_to_local_scope_top).at_least_once.returns "../../.."
+          _app.expects(:exists_in_current?).with(anything).at_least_once.returns false
+          _app.expects(:exists_in_current?).with('./zzz').returns true
+          _app.expects(:exists_in_current?).with('../../../uuu').returns true
+          _app.expects(:exists_in_current?).with('../../../zzz').at_most_once.returns true
+
           assert_equal [ './zzz', '../../../uuu' ], _app.scope_descriptors_to_top('uuu', 'zzz')
         }
       end
