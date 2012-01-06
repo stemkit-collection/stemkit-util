@@ -77,7 +77,7 @@ module SK
 
     def local_scope_top
       @local_scope_top ||= begin
-        figure_scope_top('local', '.', local_scope_selectors).tap { |_location, _item|
+        figure_scope_top('local', current_location, local_scope_selectors).tap { |_location, _item|
           top = Pathname.new _location
           @local_scope_trigger = top.join(_item)
 
@@ -91,7 +91,7 @@ module SK
         self.class.generate_path_sequence(path_to_local_scope_top).map { |_path|
           args.map { |_name|
             descriptor = File.join(_path, _name.to_s)
-            break descriptor if File.exists?(descriptor)
+            break descriptor if Pathname.new(current_location).join(descriptor).exist?
           }
         }.flatten.compact
       end
@@ -310,12 +310,16 @@ module SK
 
     def local_scope_top_path_info
       @local_scope_top_path_info ||= begin
-        Dir.pwd.scan(%r{^(#{Regexp.quote(local_scope_top.to_s)})(?:[/]*)(.*)$}).flatten.tap { |_result|
+        current_location.scan(%r{^(#{Regexp.quote(local_scope_top.to_s)})(?:[/]*)(.*)$}).flatten.tap { |_result|
           raise "Wrong path info" unless _result
           break [ '.', '.' ] if _result.last.empty?
           break [ _result.last, ([ '..' ] * _result.last.count('/').next).join('/') ]
         }
       end
+    end
+
+    def current_location
+      @current_location ||= Dir.pwd
     end
 
     def environments
