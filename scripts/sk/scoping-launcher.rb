@@ -53,10 +53,20 @@ module SK
   end
 
   class ScopingLauncher < TSC::Application
-    class << self
-      def generate_path_sequence(path)
-        return [ path ] if path == '.'
-        generate_path_sequence(File.dirname(path)) + [ path ]
+    class Helper
+      class << self
+        def command_line_arguments(args)
+          args
+        end
+
+        def launch(command, *args)
+          Process.exec command, *args
+        end
+
+        def generate_path_sequence(path)
+          return [ path ] if path == '.'
+          generate_path_sequence(File.dirname(path)) + [ path ]
+        end
       end
     end
 
@@ -67,7 +77,16 @@ module SK
 
         setup
 
-        invoke original_command, command_line_arguments(ARGV)
+        (transparent? ? Helper : self).tap { |_invocator|
+          with_normalized_array [ original_command, _invocator.command_line_arguments(ARGV) ] do |_cmdline|
+            trace _cmdline.join(' ')
+            populate_environment
+
+            _invocator.launch *_cmdline.flatten.compact.map { |_item|
+              _item.to_s
+            }
+          end
+        }
       }
     end
 
@@ -88,7 +107,7 @@ module SK
 
     def scope_descriptors_to_top(*args)
       @scope_descriptors_to_top ||= begin
-        self.class.generate_path_sequence(path_to_local_scope_top).map { |_path|
+        Helper.generate_path_sequence(path_to_local_scope_top).map { |_path|
           args.map { |_name|
             descriptor = File.join(_path, _name.to_s)
             break descriptor if exists_in_current?(descriptor)
@@ -190,6 +209,34 @@ module SK
       ConfigAttributes.new(self, location)
     end
 
+    def transparent=(state)
+      @transparent = state ? true : false
+    end
+
+    def transparent?
+      loop do
+        case @app_transparent
+          when nil
+            case ENV[[ :sk, script_name, :transparent ].join('_').upcase]
+              when %r{^(true)|(yes)|(on)$}i
+                @app_transparent = true
+
+              when %r{^(false)|(no)|(off)$}i
+                @app_transparent = false
+
+              else
+                @app_transparent = :none
+            end
+
+          when :none
+            return @transparent ? true : false
+
+          else
+            return @app_transparent
+        end
+      end
+    end
+
     protected
     #########
 
@@ -209,7 +256,7 @@ module SK
     end
 
     def command_line_arguments(args)
-      args
+      Helper.command_line_arguments(args)
     end
 
     def local_scope_selectors
@@ -218,19 +265,8 @@ module SK
     def global_scope_selectors
     end
 
-    def invoke(*cmdline)
-      with_normalized_array cmdline do |_cmdline|
-        trace _cmdline.join(' ')
-        populate_environment
-
-        launch *_cmdline.flatten.compact.map { |_item|
-          _item.to_s
-        }
-      end
-    end
-
     def launch(command, *args)
-      Process.exec command, *args
+      Helper.launch(command, *args)
     end
 
     private
@@ -573,10 +609,10 @@ if $0 == __FILE__
       end
 
       def test_generate
-        assert_equal [ '.' ], SK::ScopingLauncher.generate_path_sequence('.')
-        assert_equal [ '.', '..' ], SK::ScopingLauncher.generate_path_sequence('..')
-        assert_equal [ '.', '..', '../..' ], SK::ScopingLauncher.generate_path_sequence('../..')
-        assert_equal [ '.', '..', '../..', '../../..' ], SK::ScopingLauncher.generate_path_sequence('../../..')
+        assert_equal [ '.' ], SK::ScopingLauncher::Helper.generate_path_sequence('.')
+        assert_equal [ '.', '..' ], SK::ScopingLauncher::Helper.generate_path_sequence('..')
+        assert_equal [ '.', '..', '../..' ], SK::ScopingLauncher::Helper.generate_path_sequence('../..')
+        assert_equal [ '.', '..', '../..', '../../..' ], SK::ScopingLauncher::Helper.generate_path_sequence('../../..')
       end
 
       def test_scope_descriptors_from_top
@@ -591,7 +627,36 @@ if $0 == __FILE__
         }
       end
 
+      def test_app_can_set_transparent
+        SK::ScopingLauncher.new.tap { |_app|
+          _app.expects(:script_name).with.at_least_once.returns('app')
+
+          assert_equal false, _app.transparent?
+          _app.transparent = true
+          assert_equal true, _app.transparent?
+        }
+      end
+
+      def test_env_overrides_transparent
+        SK::ScopingLauncher.new.tap { |_app|
+          _app.expects(:script_name).with.at_least_once.returns('app')
+          _app.transparent = false
+
+          ENV['SK_APP_TRANSPARENT'] = 'True'
+          assert_equal true, _app.transparent?
+        }
+
+        SK::ScopingLauncher.new.tap { |_app|
+          _app.expects(:script_name).with.at_least_once.returns('app')
+          _app.transparent = true
+
+          ENV['SK_APP_TRANSPARENT'] = 'No'
+          assert_equal false, _app.transparent?
+        }
+      end
+
       def setup
+        ENV.delete('SK_APP_TRANSPARENT')
       end
     end
   end
