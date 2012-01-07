@@ -66,7 +66,7 @@ command -nargs=* JTest execute "!jruby -rubygems -I${PATH} -I lib -r java <args>
 command -nargs=* RSpec execute "!ruby -rubygems -I${PATH} -S spec --require sk/spec/config -fs <args> % 2>&1 | less"
 
 command -nargs=* MLocal execute "make ITEMS=%:t <args> local-test"
-command -nargs=* MUnit execute "make OFFSET=true ITEMS=%:t:r_test.%:e <args> local-test"
+command -nargs=* MUnit execute "make -C unit-tests ITEMS=%:t:r_test.%:e <args> local-test"
 
 "set shellpipe=2>&1\|sed\ \'s/:\ warning:/\ [WARNING]/g\'\|tee
 
