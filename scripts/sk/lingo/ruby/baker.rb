@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -46,8 +46,8 @@ module SK
         end
 
         def make_qualified_name(*args)
-          args.flatten.compact.map { |_item| 
-            ruby_module_name(_item.capitalize) 
+          args.flatten.compact.map { |_item|
+            ruby_module_name(_item.capitalize)
           }.join('::')
         end
 
@@ -81,10 +81,10 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
-  
+
   module SK
     module Lingo
       module Ruby
@@ -94,7 +94,7 @@ if $0 == __FILE__
           def test_enforced
             baker = Baker.new bakery
             bakery.expects(:options).returns mock('options', :target => 'ruby')
-            assert_equal true, baker.enforced? 
+            assert_equal true, baker.enforced?
           end
 
           def setup

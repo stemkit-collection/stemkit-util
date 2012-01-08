@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky (gennady.bystritsky@quest.com)
 =end
 
@@ -32,7 +32,7 @@ module SK
     end
 
     def path
-      @path ||= begin 
+      @path ||= begin
         File.join @specification.split('::').map { |_component|
           _component.split(%r{([A-Z][a-z0-9_]+[A-Z][A-Z]+)|([A-Z][A-Z]*[a-z0-9_]+)}).flatten.map { |_part|
             _part.downcase unless _part.strip.empty?
@@ -61,7 +61,7 @@ if $0 == __FILE__
         assert_equal String, ClassLoader.new('String').factory
       end
 
-      def test_require 
+      def test_require
         assert_equal StringIO, ClassLoader.new('StringIO').require
       end
 

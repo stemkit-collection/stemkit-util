@@ -2,11 +2,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky <bystr@mac.com>
 =end
 
@@ -37,7 +37,7 @@ class Application < TSC::Application
       throw :TEST if options.test?
       raise TSC::UsageError unless ARGV.empty?
 
-      puts TSC::Platform.current.name 
+      puts TSC::Platform.current.name
     }
   end
 

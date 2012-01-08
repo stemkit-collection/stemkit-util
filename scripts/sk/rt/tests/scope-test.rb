@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky <bystr@mac.com>
 =end
 
@@ -21,9 +21,9 @@ module SK
       attr_reader :scope, :stream
 
       def test_info
-        assert false == scope.respond_to?(:info) 
+        assert false == scope.respond_to?(:info)
         assert true == scope.info("aaa")
-        assert true == scope.respond_to?(:info) 
+        assert true == scope.respond_to?(:info)
         assert true == scope.info("bbb")
         assert true == scope.info("ccc")
         assert true == scope.info
@@ -35,7 +35,7 @@ module SK
         assert false == scope.notice("hello")
         assert_equal 0, stream.size
       end
-      
+
       def test_info_block_no_message
         # Calling first time without block to test that the block passed to
         # method missing does not get implicitly used by a method definition

@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -101,10 +101,10 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
-  
+
   require 'timeout'
 
   class ::Symbol
@@ -136,12 +136,12 @@ if $0 == __FILE__
       end
 
       def test_cycle_detection
-        a = [ 
+        a = [
           [ 1, 2 ],
           [ 2, 1 ]
         ]
-        timeout 3 do 
-          assert_raises Subordinator::CycleError do 
+        timeout 3 do
+          assert_raises Subordinator::CycleError do
             Subordinator.slave_to_master(*a).masters
           end
         end

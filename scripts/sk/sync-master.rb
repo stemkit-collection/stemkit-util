@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky (gennady.bystritsky@quest.com)
 =end
 
@@ -107,7 +107,7 @@ module SK
             raise TimeoutError, timeout
           end
 
-          Thread.stop 
+          Thread.stop
           raise IllegalStateError
 
         rescue DataReady
@@ -123,10 +123,10 @@ module SK
 
         unless @waiters.include? Thread.current
           raise TooManyWaitersError if @capacity && @waiters.size >= @capacity
-          @waiters.unshift Thread.current 
+          @waiters.unshift Thread.current
         end
 
-        throw :wait, timeout 
+        throw :wait, timeout
       end
     end
 
@@ -134,7 +134,7 @@ module SK
       ensure_lock_owned
 
       until @waiters.empty?
-        @waiters.pop.raise DataReady 
+        @waiters.pop.raise DataReady
         break unless @config.wakeall
       end
     end
@@ -152,7 +152,7 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
 

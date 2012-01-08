@@ -1,11 +1,11 @@
 =begin
   vim: set sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -37,7 +37,7 @@ module SK
 
       private
       #######
-      
+
       def split_namespace(namespace)
         namespace.to_s.split(%r{[:/.]+}, -1).map { |_component|
           component = _component.strip
@@ -48,7 +48,7 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
 
@@ -79,7 +79,7 @@ if $0 == __FILE__
 
         def test_simple_name_no_extension
           item = SK::Lingo::Item.new 'ccc', TSC::Dataset[ :namespace => nil ]
-          
+
           assert_equal 'ccc', item.name
           assert_equal nil, item.extension
           assert_equal [], item.namespace
@@ -88,7 +88,7 @@ if $0 == __FILE__
 
         def test_simple_name_no_extension_specified_namespace_with_empty_components
           item = SK::Lingo::Item.new 'ccc', TSC::Dataset[ :namespace => 'aaa.bbb///ccc::::ddd.' ]
-          
+
           assert_equal 'ccc', item.name
           assert_equal nil, item.extension
           assert_equal [ 'aaa', 'bbb', 'ccc', 'ddd' ], item.namespace
@@ -97,7 +97,7 @@ if $0 == __FILE__
 
         def test_component_name_no_specified_namespace
           item = SK::Lingo::Item.new 'a/b.c::d.ccc.z', TSC::Dataset[ :namespace => nil ]
-          
+
           assert_equal 'ccc', item.name
           assert_equal 'z', item.extension
           assert_equal false, item.forced_namespace?
@@ -107,7 +107,7 @@ if $0 == __FILE__
 
         def test_component_name_specified_namespace_overrides
           item = SK::Lingo::Item.new 'a/b.c::d.ccc.z', TSC::Dataset[ :namespace => "uu::oo" ]
-          
+
           assert_equal 'ccc', item.name
           assert_equal 'z', item.extension
           assert_equal true, item.forced_namespace?
@@ -117,7 +117,7 @@ if $0 == __FILE__
 
         def test_component_name_specified_namespace_joins
           item = SK::Lingo::Item.new 'a/b/ccc.z', TSC::Dataset[ :namespace => "uu::oo::" ]
-          
+
           assert_equal 'ccc', item.name
           assert_equal 'z', item.extension
           assert_equal true, item.forced_namespace?

@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky (gennady.bystritsky@quest.com)
 =end
 
@@ -31,10 +31,10 @@ module SK
       def initialize(*args)
         host, *default_ports = args.flatten.compact.tap { |_hostspec, *_ports|
           case _hostspec
-            when String 
+            when String
               next
 
-            when Hash 
+            when Hash
               break [ _hostspec[:host], _hostspec[:port], *_ports ]
 
             when self.class

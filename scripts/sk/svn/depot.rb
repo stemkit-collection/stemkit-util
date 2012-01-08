@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky <bystr@mac.com>
 =end
 
@@ -60,7 +60,7 @@ module SK
           end
         }
       end
-      
+
       def svn_command_started(args)
       end
 
@@ -101,7 +101,7 @@ module SK
               break TSC::Dataset[ :name => _entries[0], :password => _entries[1] ]
             }
           }.compact
-        rescue 
+        rescue
           []
         end
       end
@@ -123,7 +123,7 @@ if $0 == __FILE__
         puts ">>> FINISHED:#{status}: #{TSC::Launcher.normalize_command_line(args)}"
       end
     end
-  end 
+  end
 
   depot = SK::Svn::Depot.new :location => '~/depots' #, :listener => Listener
   spo = depot.repository('stemkit')
@@ -144,7 +144,7 @@ if $0 == __FILE__
       class DepotTest < Test::Unit::TestCase
         def setup
         end
-        
+
         def test_nothing
         end
       end

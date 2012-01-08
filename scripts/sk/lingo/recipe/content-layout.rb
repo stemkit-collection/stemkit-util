@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -39,7 +39,7 @@ module SK
 
         def map_content_item(indent, namespace, content)
           yield TSC::Dataset[
-            :indent => indent, :namespace => namespace, :content => config.lines(content) 
+            :indent => indent, :namespace => namespace, :content => config.lines(content)
           ]
         end
 
@@ -65,7 +65,7 @@ module SK
 
         private
         #######
-        
+
         def intersperse(gap, content, *rest)
           return [ content, *rest ] unless gap > 0 and rest.empty? == false
           [ content, [ '' ] * gap, *intersperse(gap, *rest) ]
@@ -75,7 +75,7 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
 

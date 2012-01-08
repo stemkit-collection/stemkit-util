@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -87,16 +87,16 @@ module SK
       end
 
       def config_locator
-        SK::Config::UprootLocator[ 
-          'config/new.yaml', 
-          SK::Config::HomeLocator[ 
-            '.new.yaml', 
+        SK::Config::UprootLocator[
+          'config/new.yaml',
+          SK::Config::HomeLocator[
+            '.new.yaml',
             SK::Config::UprootLocator.new(
               :item => 'config/new.yaml',
               :spot => bakery.location,
-              :locator => inline_config_locator 
+              :locator => inline_config_locator
             )
-          ] 
+          ]
         ]
       end
 
@@ -188,15 +188,15 @@ module SK
       end
 
       def make_item_reference(item)
-        File.join item.namespace, item.name 
+        File.join item.namespace, item.name
       end
-      
+
       def indent_prefix
         @indent_prefix ||= (' ' * config.indent)
       end
 
       def indent(*content)
-        content.flatten.compact.map { |_line| indent_prefix + _line } 
+        content.flatten.compact.map { |_line| indent_prefix + _line }
       end
 
       def make_filename(item)
@@ -215,7 +215,7 @@ end
 if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
-  
+
   module SK
     module Lingo
       class BakerTest < Test::Unit::TestCase

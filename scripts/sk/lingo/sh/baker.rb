@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -54,10 +54,10 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
-  
+
   module SK
     module Lingo
       module Sh
@@ -75,11 +75,11 @@ end
 
 __END__
 
-sh: 
+sh:
   default:
     like: main
-  
-  ain: 
+
+  ain:
     like: main
 
   tsc-tpm:
@@ -104,7 +104,7 @@ sh:
 
       main()
       {
-        : 
+        :
       }
 
       main "${@}"
@@ -123,7 +123,7 @@ sh:
       main()
       {
         trap "cleanup_and_exit 5" HUP INT QUIT TERM
-        trap "cleanup" EXIT 
+        trap "cleanup" EXIT
 
         unset OPTION ARGUMENT
 
@@ -311,7 +311,7 @@ sh:
 
       print_message()
       {
-        _echo "${@}" | sed '/^[ \t]*$/d;s/^[ \t]*|//' 1>&3 
+        _echo "${@}" | sed '/^[ \t]*$/d;s/^[ \t]*|//' 1>&3
       }
 
       print_program_error()

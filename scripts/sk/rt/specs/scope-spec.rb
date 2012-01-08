@@ -48,12 +48,12 @@ describe SK::Rt::Scope do
         @scope.info "zzz"
         @scope.info "uuu"
       end
-      
+
       it "should output whole multi line message" do
         @logger.expects(:info).with("aaa").returns true
         @logger.expects(:info).with("bbb").returns true
         @logger.expects(:info).with("ccc").returns true
-        
+
         @scope.info "aaa\nbbb\nccc\n"
       end
 
@@ -61,7 +61,7 @@ describe SK::Rt::Scope do
         @logger.expects(:info).with("aaa").returns true
         @logger.expects(:info).with("bbb").returns true
         @logger.expects(:info).with("ccc").returns true
-        
+
         @scope.info "aaa", "bbb", "ccc\n"
       end
     end
@@ -87,7 +87,7 @@ describe SK::Rt::Scope do
         @logger.expects(:info).with("ccc").never
         @logger.expects(:info).with("uuu").never
         @logger.expects(:info).with("yyy").never
-        
+
         @scope.info "aaa\nbbb\nccc\n"
         @scope.info "uuu", "yyy"
       end

@@ -1,7 +1,7 @@
 =begin
   vim: sw=2:
   Copyright (c) 2006, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
@@ -22,7 +22,7 @@ module SK
         return unless verbose?
 
         $stderr.puts [
-          self.class.name.to_s, 
+          self.class.name.to_s,
           args.map { |_item|
             Symbol === _item.to_s ? _item : _item.inspect
           },

@@ -1,6 +1,6 @@
 =begin
   Copyright (c) 2007, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
@@ -62,7 +62,7 @@ module SK
               "def #{ruby_method_name(name)}(#{params.join(', ')})",
               indent(
                 wsdl.types.fetch(return_type).upcast(
-                  self, return_type, 
+                  self, return_type,
                   "@client.call(#{[ [ delegate, name ].compact.join('.').inspect, *params ].join(', ')})"
                 )
               ),
@@ -173,8 +173,8 @@ module SK
           [
             type.slice(0...-1).map { |_component|
               _component.capitalize
-            }, 
-            type.last 
+            },
+            type.last
           ].flatten.join('::')
         end
 
@@ -184,7 +184,7 @@ module SK
             when 'string' then 'String'
             when 'boolean' then 'Boolean'
             when 'dateTime' then 'Date'
-            else 
+            else
               raise "Unsupported native type #{type.inspect}"
           end
         end

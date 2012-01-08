@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -21,7 +21,7 @@ module SK
       class Baker < SK::Lingo::Baker
         include SK::Lingo::Cpp::Recipes
         include SK::Lingo::Recipe::ContentLayout
-        
+
         def initialize(*args)
           super :cpp, *args
         end
@@ -57,7 +57,7 @@ module SK
 
         def cpp_item(item, extension, kind)
           TSC::Dataset.new item, Hash[
-            :kind => kind, 
+            :kind => kind,
             :extension => (extension || item.extension),
             :namespace => locator.namespace(item.namespace)
           ]
@@ -115,10 +115,10 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
-  
+
   module SK
     module Lingo
       module Cpp
@@ -141,7 +141,7 @@ cpp:
     h:
       indent: 0
       content:
-        - 
+        -
           content: |-
             #ifndef #{class_tag}
             #define #{class_tag}
@@ -149,7 +149,7 @@ cpp:
         -
           namespace: true
           content: |-
-            class #{class_name} 
+            class #{class_name}
             {
               public:
                 #{class_name}();
@@ -160,7 +160,7 @@ cpp:
                 #{class_name}& operator = (const #{class_name}& other);
             };
 
-        - 
+        -
           content: |-
             #endif /* #{class_tag} */
 
@@ -203,7 +203,7 @@ cpp:
             std::cerr << "Unknown error" << std::endl;
           }
         }
-  ain: 
+  ain:
     like: main
 
     h:
@@ -212,17 +212,17 @@ cpp:
     h:
       indent: 0
       content:
-        - 
+        -
           content: |-
             #ifndef #{class_tag}
             #define #{class_tag}
-          
+
             #include <sk/util/Object.h>
 
         -
           namespace: true
           content: |-
-            class #{class_name} 
+            class #{class_name}
               : public virtual sk::util::Object
             {
               public:
@@ -237,7 +237,7 @@ cpp:
                 #{class_name}& operator = (const #{class_name}& other);
             };
 
-        - 
+        -
           content: |-
             #endif /* #{class_tag} */
 
@@ -269,7 +269,7 @@ cpp:
         {
           return sk::util::Class(__className);
         }
-        
+
   cppunit-test:
     h:
       indent: 0
@@ -282,7 +282,7 @@ cpp:
             #include <cppunit/TestFixture.h>
             #include <cppunit/extensions/HelperMacros.h>
 
-        - 
+        -
           namespace: true
           content: |-
               class #{class_name}
@@ -291,15 +291,15 @@ cpp:
                 CPPUNIT_TEST_SUITE(#{full_class_name});
                   CPPUNIT_TEST(testBasics);
                 CPPUNIT_TEST_SUITE_END();
-                
+
                 public:
                   #{class_name}();
                   virtual ~#{class_name}();
-                  
+
                   void setUp();
                   void tearDown();
                   void testBasics();
-                  
+
                 private:
                   #{class_name}(const #{class_name}& other);
                   #{class_name}& operator = (const #{class_name}& other);

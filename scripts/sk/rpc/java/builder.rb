@@ -1,6 +1,6 @@
 =begin
   Copyright (c) 2007, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
@@ -42,7 +42,7 @@ module SK
                   public interface Driver {
                     public Object execute(String methodName, List params) throws DriverException;
                   }
-                  
+
                   public class DriverException extends Exception {
                     public DriverException(Exception original) {
                       _original = original;
@@ -92,7 +92,7 @@ module SK
                   public static void setDriverFactory(DriverFactory factory) {
                     _driverFactory = factory;
                   }
-                  
+
                   private DriverFactory getDriverFactory() {
                     if(_driverFactory == null) {
                       _driverFactory = new DriverFactory() {
@@ -119,7 +119,7 @@ module SK
                     }
                     return _driverFactory;
                   }
-                  
+
                   private static DriverFactory _driverFactory;
                   private Driver _driver;
                 ')
@@ -146,8 +146,8 @@ module SK
                 },
                 '',
                 wsdl.types.fetch(return_type).upcast(
-                  self, 
-                  return_type, 
+                  self,
+                  return_type,
                   %Q{_driver.execute("#{[ delegate, name ].compact.join('.')}", params)})
               ),
               '}'
@@ -208,7 +208,7 @@ module SK
           }
           [
             "Object[] result = (Object[])#{statement};",
-            'if(result.length == 0) {', 
+            'if(result.length == 0) {',
             indent(
               'return 0L;'
             ),
@@ -225,7 +225,7 @@ module SK
           }
           block.call("(#{convert_builtin(type)})#{statement}")
         end
-        
+
         def upcast_none(statement)
           "#{statement};"
         end
@@ -244,7 +244,7 @@ module SK
             when 'string' then 'String'
             when 'boolean' then 'Boolean'
             when 'dateTime' then 'Date'
-            else 
+            else
               raise "Unsupported native type #{type.inspect}"
           end
         end
@@ -257,8 +257,8 @@ module SK
           [
             type.slice(0...-1).map { |_component|
               _component.downcase
-            }, 
-            type.last 
+            },
+            type.last
           ].flatten.join('.')
         end
 
@@ -342,7 +342,7 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
 
   class SK::RPC::Java::BuilderTest < Test::Unit::TestCase

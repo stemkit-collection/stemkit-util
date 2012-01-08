@@ -1,11 +1,11 @@
 =begin
   vim: set sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -51,7 +51,7 @@ cpp:
     hxx:
       indent: 0
       content:
-        - 
+        -
           content: |-
             #ifndef #{class_tag}
             #define #{class_tag}
@@ -60,7 +60,7 @@ cpp:
           namespace: true
           content: |-
             template<typename T>
-            class #{class_name} 
+            class #{class_name}
             {
               public:
                 #{class_name}();
@@ -73,7 +73,7 @@ cpp:
                 #{class_name}<T>& operator = (const #{class_name}<T>& other);
             };
 
-        - 
+        -
           content: |-
             #endif /* #{class_tag} */
 
@@ -108,7 +108,7 @@ cpp:
             {
             }
 
-        - 
+        -
           content: |-
             #endif /* #{class_tag} */
 
@@ -116,7 +116,7 @@ cpp:
     hxx:
       indent: 0
       content:
-        - 
+        -
           content: |-
             #ifndef #{class_tag}
             #define #{class_tag}
@@ -125,7 +125,7 @@ cpp:
           namespace: true
           content: |-
             template<typename T>
-            class #{class_name} 
+            class #{class_name}
             {
               public:
                 #{class_name}();
@@ -138,7 +138,7 @@ cpp:
                 #{class_name}<T>& operator = (const #{class_name}<T>& other);
             };
 
-        - 
+        -
           content: |-
             #endif /* #{class_tag} */
 
@@ -173,6 +173,6 @@ cpp:
             {
             }
 
-        - 
+        -
           content: |-
             #endif /* #{class_tag} */

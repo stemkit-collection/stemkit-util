@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky <bystr@mac.com>
 =end
 
@@ -35,8 +35,8 @@ module SK
         say "\nYour terminal is #{term}, tty line - #{tty}"
         say "Display is #{display}" if display
 
-        others = logged_users.select { |_user| 
-          _user[0] != userinfo.name 
+        others = logged_users.select { |_user|
+          _user[0] != userinfo.name
         }.map { |_user| _user[0] }.uniq
 
         if others.size > 0
@@ -92,7 +92,7 @@ module SK
       end
 
       def build_path(*list)
-        normalize_path_list(list).flatten.map { |_dir| 
+        normalize_path_list(list).flatten.map { |_dir|
           Dir[ eval '%Q{' + _dir + '}' ].select { |_item|
             _item if File.directory? _item
           }
@@ -110,7 +110,7 @@ module SK
         users = logged_users.select { |_user| _user[0] == userinfo.name }
         if users.size > 1
           say yield(users.size - 1)
-          say users.select { |_user| 
+          say users.select { |_user|
             _user[1] != tty
           }.map { |_user|
             "> on #{_user[1]}" + ( " from #{_user[2]}" if _user[2] ).to_s + " since #{_user[3]}"
@@ -121,7 +121,7 @@ module SK
 
       def save_lastlog_time(time)
         FileUtils.makedirs File.dirname(lastlog_file)
-        File.open(lastlog_file,"w") do |_io| 
+        File.open(lastlog_file,"w") do |_io|
           _io.puts time.strftime('%X %x')
         end
       end
@@ -235,26 +235,26 @@ module SK
         @manpath ||= build_path(config.manpath)
       end
 
-      def config 
-        @config ||= TSC::Dataset[ 
+      def config
+        @config ||= TSC::Dataset[
           :path => TSC::Dataset[
             :before => [],
             :after => [],
             :content => %w{
-              #{home}/bin/#{sysid} 
+              #{home}/bin/#{sysid}
               #{home}/bin
               #{home}/local/platform/#{sysid}/bin
               #{home}/local/#{sysid}/bin
               #{home}/local/bin
               /opt/*/platform/#{sysid}/bin
-              /sbin 
+              /sbin
               /opt/ansic/bin
               /usr/vac/bin
-              /opt/SUNWspro/bin 
-              /usr/local/bin 
-              /usr/ccs/bin 
-              /bin /usr/bin /usr/sbin 
-              /usr/ucb /usr/bsd 
+              /opt/SUNWspro/bin
+              /usr/local/bin
+              /usr/ccs/bin
+              /bin /usr/bin /usr/sbin
+              /usr/ucb /usr/bsd
               /etc /usr/etc /usr/java1.2/bin /c/jdk1.2.2/bin
               /usr/bin/X11 /usr/X11/bin /usr/openwin/bin
               /usr/X11/demo /usr/openwin/demo
@@ -277,7 +277,7 @@ module SK
               /usr/local/samba/man
               /usr/local/fvwm95/man
             }
-          ] 
+          ]
         ]
       end
     end

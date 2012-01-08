@@ -1,6 +1,6 @@
 =begin
   Copyright (c) 2007, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
@@ -41,24 +41,24 @@ end
 if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
-  
+
   module SK
     class FileLocatorTest < Test::Unit::TestCase
       attr_reader :locator
 
       def test_bottom_up_no_params
-        assert_equal [ 
-          './d1/bbb', './d1/ccc.1', 
-          './d2/bbb.1', './d2/ccc.2', 
-          './aaa' 
+        assert_equal [
+          './d1/bbb', './d1/ccc.1',
+          './d2/bbb.1', './d2/ccc.2',
+          './aaa'
         ], locator.find_bottom_up
       end
 
       def test_bottom_up_asterisk
-        assert_equal [ 
-          './d1/bbb', './d1/ccc.1', 
-          './d2/bbb.1', './d2/ccc.2', 
-          './aaa' 
+        assert_equal [
+          './d1/bbb', './d1/ccc.1',
+          './d2/bbb.1', './d2/ccc.2',
+          './aaa'
         ], locator.find_bottom_up('*')
       end
 

@@ -1,6 +1,6 @@
 =begin
   Copyright (c) 2007, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
@@ -22,8 +22,8 @@ module SK
 
       def initialize(input)
         @data = parser.xml_in input
-        @standard_types = { 
-          'none' => SK::RPC::None.new 
+        @standard_types = {
+          'none' => SK::RPC::None.new
         }
       end
 
@@ -73,7 +73,7 @@ module SK
                     when 'soapenc:Array'
                       array_type = complex[:attribute]['wsdl:arrayType'].slice(0...-2)
                       if array_type == 'xsd:int'
-                        SK::RPC::Bignum.new 
+                        SK::RPC::Bignum.new
                       else
                         SK::RPC::Array.new normalize_type(array_type)
                       end
@@ -94,22 +94,22 @@ module SK
 
       def normalize_type(type)
         case type
-          when %r{^xsd:(.*)$} 
+          when %r{^xsd:(.*)$}
             @standard_types[$1] = SK::RPC::Builtin.new($1)
             $1
           when %r{^typens:(.*)$}
             $1.split('..')
-          else 
+          else
             raise "Unknown type #{type.inspect}"
         end
       end
 
       def parser
         @parser ||= XmlSimple.new Hash[
-          'KeyToSymbol' => true, 
-          'ForceArray' => false, 
-          'GroupTags' => { 
-            :all => :element , 
+          'KeyToSymbol' => true,
+          'ForceArray' => false,
+          'GroupTags' => {
+            :all => :element ,
             :complexcontent => :restriction,
             :types => :schema
           }

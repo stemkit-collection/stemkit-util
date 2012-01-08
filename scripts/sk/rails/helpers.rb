@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -40,7 +40,7 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
 
@@ -60,7 +60,7 @@ if $0 == __FILE__
         def content_tag(name, content_or_options = {}, options = {}, &block)
           {}.tap { |_options, _content|
             if Hash === content_or_options
-              _options.update content_or_options 
+              _options.update content_or_options
               _content = block.call if block
             else
               _content = content_or_options

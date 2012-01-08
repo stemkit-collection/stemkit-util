@@ -1,11 +1,11 @@
 =begin
   vim: set sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -21,7 +21,7 @@ module SK
         def tag
           "c"
         end
-        
+
         def accept_by_extension(item)
           case item.extension
             when 'h'
@@ -51,10 +51,10 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
-  
+
   module SK
     module Lingo
       module C
@@ -77,7 +77,7 @@ c:
     header:
       indent: 0
       content:
-        - 
+        -
           content: |-
             #ifndef #{class_tag}
             #define #{class_tag}
@@ -89,20 +89,20 @@ c:
         -
           content: |-
             void #{class_name}();
-        - 
+        -
           content: |-
             #if defined(__cplusplus)
             }
             #endif
-            
+
             #endif /* #{class_tag} */
-        
+
     body:
       indent: 0
       content: |-
         #include #{class_reference(:h)}
 
-        void #{class_name}() 
+        void #{class_name}()
         {
         }
 
@@ -111,7 +111,7 @@ c:
       indent: 0
       content: |-
         #include <stdio.h>
-        
+
         int main(int argc, const char* const argv[])
         {
           printf("Hello, world!!!\n");

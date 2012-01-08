@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -29,7 +29,7 @@ module SK
       def license
         lines data[:license]
       end
-      
+
       def indent
         @indent ||= (options.indent || tag[:indent] || data[:indent]).to_i
       end

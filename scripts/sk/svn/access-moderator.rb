@@ -1,7 +1,7 @@
 =begin
   vim: sw=2:
   Copyright (c) 2007, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
@@ -14,7 +14,7 @@ module SK
   module Svn
     class AccessModerator < Hook::Plugin::Generic
       def process(info)
-        access = config.repositories[info.depot]['access'] or return 
+        access = config.repositories[info.depot]['access'] or return
 
         [access].flatten.each do |_access|
           _access.each_pair do |_item, _params|
@@ -24,7 +24,7 @@ module SK
 
             info.affected.each do |_path|
               next unless path_patterns.any? { |_pattern|
-                _path =~ _pattern 
+                _path =~ _pattern
               }
               next unless deny_patterns.any? { |_pattern|
                 info.author =~ _pattern
@@ -49,10 +49,10 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
-  
+
   module SK
     module Svn
       class AccessModeratorTest < Test::Unit::TestCase
@@ -61,7 +61,7 @@ if $0 == __FILE__
 
         def setup
         end
-        
+
         def teardown
         end
       end

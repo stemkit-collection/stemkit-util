@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -36,7 +36,7 @@ module SK
 
         def sk_render_js_common_functions
           SK::Rails::JS::Helpers.normalize_js_block %{
-            | function updateAreaElement(element, content) { 
+            | function updateAreaElement(element, content) {
             |   var target = $('.' + element);
             |   target.hide();
             |   if(content == null) {
@@ -52,7 +52,7 @@ module SK
         def sk_render_js_functions_for_area(area, options = {})
           sk_render_for_area area do |_area, _class, _content|
             SK::Rails::JS::Helpers.normalize_js_block %{
-              | function update#{SK::Rails::JS::Helpers.capitalize_components(_area)}Area(content) { 
+              | function update#{SK::Rails::JS::Helpers.capitalize_components(_area)}Area(content) {
               |   updateAreaElement('#{_class}', content);
               | }
             }
@@ -72,7 +72,7 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
 

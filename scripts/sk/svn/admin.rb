@@ -1,5 +1,5 @@
 # Copyright (c) 2006, Gennady Bystritsky <bystr@mac.com>
-# 
+#
 # Distributed under the MIT Licence.
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
@@ -20,9 +20,9 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
-  
+
   module SK
     module Svn
       class AdminTest < Test::Unit::TestCase
@@ -31,7 +31,7 @@ if $0 == __FILE__
 
         def setup
         end
-        
+
         def teardown
         end
       end

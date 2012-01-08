@@ -1,6 +1,6 @@
 # vim:sw=2:
 # Copyright (c) 2006, Gennady Bystritsky <bystr@mac.com>
-# 
+#
 # Distributed under the MIT Licence.
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
@@ -51,7 +51,7 @@ module SK
 
         def branch_off(build)
           launch [
-            'svn', 'cp', '-q', trunk_url, File.join(builds_url, build.to_s), 
+            'svn', 'cp', '-q', trunk_url, File.join(builds_url, build.to_s),
             '-m', "[BRANCH] #{product} #{release}, build #{build}"
           ]
         end
@@ -176,7 +176,7 @@ module SK
         def top_content
           @top_content ||= launch("svn ls #{top}").first
         end
-        
+
         def top_folder(name)
           folder = File.join(top, name)
           raise "No #{folder.inspect}" unless top_content.include?(name + '/')
@@ -188,16 +188,16 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
-  
+
   module SK
     module Svn
       module Build
         class ManagerTest < Test::Unit::TestCase
           def setup
           end
-          
+
           def teardown
           end
         end

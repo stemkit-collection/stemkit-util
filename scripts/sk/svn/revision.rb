@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky <bystr@mac.com>
 =end
 
@@ -74,7 +74,7 @@ module SK
       end
 
       def items
-        @values[:items] ||= begin 
+        @values[:items] ||= begin
           Hash.new.tap { |_result|
             getlog('-v').first.fetch('paths').first.fetch('path').each do |_item|
               (_result[normalize_path_action(_item['action'])] ||= []) << _item['content']

@@ -20,4 +20,4 @@ unless defined? Test::Unit
   Application.new.start
   exit 0
 end
-  
+

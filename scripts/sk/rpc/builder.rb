@@ -1,6 +1,6 @@
 =begin
   Copyright (c) 2007, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
@@ -39,8 +39,8 @@ module SK
 
       def extract_name_components(name)
         name.split(%r{[_-]}).map { |_partial|
-          _partial.split(%r{(?=[A-Z])}).map { |_item| 
-            _item.downcase 
+          _partial.split(%r{(?=[A-Z])}).map { |_item|
+            _item.downcase
           }
         }.flatten
       end

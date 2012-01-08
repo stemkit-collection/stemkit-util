@@ -8,7 +8,7 @@ module SK
       def append_features(other)
         instance_methods(false).each do |_method|
           next unless other.instance_methods.include?(_method)
-          raise "#{self.name}: method #{_method.inspect} already defined for #{other.name}" 
+          raise "#{self.name}: method #{_method.inspect} already defined for #{other.name}"
         end
 
         super
@@ -23,8 +23,8 @@ module SK
           action.map { |_action, _cascade|
             method, *args = Array(_action)
 
-            Hash[ 
-              method.to_s.intern => SK::Enumerable.make(item.send(method, *args)).map_with(*Array(*_cascade), &block) 
+            Hash[
+              method.to_s.intern => SK::Enumerable.make(item.send(method, *args)).map_with(*Array(*_cascade), &block)
             ]
           }.first
         else
@@ -63,7 +63,7 @@ module SK
       result
     end
 
-    def map_with(*args, &block) 
+    def map_with(*args, &block)
       actions = SK::Enumerable.make(args).unbox(Hash)
       SK::Enumerable.make actions.empty? ? map(&block) : begin
         map { |_item|
@@ -101,12 +101,12 @@ if $0 == __FILE__
 
       def test_cascading
         systems = [
-          TSC::Dataset[ 
+          TSC::Dataset[
             :name => :s1, :hosts => [
               TSC::Dataset[ :name => :h1 ], TSC::Dataset[ :name => :h2 ]
             ]
-          ], 
-          TSC::Dataset[ 
+          ],
+          TSC::Dataset[
             :name => :s2, :hosts => [
               TSC::Dataset[ :name => :h3 ], TSC::Dataset[ :name => :h4 ]
             ]

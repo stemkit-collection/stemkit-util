@@ -1,5 +1,5 @@
 # Copyright (c) 2006, Gennady Bystritsky <bystr@mac.com>
-# 
+#
 # Distributed under the MIT Licence.
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
@@ -8,7 +8,7 @@ require 'tsc/errors.rb'
 require 'timeout'
 
 module SK
-  class Process 
+  class Process
     class << self
       include ::Process
 
@@ -50,7 +50,7 @@ module SK
 
       def stop(pid, tolerance = 3)
         kill 'INT', pid rescue return
-        begin 
+        begin
           timeout tolerance do
             loop do
               kill 0, pid rescue break

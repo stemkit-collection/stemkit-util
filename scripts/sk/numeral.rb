@@ -1,11 +1,11 @@
 =begin
   vim: set sw=2:
   Copyright (c) 2009, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky (gennady.bystritsky@quest.com)
 =end
 
@@ -32,7 +32,7 @@ module SK
   end
 end
 
-if $0 == __FILE__ 
+if $0 == __FILE__
   require 'test/unit'
   require 'mocha'
 
@@ -53,29 +53,29 @@ if $0 == __FILE__
       end
 
       def test_to_roman_classic
-        assert_equal "I", SK::Numeral.to_roman(1, false)   
-        assert_equal "IIII", SK::Numeral.to_roman(4, false)   
-        assert_equal "V", SK::Numeral.to_roman(5, false)   
-        assert_equal "VI", SK::Numeral.to_roman(6, false)   
-        assert_equal "VIIII", SK::Numeral.to_roman(9, false)   
-        assert_equal "X", SK::Numeral.to_roman(10, false)  
-        assert_equal "XVIIII", SK::Numeral.to_roman(19, false)  
-        assert_equal "XXI", SK::Numeral.to_roman(21, false)  
-        assert_equal "CLXXX", SK::Numeral.to_roman(180, false) 
-        assert_equal "DCCCCXXXXVIIII", SK::Numeral.to_roman(949, false) 
+        assert_equal "I", SK::Numeral.to_roman(1, false)
+        assert_equal "IIII", SK::Numeral.to_roman(4, false)
+        assert_equal "V", SK::Numeral.to_roman(5, false)
+        assert_equal "VI", SK::Numeral.to_roman(6, false)
+        assert_equal "VIIII", SK::Numeral.to_roman(9, false)
+        assert_equal "X", SK::Numeral.to_roman(10, false)
+        assert_equal "XVIIII", SK::Numeral.to_roman(19, false)
+        assert_equal "XXI", SK::Numeral.to_roman(21, false)
+        assert_equal "CLXXX", SK::Numeral.to_roman(180, false)
+        assert_equal "DCCCCXXXXVIIII", SK::Numeral.to_roman(949, false)
       end
 
       def test_to_roman_short
-        assert_equal "I", SK::Numeral.to_roman(1)   
-        assert_equal "IV", SK::Numeral.to_roman(4)   
-        assert_equal "V", SK::Numeral.to_roman(5)   
-        assert_equal "VI", SK::Numeral.to_roman(6)   
-        assert_equal "IX", SK::Numeral.to_roman(9)   
-        assert_equal "X", SK::Numeral.to_roman(10)  
-        assert_equal "XIX", SK::Numeral.to_roman(19)  
-        assert_equal "XXI", SK::Numeral.to_roman(21)  
-        assert_equal "CLXXX", SK::Numeral.to_roman(180) 
-        assert_equal "CMXLIX", SK::Numeral.to_roman(949) 
+        assert_equal "I", SK::Numeral.to_roman(1)
+        assert_equal "IV", SK::Numeral.to_roman(4)
+        assert_equal "V", SK::Numeral.to_roman(5)
+        assert_equal "VI", SK::Numeral.to_roman(6)
+        assert_equal "IX", SK::Numeral.to_roman(9)
+        assert_equal "X", SK::Numeral.to_roman(10)
+        assert_equal "XIX", SK::Numeral.to_roman(19)
+        assert_equal "XXI", SK::Numeral.to_roman(21)
+        assert_equal "CLXXX", SK::Numeral.to_roman(180)
+        assert_equal "CMXLIX", SK::Numeral.to_roman(949)
       end
 
       def setup

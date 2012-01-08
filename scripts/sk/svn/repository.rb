@@ -1,11 +1,11 @@
 =begin
   vim: sw=2:
   Copyright (c) 2011, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky <bystr@mac.com>
 =end
 
@@ -34,7 +34,7 @@ module SK
 
       def revision(number)
         normalize_revision_number(number).tap { |_number|
-          return @revisions[_number] || begin 
+          return @revisions[_number] || begin
             _number.zero? ? revision_0 : revision_from_log(getlog('-r', _number).first)
           end
         }
@@ -111,7 +111,7 @@ if $0 == __FILE__
       class RepositoryTest < Test::Unit::TestCase
         def setup
         end
-        
+
         def test_nothing
         end
       end

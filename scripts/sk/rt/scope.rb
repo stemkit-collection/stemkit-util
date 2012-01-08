@@ -1,7 +1,7 @@
 =begin
   vim: sw=2:
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
@@ -9,7 +9,7 @@
 
 # This separation is designed for substituting pure ruby implementation with
 # the C++ one from stemkit-cpp runtime library.
-# 
+#
 require 'sk/rt/scope-implementation.rb' unless defined? SK::Rt::Scope
 require 'stringio'
 
@@ -64,8 +64,8 @@ module SK
       end
 
       def make_do_nothing_logger(name)
-        make_singleton_method(name) { |*_args| 
-          false 
+        make_singleton_method(name) { |*_args|
+          false
         }
       end
 

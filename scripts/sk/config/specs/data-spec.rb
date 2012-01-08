@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky (gennady.bystritsky@quest.com)
 =end
 
@@ -24,7 +24,7 @@ describe SK::Config::Data do
 
   it "should merge strings as hashes when merging" do
     d = SK::Config::Data.new :c => 12
-    
+
     SK::Config::Data.merge d, 'aaa'
     SK::Config::Data.merge d, { 'bbb' => 'ccc', 1 => 2 }
     SK::Config::Data.merge d, 'bbb'

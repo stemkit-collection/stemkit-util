@@ -1,11 +1,11 @@
 # vim: set sw=2:
 =begin
   Copyright (c) 2008, Gennady Bystritsky <bystr@mac.com>
-  
+
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
-  
+
   Author: Gennady Bystritsky
 =end
 
@@ -20,9 +20,9 @@ module SK
     class Exit < Exception
     end
 
-    DEFAULTS = { 
-      :tag => :sk, 
-      :relay => false, 
+    DEFAULTS = {
+      :tag => :sk,
+      :relay => false,
       :verbose => false,
       :ignore => false,
       :terminate_tolerance => 5
@@ -70,7 +70,7 @@ module SK
         thread.join
       end
     end
-    
+
     def reset
       terminate_threads if @group
 
@@ -102,7 +102,7 @@ module SK
     end
 
     def start_timeout_enforcer(interval = 10, &block)
-      in_a_thread do 
+      in_a_thread do
         localstore[:enforcer] = true
 
         loop do
@@ -126,7 +126,7 @@ module SK
       threads = @lock.synchronize {
         @transients.clone
       }
-      
+
       now = Time.now.to_i
       threads.each do |_thread|
         start, tolerance = localstore(_thread)[:timeout]
@@ -170,7 +170,7 @@ module SK
           end
 
           unless @params.ignore
-            if @params.relay 
+            if @params.relay
               _parent.raise TSC::Error.new(error)
             else
               $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose )
@@ -182,7 +182,7 @@ module SK
 
     def preserve_if_native_java_thread(thread)
       return unless jruby?
-      localstore(thread)[:java] = java.lang.Thread.currentThread 
+      localstore(thread)[:java] = java.lang.Thread.currentThread
     end
 
     def native_exception_class
@@ -202,11 +202,11 @@ module SK
     end
 
     def jruby?
-      RUBY_PLATFORM == 'java' 
+      RUBY_PLATFORM == 'java'
     end
 
     def localstore(thread = nil)
-      (thread || Thread.current)[@tag] ||= Hash.new 
+      (thread || Thread.current)[@tag] ||= Hash.new
     end
 
     def terminate(threads)
@@ -289,7 +289,7 @@ if $0 == __FILE__
       end
 
       def test_timeout_returns_block_value
-        result = executor.timeout 2 do 
+        result = executor.timeout 2 do
            "abcd"
         end
 
@@ -318,7 +318,7 @@ if $0 == __FILE__
         assert_equal 0, executor.threads.size
         assert_instance_of SK::Executor::Exit, error
       end
-      
+
       def test_termination_tolerance
         executor = Executor.new :terminate_tolerance => 2
         executor.in_a_thread do
