@@ -1,6 +1,6 @@
 # The weird series of -e options is needed here because make adds option -c
 # to execute the command line, causing ruby syntax errors. So here we simply
-# force numeric variable 'c' by assigning 0. '-c' after the last -e will 
+# force numeric variable 'c' by assigning 0. '-c' after the last -e will
 # make a legal expression, while the actual parameter evaluation is done
 # by the second -e.
 #
@@ -21,15 +21,15 @@ endif
 
 export RUBY_EXTRA_LOADPATH := $(loadpath)
 
-RUBY = ruby -rubygems 
+RUBY = ruby -rubygems
 JRUBY = jruby -rubygems -rjava
 
 SHELL = $(RUBY) -r fileutils -e 'c=0' -e 'eval ARGV.first' -e
 
-# Here we have to resort to another "trick" to compensate for "slight" JRuby 
-# incompatibility. When -I ${PATH}, load("spec") used inside RSpec launcher 
-# script (also named "spec"), tries to load the laucher script again instead 
-# of loading the gem (as intended). This causes looping in load, eventually 
+# Here we have to resort to another "trick" to compensate for "slight" JRuby
+# incompatibility. When -I ${PATH}, load("spec") used inside RSpec launcher
+# script (also named "spec"), tries to load the laucher script again instead
+# of loading the gem (as intended). This causes looping in load, eventually
 # crashing eihter on "Stack level too deep", or "Too many open files".
 #
 # Solution: invoke_spec() takes care of adding extra loadpath info, path
@@ -38,12 +38,12 @@ SHELL = $(RUBY) -r fileutils -e 'c=0' -e 'eval ARGV.first' -e
 #
 define invoke_spec
   rspec_launcher = 'spec';
-  path = ENV['RUBY_EXTRA_LOADPATH'].split(':').reject { |_path| 
+  path = ENV['RUBY_EXTRA_LOADPATH'].split(':').reject { |_path|
     _path.strip.empty? or File.exist?(File.join(_path, rspec_launcher));
   };
   $$:.concat path;
   require 'sk/file-locator';
-  %w[$(SPECDIR)].map { |_item| Dir.glob(_item) }.flatten.each do |_folder| 
+  %w[$(SPECDIR)].map { |_item| Dir.glob(_item) }.flatten.each do |_folder|
     File.directory? _folder and begin
       system %Q[ $(1) -I#{path.join(':')} -I#{_folder} -S #{rspec_launcher}
         --require sk/spec/config $(2)
@@ -53,10 +53,10 @@ define invoke_spec
   end
 endef
 
-all:: 
+all::
 	@ puts "Use 'make [j]tests' or 'make [j]specs' for unit tests or specs ('j' for JRuby)."
 
-test tests spec specs jtest jtests jspec jspecs:: 
+test tests spec specs jtest jtests jspec jspecs::
 	@ %w[ $(ITEMS) ].empty? && Dir['*/makefile'].map { |item| system "$(MAKE) -C #{File.dirname(item)} $(@)" or exit(2) }
 
 test tests:: tests-local
@@ -65,20 +65,20 @@ jtest jtests:: jtests-local
 spec specs:: specs-local
 jspec jspecs:: jspecs-local
 
-test-local tests-local:: 
+test-local tests-local::
 	@ Dir['*.rb'].each { |item| system "$(RUBY) -I$(RUBY_EXTRA_LOADPATH) #{item}" or exit(2) }
 
-jtest-local jtests-local:: 
+jtest-local jtests-local::
 	@ items = %w[ $(ITEMS) ]; Dir['*.rb'].each { |item| next if items.empty? == false && items.include?(item) == false; system %Q[ $(JRUBY) -e '$$:.concat ENV["RUBY_EXTRA_LOADPATH"].split(":"); $$:.delete("."); $$:.delete(""); file = #{File.expand_path(item).inspect}; $$0.replace file; load file'] or exit(2) }
 
-spec-local specs-local:: 
+spec-local specs-local::
 	@ ${strip ${call invoke_spec, $(RUBY), --color -fs}}
 
-test-local tests-local:: 
+test-local tests-local::
 	@ ${strip ${call invoke_spec, $(RUBY)}}
 
-jspec-local jspecs-local:: 
+jspec-local jspecs-local::
 	@ ${strip ${call invoke_spec, $(JRUBY), --color -fs}}
 
-jtest-local jtests-local:: 
+jtest-local jtests-local::
 	@ ${strip ${call invoke_spec, $(JRUBY)}}
