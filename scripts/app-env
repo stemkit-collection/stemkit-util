@@ -19,24 +19,31 @@ class Application < TSC::Application
   in_generator_context do |_content|
     File.join(self.class.installation_top, 'bin').tap { |_directory|
       _content << '#!/usr/bin/env ' + figure_ruby_path
-      _content << "PLATFORM_TOP = #{self.class.installation_parameters[:platform_top].to_s.inspect}"
       _content << TSC::PATH.current.front(_directory).to_ruby_eval
-      _content << '$: << ' + File.dirname(figure_ruby_path).inspect
+      _content << "PLATFORM_TOP = #{self.class.installation_parameters[:platform_top].to_s.inspect}"
     }
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
 
   def start
     handle_errors {
-      TSC::PATH.current.front(top('bin')).front(self_location('wrappers')).install
       TSC::LD_LIBRARY_PATH.current.back(top('lib64')).install
-
-      exec *[ facility, ARGV ].flatten
+      exec *[ locate(facility), ARGV ].flatten
     }
   end
 
   private
   #######
+
+  def locate(command)
+    [ top('bin'), *ENV['PATH'].to_s.split(File::PATH_SEPARATOR) ].each do |_location|
+      Dir[ File.join(_location, command) ].each do |_item|
+        return _item unless _item == $0
+      end
+    end
+
+    raise "Launching target not found: #{command}"
+  end
 
   def facility
     return script_name unless script_name == 'app-env'
@@ -50,14 +57,11 @@ class Application < TSC::Application
   end
 
   def platform_top
+    return "/opt/emc-freeware/platform/rh-40-x64"
     @platform_top = begin
       raise "No platform top defined" unless defined? PLATFORM_TOP
       PLATFORM_TOP
     end
-  end
-
-  def self_location(*args)
-    File.join File.dirname(__FILE__), *args
   end
 end
 
