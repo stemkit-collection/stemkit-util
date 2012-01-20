@@ -111,7 +111,7 @@ class Application < TSC::Application
   in_generator_context do |_content|
     top = Pathname.new(self.class.installation_top)
     ruby = top.join('bin', 'ruby')
-    ruby = Pahtname.new(figure_ruby_path) unless ruby.exist?
+    ruby = Pathname.new(figure_ruby_path) unless ruby.exist?
 
     _content << '#!/usr/bin/env ' + ruby.to_s
     _content << TSC::PATH.current.front(ruby.dirname.to_s).to_ruby_eval
