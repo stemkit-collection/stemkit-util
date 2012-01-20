@@ -14,8 +14,23 @@ $:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
 require 'sk/cli/tuning-launcher.rb'
 
 class Application < SK::Cli::TuningLauncher
+  in_generator_context do |_content|
+    file = File.basename(target)
+    directory = File.join(self.class.installation_top, 'bin')
+    original = File.join(directory, 'originals', file)
+
+    _content << '#!/usr/bin/env ' + figure_ruby_path
+    _content << TSC::PATH.current.front(directory).to_ruby_eval
+    _content << "ORIGINAL = #{original.inspect}"
+    _content << IO.readlines(__FILE__).slice(1..-1)
+  end
+
   protected
   #########
+
+  def original_command
+    defined?(ORIGINAL) ? ORIGINAL : super
+  end
 
   def setup
     join_output_when_tuning

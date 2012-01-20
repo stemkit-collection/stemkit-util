@@ -7,9 +7,7 @@
 # You must read and accept the license prior to use.
 
 $:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
-
 require 'sk/cli/tuning-launcher.rb'
-require 'tsc/path.rb'
 
 # This is a Subversion front-end that transforms its arguments as follows:
 #   %r is replaced by a repository root found either in environment variable
@@ -26,7 +24,7 @@ class Application < SK::Cli::TuningLauncher
 
     _content << '#!/usr/bin/env ' + figure_ruby_path
     _content << TSC::PATH.current.front(directory).to_ruby_eval
-    _content << "SVN_ORIGINAL = #{original.inspect}"
+    _content << "ORIGINAL = #{original.inspect}"
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
 
@@ -42,7 +40,7 @@ class Application < SK::Cli::TuningLauncher
   end
 
   def original_command
-    defined?(SVN_ORIGINAL) ? SVN_ORIGINAL : super
+    defined?(ORIGINAL) ? ORIGINAL : super
   end
 
   def check_option(item)
