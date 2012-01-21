@@ -79,7 +79,7 @@ class Application < SK::Cli::TuningLauncher
   #######
 
   def config
-    @config ||= super('.cvsrc', :uproot => true, :home => true)
+    @config ||= super('.skcvsrc', :uproot => true, :home => true)
   end
 
   def configure_short_status
