@@ -13,6 +13,31 @@ module SK
   module Cli
     module Svn
       class CvsDiffHeaderMaker
+        class WrongInputError < Exception
+          def initialize(line)
+            super "Unrecognized input line: #{line.inspect}"
+          end
+        end
+
+        class WrongItemError < Exception
+          def initialize(args)
+            given, needed = args
+            super "Unexpected item: got #{given.inspect}, need #{needed.inspect}"
+          end
+        end
+
+        class MissingRevisionError < Exception
+          def initialize(label)
+            super "No revision - #{label.inspect}"
+          end
+        end
+
+        class WrongRevisionError < Exception
+          def initialize(spec)
+            super "Unknown revision specificaiton #{spec.inspect}"
+          end
+        end
+
         def initialize(app, item)
           @app, @item = app, item
         end
@@ -53,6 +78,14 @@ module SK
           produce '+++', make_revision_string(end_revision, @deleted)
         end
 
+        def end_revision
+          @end_revision or raise MissingRevisionError, :end
+        end
+
+        def start_revision
+          @start_revision or raise MissingRevisionError, :start
+        end
+
         private
         #######
 
@@ -79,27 +112,19 @@ module SK
           start_revision == 0 or @deleted
         end
 
-        def end_revision
-          @end_revision or raise "End revision not encountered"
-        end
-
-        def start_revision
-          @start_revision or raise "Start revision not encountered"
-        end
-
         def report_unknown_line(line)
-          raise "Unrecognized line: #{line.inspect}"
+          raise WrongInputError, line
         end
 
         def ensure_item(item)
-          raise "Unexpected item: got #{item.inspect}, need #{@item.inspect}" unless item == @item
+          raise WrongItemError, [ item, @item ] unless item == @item
         end
 
         def figure_revision(input)
           return 0 if input == 'working copy'
           return $1.to_i if input =~ %r{^revision\s+(\d+)\s*$}
 
-          raise "Unknown revision specificaiton #{input.inspect}"
+          raise WrongRevisionError, input
         end
       end
     end
@@ -114,7 +139,63 @@ if $0 == __FILE__
     module Cli
       module Svn
         class CvsDiffHeaderMakerTest < Test::Unit::TestCase
+          attr_reader :depot
+          def test_sends_67_equals_on_any_equals_line
+            CvsDiffHeaderMaker.new(self, "abc.rb").tap do |_maker|
+              _maker.process("====");
+              assert_equal 1, depot.size
+              assert_equal 67, depot.first.size
+            end
+          end
+
+          def test_fails_start_end_revision_with_different_name
+            CvsDiffHeaderMaker.new(self, "abc.rb").tap do |_maker|
+              assert_raises CvsDiffHeaderMaker::WrongItemError do
+                _maker.process "--- zzz (revision 3)"
+              end
+
+              assert_raises CvsDiffHeaderMaker::WrongItemError do
+                _maker.process "+++ zzz (revision 3)"
+              end
+            end
+          end
+
+          def test_fails_wrong_revision
+            CvsDiffHeaderMaker.new(self, "abc.rb").tap do |_maker|
+              assert_raises CvsDiffHeaderMaker::WrongRevisionError do
+                _maker.process "--- abc.rb (rev 3a)"
+              end
+
+              assert_raises CvsDiffHeaderMaker::WrongRevisionError do
+                _maker.process "+++ abc.rb (some text)"
+              end
+            end
+          end
+
+          def test_succeeds_on_correct_revision
+            CvsDiffHeaderMaker.new(self, "abc.rb").tap do |_maker|
+              assert_raises CvsDiffHeaderMaker::MissingRevisionError do
+                _maker.start_revision
+              end
+
+              assert_raises CvsDiffHeaderMaker::MissingRevisionError do
+                _maker.end_revision
+              end
+
+              _maker.process "--- abc.rb (revision 3)"
+              _maker.process "+++ abc.rb (working copy)"
+
+              assert_equal 3, _maker.start_revision
+              assert_equal 0, _maker.end_revision
+            end
+          end
+
           def setup
+            @depot = []
+          end
+
+          def output_info(line)
+            @depot << line
           end
         end
       end
