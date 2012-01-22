@@ -65,7 +65,7 @@ module SK
               @deleted = true if $1 == '0,0'
 
             else
-              report_unknown_line
+              report_unknown_line line
           end
 
         end
@@ -84,6 +84,10 @@ module SK
 
         def start_revision
           @start_revision or raise MissingRevisionError, :start
+        end
+
+        def added_or_deleted?
+          start_revision == 0 || @deleted ? true : false
         end
 
         private
@@ -106,10 +110,6 @@ module SK
 
         def cvs_revision(revision)
           "0.#{revision}"
-        end
-
-        def added_or_deleted?
-          start_revision == 0 or @deleted
         end
 
         def report_unknown_line(line)
@@ -145,6 +145,18 @@ if $0 == __FILE__
               _maker.process("====");
               assert_equal 1, depot.size
               assert_equal 67, depot.first.size
+            end
+          end
+
+          def test_fails_on_wrong_input
+            CvsDiffHeaderMaker.new(self, "abc.rb").tap do |_maker|
+              assert_raises CvsDiffHeaderMaker::WrongInputError do
+                _maker.process("ljkjkjkjlkjlj")
+              end
+
+              assert_raises CvsDiffHeaderMaker::WrongInputError do
+                _maker.process("----- abc.rb (revision 78)")
+              end
             end
           end
 
@@ -187,6 +199,26 @@ if $0 == __FILE__
 
               assert_equal 3, _maker.start_revision
               assert_equal 0, _maker.end_revision
+            end
+          end
+
+          def test_checks_for_added_and_deleted_files
+            CvsDiffHeaderMaker.new(self, "abc.rb").tap do |_maker|
+              assert_raises CvsDiffHeaderMaker::MissingRevisionError do
+                _maker.added_or_deleted?
+              end
+
+              _maker.process('--- abc.rb (working copy)')
+              assert_equal true, _maker.added_or_deleted?
+
+              _maker.process('--- abc.rb (revision 34)')
+              assert_equal false, _maker.added_or_deleted?
+
+              _maker.process("@@ -34,67 +56,88 @@")
+              assert_equal false, _maker.added_or_deleted?
+
+              _maker.process("@@ -34,67 +0,0 @@")
+              assert_equal true, _maker.added_or_deleted?
             end
           end
 
