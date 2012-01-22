@@ -16,8 +16,20 @@ module SK
   module Cli
     module Svn
       class CvsDiffFormatTuner < SK::Cli::Tuner
+        def check_option(option)
+          return option unless [ '--no-ignore', '-I' ].include?(option)
+          @noignore = true
+          nil
+        end
+
         def process(io)
           io.each do |_line|
+            unless @noignore
+              @noshow = ($2 ? true : false) if _line =~ %r{^Index:\s+(.*?)(\bCVS(?:/\w+?(?:[.]\w+?)?)?)?\s*$}
+            end
+
+            next if @noshow
+
             case _line
               when %r{^Index:\s*(.*?)\s*$}
                 collector.start($1)
