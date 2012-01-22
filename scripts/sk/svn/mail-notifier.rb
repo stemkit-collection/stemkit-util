@@ -1,8 +1,11 @@
-# Copyright (c) 2006, Gennady Bystritsky <bystr@mac.com>
-#
-# Distributed under the MIT Licence.
-# This is free software. See 'LICENSE' for details.
-# You must read and accept the license prior to use.
+=begin
+  vim: sw=2:
+  Copyright (c) 2006, Gennady Bystritsky <bystr@mac.com>
+
+  Distributed under the MIT Licence.
+  This is free software. See 'LICENSE' for details.
+  You must read and accept the license prior to use.
+=end
 
 require 'net/smtp'
 require 'tsc/contrib/mailfactory.rb'
@@ -26,7 +29,7 @@ module SK
         mail = MailFactory.new
 
         mail.subject = "SVN[#{info.depot}] #{info.revision}: #{info.log.to_s.map.first.chomp[0...70]}"
-        mail.from = "#{info.author}@#{config.domain}"
+        mail.from = config.email_for_user(info.author)
         mail.to = notification_list
         mail.text = [ info.digest(config.url_base), info.diff ].flatten.join("\n")
 
