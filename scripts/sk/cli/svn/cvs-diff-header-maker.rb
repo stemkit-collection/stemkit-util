@@ -72,7 +72,7 @@ module SK
 
         def finish
           produce "RCS file: #{@item}"
-          produce "retrieving revision #{cvs_revision(start_revision)}" if start_revision > 0
+          produce "retrieving revision #{cvs_revision(start_revision)}" unless added_or_deleted?
           produce 'diff', cvs_diff_options, File.basename(@item)
           produce '---', make_revision_string(start_revision, true)
           produce '+++', make_revision_string(end_revision, @deleted)
