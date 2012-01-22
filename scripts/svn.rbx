@@ -80,6 +80,10 @@ class Application < SK::Cli::TuningLauncher
         configure_log_no_cvs
         'log'
 
+      when 'cvs-diff'
+        configure_cvs_diff
+        'diff'
+
       else
         item.gsub(%r{%[rtu]}i) { |_match|
           case _match.downcase
@@ -107,6 +111,11 @@ class Application < SK::Cli::TuningLauncher
   def configure_log_no_cvs
     require 'sk/cli/svn/cvs-entries-log-tuner.rb'
     set_tuner SK::Cli::Svn::CvsEntriesLogTuner.new(self)
+  end
+
+  def configure_cvs_diff
+    require 'sk/cli/svn/cvs-diff-format-tuner.rb'
+    set_tuner SK::Cli::Svn::CvsDiffFormatTuner.new(self)
   end
 
   def config
