@@ -101,7 +101,7 @@ module SK
           [ (revision.zero? && zero_out ? '/dev/null' : @item),
             '1 Jan 1970 00:00:00 -0000',
             (cvs_revision(revision) unless revision.zero?)
-          ]
+          ].join("\t")
         end
 
         def cvs_diff_options
