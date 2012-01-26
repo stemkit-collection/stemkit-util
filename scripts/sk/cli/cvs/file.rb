@@ -22,7 +22,7 @@ module SK
 
         def initialize(name, folder, status)
           @status = self.class.statuses.fetch(status, '<' + status.to_s + '>')
-          @path = folder.join(missing? ? name.sub(%r{^no file\s*}, '') : name)
+          @path = folder.join(missing? || removed? ? name.sub(%r{^no file\s*}, '') : name)
         end
 
         def to_s
@@ -35,7 +35,7 @@ module SK
         end
 
         def updated?
-          modified? || added? || local_only? || missing?
+          modified? || added? || local_only? || missing? || removed?
         end
 
         def current?
@@ -44,6 +44,10 @@ module SK
 
         def missing?
           status == '!'
+        end
+
+        def removed?
+          status == 'D'
         end
 
         def modified?
@@ -78,6 +82,7 @@ module SK
               'Needs Patch' => '*',
               'Needs Merge' => 'G',
               'Needs Checkout' => '!',
+              'Locally Removed' => 'D',
               '?' => '?'
             }
           end

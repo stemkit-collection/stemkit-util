@@ -10,6 +10,7 @@
 =end
 
 require 'sk/cli/tuner.rb'
+require 'sk/cli/cvs/file.rb'
 
 module SK
   module Cli
@@ -18,10 +19,26 @@ module SK
         def process(io)
           io.each do |_line|
             case _line
-              when %r{^[!]\s+(.*?)\s*$}
-                system 'cvs', 'rm', $1
+              when %r{^cvs\s+status:\s+Examining\s+(.*?)\s*$}
+                set_folder $1
+
+              when %r{^File:\s+(.*?)\s+Status:\s+(.*?)\s*$}
+                Cvs::File.new($1, folder, $2).tap do |_file|
+                  system('cvs', 'rm', _file.path.to_s) if _file.missing?
+                end
             end
           end
+        end
+
+        private
+        #######
+
+        def set_folder(folder)
+          @folder = Pathname.new(folder)
+        end
+
+        def folder
+          @folder or raise 'No folder information encountered'
         end
       end
     end

@@ -23,6 +23,7 @@ module SK
           io.each do |_line|
             case _line
               when %r{^cvs\s+diff:\s+Diffing\s+(.*?)\s*$}
+              when %r{^cvs\s+diff:\s+cannot find\s+(.*?)\s*$}
 
               when %r{^cvs\s+diff:}, %r{^cvs\s+\[diff\s+aborted\]:}
                 app.register_errors _line

@@ -23,7 +23,7 @@ module SK
                 next if item.split('/').any? { |_item|
                   _item == '.svn'
                 }
-                system 'cvs', 'add', item
+                system('cvs', 'add', item) or exit $?.exitstatus
             end
           end
         end
