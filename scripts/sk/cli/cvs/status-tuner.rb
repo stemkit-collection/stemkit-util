@@ -16,6 +16,11 @@ module SK
   module Cli
     module Cvs
       class StatusTuner < SK::Cli::Tuner
+        def initialize(app, updates = false)
+          @updates = updates
+          super(app)
+        end
+
         def check_option(option)
           case option
             when '-u'
@@ -33,9 +38,11 @@ module SK
             case _line
               when %r{^cvs\s+status:\s+Examining\s+(.*?)\s*$}
                 set_folder $1
+              when %r{^cvs\s+status:\s+conflict:\s+(.*?)\s*$}
+                set_conflict $1
 
-              when %r{^File:\s+(.*?)\s+Status:\s+(.*?)\s*$}
-                set_file $1, $2
+              when %r{^File:\s+(no file\s*)?(.*?)\s+Status:\s+(.*?)\s*$}
+                set_file $2, $3, ($1 ? false : true)
 
               when %r{^[?]\s+(.*)$}
                 item = $1
@@ -89,9 +96,26 @@ module SK
           @file or raise 'No file information encountered'
         end
 
-        def set_file(name, status)
+        def set_file(name, status, present = true)
           dump_file
-          @file = File.new name, folder, status
+          @file = File.new name, folder, status, present
+          propagate_conflicts
+        end
+
+        def set_conflict(line)
+          conflicts << line
+          propagate_conflicts
+        end
+
+        def conflicts
+          @conflicts ||= []
+        end
+
+        def propagate_conflicts
+          return unless @file and @file.conflict?
+
+          @file.add_conflict_lines conflicts
+          conflicts.clear
         end
 
         def dump_file

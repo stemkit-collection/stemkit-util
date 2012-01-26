@@ -70,8 +70,8 @@ class Application < SK::Cli::TuningLauncher
         clear_tuner
         item.split('-').last
 
-      when 'short-status', 'ss'
-        configure_short_status
+      when 'short-status', 'ss', 'su'
+        configure_short_status(item == 'su')
         'status'
 
       when 'neat-diff', 'dd'
@@ -104,9 +104,9 @@ class Application < SK::Cli::TuningLauncher
     set_tuner SK::Cli::Cvs::AddExtraTuner.new(self)
   end
 
-  def configure_short_status
+  def configure_short_status(updates = false)
     require 'sk/cli/cvs/status-tuner.rb'
-    set_tuner SK::Cli::Cvs::StatusTuner.new(self)
+    set_tuner SK::Cli::Cvs::StatusTuner.new(self, updates)
   end
 
   def configure_neat_diff

@@ -20,12 +20,20 @@ module SK
         attr_accessor :working_revision, :repository_revision, :repository_path
         attr_accessor :commit_identifier, :sticky_tag, :sticky_date, :sticky_options
 
-        def initialize(name, folder, status)
-          @status = self.class.statuses.fetch(status, '<' + status.to_s + '>')
-          @path = folder.join(missing? || removed? ? name.sub(%r{^no file\s*}, '') : name)
+        def initialize(name, folder, status, available = true)
+          @status = self.class.statuses.fetch(status, 'X <' + status.to_s + '>')
+          @status = '*' if missing? and available
+          @available = available
+          @path = folder.join name
         end
 
         def to_s
+          join_items "\n", description, conflicts.map { |_item|
+            '  > ' + _item
+          }
+        end
+
+        def description
           join_items ' ', [
             status,
             ' ' * 2,
@@ -35,7 +43,7 @@ module SK
         end
 
         def updated?
-          modified? || added? || local_only? || missing? || removed?
+          modified? or !current? && !outdated?
         end
 
         def current?
@@ -48,6 +56,14 @@ module SK
 
         def removed?
           status == 'D'
+        end
+
+        def conflict?
+          status == 'C'
+        end
+
+        def unknown?
+          status =~ %r{^X} ? true : false
         end
 
         def modified?
@@ -66,8 +82,16 @@ module SK
           status == 'A'
         end
 
+        def add_conflict_lines(*args)
+          conflicts.concat args.flatten.compact
+        end
+
         private
         #######
+
+        def conflicts
+          @conflicts ||= []
+        end
 
         def join_items(separator, *args)
           args.flatten.compact.join separator
@@ -83,6 +107,8 @@ module SK
               'Needs Merge' => 'G',
               'Needs Checkout' => '!',
               'Locally Removed' => 'D',
+              'Unresolved Conflict' => 'C',
+              'Entry Invalid' => '-',
               '?' => '?'
             }
           end
@@ -128,6 +154,15 @@ if $0 == __FILE__
               assert_equal true, _file.outdated?
               assert_equal '*    d1/d2/fff ... 1.1 -> 2.3', _file.to_s
             }
+            Cvs::File.new('uuu', Pathname.new('d1').join('d2'), 'Needs Checkout').tap { |_file|
+              _file.working_revision = '1.1'
+              _file.repository_revision = '2.3'
+
+              assert_equal false, _file.modified?
+              assert_equal false, _file.updated?
+              assert_equal true, _file.outdated?
+              assert_equal '*    d1/d2/uuu ... 1.1 -> 2.3', _file.to_s
+            }
           end
 
           def test_needs_merge
@@ -152,7 +187,7 @@ if $0 == __FILE__
           end
 
           def test_missing
-            Cvs::File.new('no file fff', Pathname.new('d1').join('d2'), 'Needs Checkout').tap { |_file|
+            Cvs::File.new('fff', Pathname.new('d1').join('d2'), 'Needs Checkout', false).tap { |_file|
               assert_equal false, _file.modified?
               assert_equal true, _file.updated?
               assert_equal false, _file.outdated?

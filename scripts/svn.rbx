@@ -64,9 +64,9 @@ class Application < SK::Cli::TuningLauncher
         configure_add_extra
         'status'
 
-      when 'status', 'ss'
+      when 'status', 'ss', 'su'
         configure_status_no_cvs if config.attribute('status-no-cvs') == true
-        'status'
+        [ 'status', ('-u' if item == 'su') ]
 
       when 'diff', 'dd', 'ds'
         configure_diff_no_cvs if config.attribute('diff-no-cvs') == true

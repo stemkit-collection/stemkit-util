@@ -22,9 +22,9 @@ module SK
               when %r{^cvs\s+status:\s+Examining\s+(.*?)\s*$}
                 set_folder $1
 
-              when %r{^File:\s+(.*?)\s+Status:\s+(.*?)\s*$}
-                Cvs::File.new($1, folder, $2).tap do |_file|
-                  system('cvs', 'rm', _file.path.to_s) if _file.missing?
+              when %r{^File:\s+(no file\s*)?(.*?)\s+Status:\s+(.*?)\s*$}
+                Cvs::File.new($2, folder, $3, $1 ? false : true).tap do |_file|
+                  system('cvs', 'rm', '-f', _file.path.to_s) if _file.missing?
                 end
             end
           end
