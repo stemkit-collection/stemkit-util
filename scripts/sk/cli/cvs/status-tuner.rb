@@ -38,8 +38,12 @@ module SK
                 set_file $1, $2
 
               when %r{^[?]\s+(.*)$}
+                item = $1
+                next if item.split('/').any? { |_item|
+                  _item == '.svn'
+                }
                 set_folder '.'
-                set_file $1, '?'
+                set_file item, '?'
 
               when %r{^[= ]*$}
 

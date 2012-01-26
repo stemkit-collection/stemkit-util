@@ -32,8 +32,12 @@ module SK
       protected
       #########
 
+      def extra_cli_options
+      end
+
       def command_line_arguments(args)
-        [ args.map { |_item|
+        [ Array(extra_cli_options),
+          args.map { |_item|
             check_option(_item) || tuner.check_option(_item)
           },
           Array(tuner.extra_cli_options)

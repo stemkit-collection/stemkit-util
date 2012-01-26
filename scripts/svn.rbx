@@ -56,17 +56,28 @@ class Application < SK::Cli::TuningLauncher
         set_tuner SK::Cli::Svn::LocalTimeTuner.new(self)
         '--xml'
 
-      when 'status'
+      when 'remove-missing', 'rm-missing', 'rm-gone'
+        configure_remove_missing
+        'status'
+
+      when 'add-extra'
+        configure_add_extra
+        'status'
+
+      when 'status', 'ss'
         configure_status_no_cvs if config.attribute('status-no-cvs') == true
-        item
+        'status'
 
-      when 'diff'
+      when 'diff', 'dd', 'ds'
         configure_diff_no_cvs if config.attribute('diff-no-cvs') == true
-        item
+        [ 'diff', ('--summarize' if item == 'ds') ]
 
-      when 'log'
+      when 'log', 'll'
         configure_log_no_cvs if config.attribute('log-no-cvs') == true
-        item
+        [ 'log', ('--stop-on-copy' if item == 'll') ]
+
+      when 'uu'
+        'update'
 
       when 'status-no-cvs'
         configure_status_no_cvs
@@ -101,6 +112,16 @@ class Application < SK::Cli::TuningLauncher
   def configure_status_no_cvs
     require 'sk/cli/svn/cvs-entries-status-tuner.rb'
     set_tuner SK::Cli::Svn::CvsEntriesStatusTuner.new(self)
+  end
+
+  def configure_remove_missing
+    require 'sk/cli/svn/remove-missing-tuner.rb'
+    set_tuner SK::Cli::Svn::RemoveMissingTuner.new(self)
+  end
+
+  def configure_add_extra
+    require 'sk/cli/svn/add-extra-tuner.rb'
+    set_tuner SK::Cli::Svn::AddExtraTuner.new(self)
   end
 
   def configure_diff_no_cvs

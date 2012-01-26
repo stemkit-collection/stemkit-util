@@ -28,6 +28,7 @@ module SK
                 app.register_errors _line
 
               when %r{^[?]\s+(.*)$}
+                next
 
               else
                 app.output_info _line

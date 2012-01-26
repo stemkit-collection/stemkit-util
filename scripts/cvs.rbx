@@ -40,8 +40,20 @@ class Application < SK::Cli::TuningLauncher
     }
   end
 
+  def extra_cli_options
+    [ '-f' ]
+  end
+
   def check_option(item)
     case item
+      when 'remove-missing', 'rm-missing', 'rm-gone'
+        configure_remove_missing
+        'status'
+
+      when 'add-extra'
+        configure_add_extra
+        'status'
+
       when 'status'
         configure_short_status if config.attribute('short-status') == true
         item
@@ -58,15 +70,15 @@ class Application < SK::Cli::TuningLauncher
         clear_tuner
         item.split('-').last
 
-      when 'short-status'
+      when 'short-status', 'ss'
         configure_short_status
         'status'
 
-      when 'neat-diff'
+      when 'neat-diff', 'dd'
         configure_neat_diff
         'diff'
 
-      when 'neat-update'
+      when 'neat-update', 'uu'
         configure_neat_update
         'update'
 
@@ -80,6 +92,16 @@ class Application < SK::Cli::TuningLauncher
 
   def config
     @config ||= super('.skcvsrc', :uproot => true, :home => true)
+  end
+
+  def configure_remove_missing
+    require 'sk/cli/cvs/remove-missing-tuner.rb'
+    set_tuner SK::Cli::Cvs::RemoveMissingTuner.new(self)
+  end
+
+  def configure_add_extra
+    require 'sk/cli/cvs/add-extra-tuner.rb'
+    set_tuner SK::Cli::Cvs::AddExtraTuner.new(self)
   end
 
   def configure_short_status
