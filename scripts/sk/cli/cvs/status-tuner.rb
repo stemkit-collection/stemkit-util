@@ -38,6 +38,7 @@ module SK
             case _line
               when %r{^cvs\s+status:\s+Examining\s+(.*?)\s*$}
                 set_folder $1
+
               when %r{^cvs\s+status:\s+conflict:\s+(.*?)\s*$}
                 set_conflict $1
 

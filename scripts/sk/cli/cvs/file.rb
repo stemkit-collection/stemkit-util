@@ -21,10 +21,11 @@ module SK
         attr_accessor :commit_identifier, :sticky_tag, :sticky_date, :sticky_options
 
         def initialize(name, folder, status, available = true)
+          @path = folder.join name
+
           @status = self.class.statuses.fetch(status, 'X <' + status.to_s + '>')
           @status = '*' if missing? and available
-          @available = available
-          @path = folder.join name
+          @status += 'F' if local_only? and folder?
 
           conflicts << status if conflict?
         end
@@ -37,11 +38,14 @@ module SK
 
         def description
           join_items ' ', [
-            status,
-            ' ' * 2,
+            ("%-4.4s" % status),
             path,
             outdated? ? [ '...', working_revision, '->', repository_revision ] : []
           ]
+        end
+
+        def folder?
+          ::File.directory? path
         end
 
         def updated?
@@ -77,7 +81,7 @@ module SK
         end
 
         def local_only?
-          status == '?'
+          status =~ %r{^[?]}
         end
 
         def added?

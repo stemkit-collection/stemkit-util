@@ -54,6 +54,10 @@ class Application < SK::Cli::TuningLauncher
         configure_add_extra
         'status'
 
+      when 'revert'
+        configure_revert
+        'status'
+
       when 'status'
         configure_short_status if config.attribute('short-status') == true
         item
@@ -97,6 +101,11 @@ class Application < SK::Cli::TuningLauncher
   def configure_remove_missing
     require 'sk/cli/cvs/remove-missing-tuner.rb'
     set_tuner SK::Cli::Cvs::RemoveMissingTuner.new(self)
+  end
+
+  def configure_revert
+    require 'sk/cli/cvs/revert-tuner.rb'
+    set_tuner SK::Cli::Cvs::RevertTuner.new(self)
   end
 
   def configure_add_extra
