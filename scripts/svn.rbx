@@ -64,13 +64,19 @@ class Application < SK::Cli::TuningLauncher
         configure_add_extra
         'status'
 
-      when 'status', 'ss', 'su'
+      when 'status', 'ss', 'su', 'si'
         configure_status_no_cvs if config.attribute('status-no-cvs') == true
-        [ 'status', ('-u' if item == 'su') ]
+        [ 'status',
+          ('-u' if item == 'su'),
+          (tuner.check_option('--no-ignore') if item == 'si')
+        ]
 
-      when 'diff', 'dd', 'ds'
+      when 'diff', 'dd', 'ds', 'di'
         configure_diff_no_cvs if config.attribute('diff-no-cvs') == true
-        [ 'diff', ('--summarize' if item == 'ds') ]
+        [ 'diff',
+          ('--summarize' if item == 'ds'),
+          (tuner.check_option('--no-ignore') if item == 'di')
+        ]
 
       when 'log', 'll'
         configure_log_no_cvs if config.attribute('log-no-cvs') == true
