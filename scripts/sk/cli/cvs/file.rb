@@ -6,7 +6,7 @@
   This is free software. See 'LICENSE' for details.
   You must read and accept the license prior to use.
 
-  Author: EMC Gennady Bystritsky
+  Author: Gennady Bystritsky
 =end
 
 require 'pathname'
@@ -25,6 +25,8 @@ module SK
           @status = '*' if missing? and available
           @available = available
           @path = folder.join name
+
+          conflicts << status if conflict?
         end
 
         def to_s
@@ -108,6 +110,7 @@ module SK
               'Needs Checkout' => '!',
               'Locally Removed' => 'D',
               'Unresolved Conflict' => 'C',
+              'File had conflicts on merge' => 'C',
               'Entry Invalid' => '-',
               '?' => '?'
             }
