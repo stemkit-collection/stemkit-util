@@ -19,7 +19,13 @@ module SK
   module Cli
     module Cvs
       class RevertTuner < SK::Cli::Tuner
+        def check_option(option)
+          depot << option
+          nil
+        end
+
         def process(io)
+          raise 'No items specified' if depot.empty?
           io.each do |_line|
             case _line
               when %r{^cvs\s+status:\s+Examining\s+(.*?)\s*$}
@@ -28,22 +34,31 @@ module SK
               when %r{^File:\s+(no file\s*)?(.*?)\s+Status:\s+(.*?)\s*$}
                 Cvs::File.new($2, folder, $3, $1 ? false : true).tap do |_file|
                   next unless _file.added?
-                  Tempfile.new(_file.path.basename) do |_tempfile|
+                  next unless depot.include? _file.path.to_s
+
+                  Tempfile.open(_file.path.basename) do |_tempfile|
                     _tempfile.close
-                    FileUtils.cp _file.path.to_s, _tempfile.path, :verbose => true
+                    FileUtils.cp _file.path.to_s, _tempfile.path, :verbose => false
                     begin
                       system('cvs', 'rm', '-f', _file.path.to_s)
+                      @reverted = true
                     ensure
-                      FileUtils.cp _tempfile.path, _file.path.to_s, :verbose => true
+                      FileUtils.cp _tempfile.path, _file.path.to_s, :verbose => false
                     end
                   end
                 end
             end
           end
+
+          raise 'No items found' unless @reverted
         end
 
         private
         #######
+
+        def depot
+          @depot ||= []
+        end
 
         def set_folder(folder)
           @folder = Pathname.new(folder)

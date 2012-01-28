@@ -35,7 +35,10 @@ module SK
                 next if item.split('/').any? { |_item|
                   _item == '.svn'
                 }
-                next if ::File.directory?(item) and folders? == false
+                if ::File.directory?(item) and folders? == false
+                  app.register_errors "Skipped folder #{item.inspect}, use --folders to force"
+                  next
+                end
                 system('cvs', 'add', item) or exit $?.exitstatus
             end
           end
