@@ -77,15 +77,17 @@ module SK
 
         setup
 
-        (transparent? ? Helper : self).tap { |_invocator|
-          with_normalized_array [ original_command, _invocator.command_line_arguments(ARGV) ] do |_cmdline|
-            trace _cmdline.join(' ')
-            populate_environment
+        prepare_arguments(ARGV).tap { |_args|
+          (transparent? ? Helper : self).tap { |_invocator|
+            with_normalized_array [ original_command, _invocator.command_line_arguments(_args) ] do |_cmdline|
+              trace _cmdline.join(' ')
+              populate_environment
 
-            _invocator.launch *_cmdline.flatten.compact.map { |_item|
-              _item.to_s
-            }
-          end
+              _invocator.launch *_cmdline.flatten.compact.map { |_item|
+                _item.to_s
+              }
+            end
+          }
         }
       }
     end
@@ -257,6 +259,10 @@ module SK
 
     def command_line_arguments(args)
       Helper.command_line_arguments(args)
+    end
+
+    def prepare_arguments(args)
+      args
     end
 
     def local_scope_selectors

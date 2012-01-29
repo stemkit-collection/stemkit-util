@@ -35,8 +35,18 @@ class Application < SK::Cli::TuningLauncher
   def setup
     join_output_when_tuning
 
+    self.transparent = true if ENV.has_key?('SK_MAKE_GLOBAL_MAKEFILE')
+
     config.attribute(:root).tap { |_root|
       update_environment Hash[ :CVSROOT => _root ], :prefix => false, :upcase => true if _root
+    }
+  end
+
+  def prepare_arguments(args)
+    args.map { |_item|
+      next _item unless _item == '-C'
+      self.transparent = true
+      nil
     }
   end
 
@@ -70,7 +80,7 @@ class Application < SK::Cli::TuningLauncher
         configure_neat_update if config.attribute('neat-update') == true
         item
 
-      when 'classic-diff', 'clasic-update', 'classic-status', 'long-status'
+      when 'classic-diff', 'classic-update', 'classic-status', 'long-status'
         clear_tuner
         item.split('-').last
 
