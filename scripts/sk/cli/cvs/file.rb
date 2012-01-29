@@ -81,7 +81,7 @@ module SK
         end
 
         def local_only?
-          status =~ %r{^[?]}
+          status =~ %r{^[?]} ? true : false
         end
 
         def added?
