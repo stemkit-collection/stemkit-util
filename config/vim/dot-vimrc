@@ -26,6 +26,7 @@ set keywordprg=man\ -a
 set bs=indent,start
 set ttyfast
 
+let g:netrw_dirhistmax = 0
 let mysyntaxfile = "~/.vimsyntax"
 syntax on
 
