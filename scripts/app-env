@@ -47,21 +47,26 @@ class Application < TSC::Application
 
   def facility
     return script_name unless script_name == 'app-env'
-    raise "No facility specified" if ARGV.empty?
+    return ARGV.shift unless ARGV.empty?
 
-    ARGV.shift
+    raise 'No facility specified'
   end
 
   def top(*args)
-    File.join platform_top, *args
+    platform_top.join(*args).to_s
   end
 
   def platform_top
-    return "/opt/emc-freeware/platform/rh-40-x64"
-    @platform_top = begin
-      raise "No platform top defined" unless defined? PLATFORM_TOP
-      PLATFORM_TOP
-    end
+    @platform_top ||= figure_platform_top
+  end
+
+  def figure_platform_top
+    return Pathname.new(PLATFORM_TOP) if defined? PLATFORM_TOP
+
+    find_in_path('ruby').first.tap { |_path|
+      return Pathname.new(_path).parent.parent if _path
+    }
+    raise 'Platform top cannot be determined'
   end
 end
 
