@@ -47,7 +47,7 @@ pattern="${2}"
 [ "${#}" -ne 0 ] && shift
 
 if [ "${pattern:+set}" = set ]; then
-  exec find "${location:-.}" -follow -name .svn -prune -o -type f ${selector} -exec grep ${grep_options} -- "${pattern}" "{}" \; "${@:--print}"
+  exec find ${location:-.} -follow -name .svn -prune -o -type f ${selector} -exec grep ${grep_options} -- "${pattern}" "{}" \; "${@:--print}"
 else
-  exec find "${location:-.}" -follow -name .svn -prune -o -type f ${selector} "${@:--print}"
+  exec find ${location:-.} -follow -name .svn -prune -o -type f ${selector} "${@:--print}"
 fi
