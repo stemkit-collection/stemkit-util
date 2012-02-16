@@ -37,18 +37,26 @@ class Application < TSC::Application
 
   def launch(command, *args)
     app_env_path.front(top(@folder, 'bin')).install if @folder
+    system_path.front(top('bin')) unless system_path.entries.include?(top('bin'))
 
-    (app_env_path.entries + [ top('bin') ] + system_path.entries).each do |_location|
+    (app_env_path.entries + system_path.entries).each do |_location|
       Dir[ File.join(_location, command) ].each do |_item|
+        next if _item == $0
+
         system_path.front app_env_path.entries.reverse
         system_path.front TOP if defined? TOP
         system_path.install
 
-        exec _item, *args unless _item == $0
+        exec _item, *args
       end
     end
 
     raise "Launching target not found: #{command}"
+  end
+
+  def exec(*args)
+    puts "### #{args.join(' ')}" if verbose?
+    Kernel.exec *args
   end
 
   def app_env_path
