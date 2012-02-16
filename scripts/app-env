@@ -17,43 +17,82 @@ require 'tsc/path.rb'
 
 class Application < TSC::Application
   in_generator_context do |_content|
-    File.join(self.class.installation_top, 'bin').tap { |_directory|
-      _content << '#!/usr/bin/env ' + figure_ruby_path
-      _content << TSC::PATH.current.front(_directory).to_ruby_eval
-      _content << "PLATFORM_TOP = #{self.class.installation_parameters[:platform_top].to_s.inspect}"
-    }
+    _content << '#!/usr/bin/env ' + figure_ruby_path
+    _content << '$LOAD_PATH.unshift ' + File.dirname(figure_ruby_path).inspect
+    _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
+    _content << 'TOP = ' + File.join(self.class.installation_top, 'bin').inspect
+
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
 
   def start
-    handle_errors {
-      TSC::LD_LIBRARY_PATH.current.back(top('lib64')).install
-      exec *[ locate(facility), ARGV ].flatten
-    }
+    handle_errors do
+      TSC::LD_LIBRARY_PATH.current.back(top('lib64'), top('lib')).install
+      launch *facility(script_name, *ARGV)
+    end
   end
 
   private
   #######
 
-  def locate(command)
-    [ top('bin'), *ENV['PATH'].to_s.split(File::PATH_SEPARATOR) ].each do |_location|
+  def launch(command, *args)
+    app_env_path.front(top(@folder, 'bin')).install if @folder
+
+    (app_env_path.entries + [ top('bin') ] + system_path.entries).each do |_location|
       Dir[ File.join(_location, command) ].each do |_item|
-        return _item unless _item == $0
+        system_path.front app_env_path.entries.reverse
+        system_path.front TOP if defined? TOP
+        system_path.install
+
+        exec _item, *args unless _item == $0
       end
     end
 
     raise "Launching target not found: #{command}"
   end
 
-  def facility
-    return script_name unless script_name == 'app-env'
-    return ARGV.shift unless ARGV.empty?
+  def app_env_path
+    @app_env_path ||= TSC::Path['APP_ENV_PATH'].load
+  end
+
+  def system_path
+    @system_path ||= TSC::PATH.new.load
+  end
+
+  def facility(*args)
+    until args.empty?
+      break nil unless args.shift.tap do |_item|
+        case _item
+          when %r{^([^-]+)-([^-]+)$}
+            lastenv = ($2 == 'env' ? true : false)
+            @env = true if lastenv
+
+            next if $1 == 'app' and lastenv
+            @facility = $1
+
+            unless lastenv
+              if @env
+                @folder = _item
+              else
+                args.unshift $2, @facility
+              end
+            end
+
+          when %r{^\d+([.]\d+)+$}
+            break nil unless @facility
+            @folder = @facility + '-' + _item
+
+          else
+            return _item, *args
+        end
+      end
+    end
 
     raise 'No facility specified'
   end
 
   def top(*args)
-    platform_top.join(*args).to_s
+    platform_top.join(*args.flatten.compact).to_s
   end
 
   def platform_top
