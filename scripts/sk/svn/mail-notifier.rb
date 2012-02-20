@@ -41,13 +41,15 @@ module SK
 
       def figure_notification_list(info)
         Array(config.notify(info.depot)).map { |_param|
-          element, list = Array(_param)
+          element, *list = Array(_param).flatten
           item = element.to_s.strip
-          if list
+          if list.empty? == false
             pattern = Regexp.new [ ('^\s*' unless item.slice(0) == ?^), item ].join
-            info.affected.map { |_path|
-              list if pattern.match(_path)
+            next unless info.affected.any? { |_path|
+              pattern.match(_path)
             }
+            break list if Hash === _param
+            list
           else
             item
           end
@@ -81,6 +83,21 @@ if $0 == __FILE__
           ]
 
           assert_equal Set[ 'zzz', 'iii', 'uuu' ], Set[*notifier.figure_notification_list(info)]
+        end
+
+        def test_per_location_ordered_list
+          info.stubs(:depot).returns 'abc'
+          config.stubs(:notify).returns [
+            { '.*?/bbb' => [ 'zzz', 'uuu' ] },
+            { 'ccc/uuu/' => 'bbb' },
+            { '.*' => 'iii' }
+          ]
+          info.stubs(:affected).returns [
+            'aaa/zzz/ccc/bbb',
+            'ccc/'
+          ]
+
+          assert_equal Set[ 'zzz', 'uuu' ], Set[*notifier.figure_notification_list(info)]
         end
 
         def test_simple_notification_list
