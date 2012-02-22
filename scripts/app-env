@@ -27,6 +27,8 @@ class Application < TSC::Application
 
   def start
     handle_errors do
+      require 'pathname'
+
       TSC::LD_LIBRARY_PATH.current.back(top('lib64'), top('lib')).install
       launch *facility(script_name, *ARGV)
     end
@@ -39,14 +41,15 @@ class Application < TSC::Application
     app_env_path.front(top(@folder, 'bin')).install if @folder
     system_path.front(top('bin')) unless system_path.entries.include?(top('bin'))
 
-    (app_env_path.entries + system_path.entries).each do |_location|
+    system_path.front app_env_path.entries.reverse
+    system_path.front TOP if defined? TOP
+
+    system_path.entries.each do |_location|
       Dir[ File.join(_location, command) ].each do |_item|
         next if _item == $0
+        next if defined?(TOP) and _item == File.join(TOP, script_name)
 
-        system_path.front app_env_path.entries.reverse
-        system_path.front TOP if defined? TOP
         system_path.install
-
         exec _item, *args
       end
     end
