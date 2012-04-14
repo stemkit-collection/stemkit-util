@@ -79,13 +79,11 @@ module SK
 
         prepare_arguments(ARGV).tap { |_args|
           (transparent? ? Helper : self).tap { |_invocator|
-            with_normalized_array [ original_command, _invocator.command_line_arguments(_args) ] do |_cmdline|
+            with_string_array [ original_command, _invocator.command_line_arguments(_args) ] do |_cmdline|
               trace _cmdline.join(' ')
               populate_environment
 
-              _invocator.launch *_cmdline.flatten.compact.map { |_item|
-                _item.to_s
-              }
+              _invocator.launch *_cmdline
             end
           }
         }
@@ -385,6 +383,15 @@ module SK
 
     def with_normalized_array(array)
       yield Array(array).flatten.compact
+    end
+
+    def with_string_array(array)
+      yield Array(array).flatten.map { |_item|
+        next nil if _item.nil?
+        _item.to_s.tap { |_string|
+          break nil if _string.empty?
+        }
+      }.compact
     end
   end
 end
