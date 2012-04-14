@@ -15,13 +15,21 @@ module SK
   module Cli
     module Cvs
       class File
-        attr_reader :path, :status
+        attr_reader :path, :status, :top
 
         attr_accessor :working_revision, :repository_revision, :repository_path
         attr_accessor :commit_identifier, :sticky_tag, :sticky_date, :sticky_options
 
         def initialize(name, folder, status, available = true)
           @path = folder.join name
+
+          if Hash === available
+            options = available
+            available = options.fetch(:available, true)
+            @top = options.fetch(:top, nil).tap { |_top|
+              break Pathname.new(_top) if _top
+            }
+          end
 
           @status = self.class.statuses.fetch(status, 'X <' + status.to_s + '>')
           @status = '*' if missing? and available
@@ -39,7 +47,7 @@ module SK
         def description
           join_items ' ', [
             ("%-4.4s" % status),
-            path,
+            (top ? top.join(path) : path),
             outdated? ? [ '...', working_revision, '->', repository_revision ] : []
           ]
         end
@@ -208,6 +216,15 @@ if $0 == __FILE__
               assert_equal true, _file.updated?
               assert_equal false, _file.outdated?
               assert_equal '?    aaa/bbb/fff', _file.to_s
+            }
+          end
+
+          def test_local_only_with_top
+            Cvs::File.new('aaa/bbb/fff', Pathname.new('.'), '?', :top => 'zzz').tap { |_file|
+              assert_equal true, _file.local_only?
+              assert_equal true, _file.updated?
+              assert_equal false, _file.outdated?
+              assert_equal '?    zzz/aaa/bbb/fff', _file.to_s
             }
           end
 

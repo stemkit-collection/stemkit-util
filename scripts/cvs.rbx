@@ -25,6 +25,8 @@ class Application < SK::Cli::TuningLauncher
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
 
+  attr_reader :optional_top
+
   protected
   #########
 
@@ -96,8 +98,21 @@ class Application < SK::Cli::TuningLauncher
         configure_neat_update
         'update'
 
+      when '-A'
+        @optional_top = Dir.pwd
+        ''
+      when '--top'
+        @optional_top_detected = true
+        ''
+
       else
-        nil
+        if @optional_top_detected
+          @optional_top_detected = false
+          @optional_top = item
+          ''
+        else
+          nil
+        end
     end
   end
 

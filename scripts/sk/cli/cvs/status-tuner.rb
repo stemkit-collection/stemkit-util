@@ -99,7 +99,7 @@ module SK
 
         def set_file(name, status, present = true)
           dump_file
-          @file = File.new name, folder, status, present
+          @file = File.new name, folder, status, :top => app.optional_top, :available => present
           propagate_conflicts
         end
 
@@ -139,7 +139,7 @@ if $0 == __FILE__
     module Cli
       module Cvs
         class StatusTunerTest < Test::Unit::TestCase
-          attr_reader :tuner, :errors, :infos
+          attr_reader :tuner, :errors, :infos, :optional_top
 
           def test_output_without_updates
             tuner.process [
@@ -170,7 +170,9 @@ if $0 == __FILE__
             assert_equal 'zzzzzzzzzzzzzzzz', errors[1]
           end
 
-          def test_output_with_updates
+          def test_output_with_updates_and_top
+            @optional_top = 'zzz'
+
             tuner.check_option('-u')
             tuner.process [
               '? aaa/bbb/ccc',
@@ -189,10 +191,10 @@ if $0 == __FILE__
             ]
 
             assert_equal 4, infos.size
-            assert_equal '?    aaa/bbb/ccc', infos[0]
-            assert_equal 'M    aaa.c', infos[1]
-            assert_equal '*    d1/d2/d3/bbb.rb ... 1.4 -> 7.5', infos[2]
-            assert_equal 'G    d1/d2/d3/uuu.rb ... 1.4 -> 7.5', infos[3]
+            assert_equal '?    zzz/aaa/bbb/ccc', infos[0]
+            assert_equal 'M    zzz/aaa.c', infos[1]
+            assert_equal '*    zzz/d1/d2/d3/bbb.rb ... 1.4 -> 7.5', infos[2]
+            assert_equal 'G    zzz/d1/d2/d3/uuu.rb ... 1.4 -> 7.5', infos[3]
 
 
             assert_equal 1, errors.size
@@ -210,6 +212,7 @@ if $0 == __FILE__
           def setup
             @errors = []
             @infos = []
+            @optional_top = nil
 
             @tuner = SK::Cli::Cvs::StatusTuner.new(self)
           end
