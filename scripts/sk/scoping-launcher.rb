@@ -40,12 +40,6 @@ module SK
     end
   end
 
-  class SourceScopeError < SK::ScopeError
-    def initialize(top)
-      super "Scope top not under src (#{top})"
-    end
-  end
-
   class NotInPathError < TSC::Error
     def initialize(name)
       super "No #{name.inspect} in PATH"
@@ -170,8 +164,8 @@ module SK
     def root
       @root ||= begin
         local_scope_top.split.tap { |_root, _component|
-          break _root if _component.to_s == 'src'
-          raise SK::SourceScopeError, local_scope_top
+          @src = _component
+          break _root
         }
       end
     end
@@ -180,13 +174,13 @@ module SK
       @source_scope ||= begin
         root
         true
-      rescue SK::ScopeError, SK::SourceScopeError
+      rescue SK::ScopeError
         false
       end
     end
 
     def srctop
-      root.join 'src'
+      root.join @src
     end
 
     def bintop
@@ -291,7 +285,7 @@ module SK
 
       def normalize(properties)
         properties.each_pair do |_key, _value|
-          @properties[upcase(prefix(_key.to_s))] = _value.to_s
+          @properties[upcase(prefix(_key.to_s).gsub(%r{[.\-\:/]}, '_'))] = _value.to_s
         end
 
         @properties
