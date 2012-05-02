@@ -66,9 +66,9 @@ command -nargs=* RTest execute "!ruby -rubygems -I${PATH} <args> % 2>&1 | less"
 command -nargs=* JTest execute "!jruby -rubygems -I${PATH} -I lib -r java <args> % 2>&1 | less"
 command -nargs=* RSpec execute "!ruby -rubygems -I${PATH} -S spec --require sk/spec/config -fs <args> % 2>&1 | less"
 
-command -nargs=* MLocal execute "make -C %:h ITEMS=%:t:r <args> local-test"
-command -nargs=* MUnit execute "make -C %:h/unit-tests ITEMS=%:t:r <args> local-test"
-command -nargs=* MSpecs execute "make -C %:h/specs ITEMS=%:t:r <args> local-spec"
+command -nargs=* MLocal execute "make -C %:h ITEMS=%:t:r DOALL=true <args> local-test"
+command -nargs=* MUnit execute "make -C %:h/unit-tests ITEMS=%:t:r DOALL=true <args> local-test"
+command -nargs=* MSpecs execute "make -C %:h/specs ITEMS=%:t:r DOALL=true <args> local-spec"
 
 "set shellpipe=2>&1\|sed\ \'s/:\ warning:/\ [WARNING]/g\'\|tee
 
