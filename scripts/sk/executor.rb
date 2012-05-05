@@ -143,6 +143,8 @@ module SK
       end
     end
 
+    alias_method :perform, :in_a_thread
+
     private
     #######
 
@@ -249,7 +251,7 @@ if $0 == __FILE__
           sleep 60
         end
 
-        executor.in_a_thread do
+        executor.perform do
           sleep 60
         end
 
@@ -259,7 +261,7 @@ if $0 == __FILE__
       end
 
       def test_join
-        executor.in_a_thread do
+        executor.perform do
           sleep 1
         end
 
