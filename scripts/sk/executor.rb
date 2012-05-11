@@ -65,10 +65,15 @@ module SK
       thread
     end
 
-    def join
-      while thread = @group.list.first
-        thread.join
+    def join(options = {})
+      TSC::Dataset[ :external => true ].update(options).external.tap do |_external|
+        @group.list.each do |_thread|
+          next if localstore(_thread)[:enforcer]
+          _thread.join if localstore(_thread)[:internal] or _external
+        end
       end
+
+      stop_timeout_enforcer
     end
 
     def reset
@@ -211,8 +216,8 @@ module SK
       (thread || Thread.current)[@tag] ||= Hash.new
     end
 
-    def terminate(threads)
-      threads.each do |_thread|
+    def terminate(*threads)
+      threads.flatten.compact.each do |_thread|
         stop_if_alive _thread
 
         ready = false
