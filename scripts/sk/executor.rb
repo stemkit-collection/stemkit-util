@@ -40,20 +40,32 @@ module SK
       preserve_if_native_java_thread Thread.current
     end
 
-    def in_a_thread(&block)
+    def perform(options = {}, &block)
+      params = TSC::Dataset[ :sync => false, :timeout => nil ].update(options)
       ready = false
+
       thread = Thread.new Thread.current do |_parent|
         handle_errors do
           localstore[:internal] = true
+          localstore[:parent] = _parent
           preserve_if_native_java_thread Thread.current
           ready = true
 
-          block.call _parent
+          if params.timeout
+            self.timeout *params.timeout do
+              block.call _parent
+            end
+          else
+            block.call _parent
+          end
         end
       end
 
       sleep 0.01 until ready
       add_thread thread
+
+      thread.join if params.sync
+      thread
     end
 
     def threads
@@ -88,16 +100,23 @@ module SK
       terminate @group.list.map
     end
 
-    def timeout(seconds, &block)
+    def timeout(seconds, options = {}, &block)
       return unless block
+      return unless seconds
 
+      params = TSC::Dataset[ :ignore => false ].update(options)
       localstore[:timeout] = [ Time.now.to_i, seconds ]
+
       @lock.synchronize {
         @transients.push Thread.current
       }
 
       begin
-        delay_java_native_interrupt_if_any &block
+        delay_java_native_interrupt_if_any params.ignore == false ? block : proc {
+          TSC::Error.ignore Timeout::Error do
+            block.call
+          end
+        }
       ensure
         @lock.synchronize {
           localstore.delete :timeout
@@ -148,14 +167,14 @@ module SK
       end
     end
 
-    alias_method :perform, :in_a_thread
+    alias_method :in_a_thread, :perform
 
     private
     #######
 
-    def delay_java_native_interrupt_if_any(&block)
+    def delay_java_native_interrupt_if_any(block)
       begin
-        yield
+        block.call
       rescue Exception => error
         case error
           when native_exception_class
@@ -168,7 +187,7 @@ module SK
 
     def handle_errors(&block)
       begin
-        delay_java_native_interrupt_if_any &block
+        delay_java_native_interrupt_if_any block
       rescue Exception => error
         catch :done do
           case error
@@ -178,7 +197,7 @@ module SK
 
           unless @params.ignore
             if @params.relay
-              _parent.raise TSC::Error.new(error)
+              localstore[:parent].raise TSC::Error.new(error)
             else
               $stderr.puts TSC::Error.textualize(error, :backtrace => @params.verbose )
             end
