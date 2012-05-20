@@ -14,10 +14,18 @@ $:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
 
 require 'tsc/application.rb'
 require 'tsc/path.rb'
+require 'tsc/launch.rb'
 
 class Application < TSC::Application
   def initialize
     super { |_config|
+      _config.arguments = '<env-tag>'
+      _config.options = [
+        [ '--quiet', 'No output, just an exit code', nil, '-q' ],
+        [ '--folder', 'Top folder to look for the product', '<path>', '-f', '-t' ],
+        [ '--product', 'Product name', '<name>', '-p' ],
+        [ '--info', 'Info utility to check for product version', '<name>', '-i' ]
+      ]
       _config.description = [
         'Enusres validity of the current enviroment'
       ]
@@ -27,15 +35,90 @@ class Application < TSC::Application
   def start
     handle_errors {
       process_command_line
+
       require 'rubygems'
+      require 'pathname'
 
       raise TSC::UsageError unless ARGV.empty?
       perform_validation
     }
   end
 
+  def separator
+    @separator ||= '-'
+  end
+
+  def tag
+    @tag ||= begin
+      script_name.split(%r{([-_]+)}).tap do |_items|
+        break unless _items.pop == 'validate'
+        break if _items.empty?
+
+        Array(_items.each_slice(2)).transpose.tap do |_components, _separators|
+          @separator = _separators.last
+          @product = _components.join.downcase
+
+          return _components.join(separator)
+        end
+      end
+
+      raise "Wrong validation utility name: #{script_name.inspect}"
+    end
+  end
+
+  def product
+    @product ||= begin
+      options.product or raise 'Product not specified and not figured'
+    end
+  end
+
+  def product_version
+    product_info do |_info|
+      break unless Hash === _info
+      _info.each do |_product, _data|
+        if _product.downcase == product
+          break unless Hash === _data
+          return _data['Version'] || break
+        end
+      end
+    end
+
+    raise 'Invalid product info' unless Hash === _info
+  end
+
+  def product_info
+    yield YAML.parse(launch(info).join).tap do |_data|
+      break {} unless _data
+      break _data.transform
+    end
+  end
+
+  def info
+    @info ||= [ tag, 'info' ].join(separator)
+  end
+
+  def folder
+    @folder ||= find_in_path(info).first.tap { |_path|
+      raise "Utility #{info.inspect} not in PATH" unless _path
+
+      break Pathname.new(_path).dirname.parent.split.tap { |_top, _folder|
+        process_folder _folder.to_s
+        break _top
+      }
+    }
+  end
+
+  def process_folder(folder)
+    folder.split(separator).tap do |_components|
+      @folder_version = _components.pop if _components.last.match(%r{^\d+([.]\d+)*$})
+      @folder_tag = _components.join(separator)
+    end
+  end
+
   def perform_validation
-    raise TSC::NotImplementedError, :perform_validation
+    puts ">>> T: #{tag.inspect}"
+    puts ">>> I: #{info.inspect}"
+    puts ">>> F: #{folder.inspect}"
   end
 
   in_generator_context do |_content|
