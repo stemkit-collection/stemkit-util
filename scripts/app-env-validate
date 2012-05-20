@@ -38,6 +38,7 @@ class Application < TSC::Application
 
       require 'rubygems'
       require 'pathname'
+      require 'yaml'
 
       raise TSC::UsageError unless ARGV.empty?
       perform_validation
@@ -49,7 +50,7 @@ class Application < TSC::Application
   end
 
   def tag
-    @tag ||= begin
+    @tag ||= catch :tag do
       script_name.split(%r{([-_]+)}).tap do |_items|
         break unless _items.pop == 'validate'
         break if _items.empty?
@@ -58,7 +59,7 @@ class Application < TSC::Application
           @separator = _separators.last
           @product = _components.join.downcase
 
-          return _components.join(separator)
+          throw :tag, _components.join(separator)
         end
       end
 
@@ -72,25 +73,31 @@ class Application < TSC::Application
     end
   end
 
-  def product_version
-    product_info do |_info|
-      break unless Hash === _info
-      _info.each do |_product, _data|
-        if _product.downcase == product
-          break unless Hash === _data
-          return _data['Version'] || break
-        end
-      end
-    end
+  def current_product_version
+    raise catch(:error) {
+      current_product_info { |_info|
+        throw :error, 'Invalid product info' unless Hash === _info
+        _info.each do |_product, _data|
+          if _product.downcase == product
+            if Hash === _data
+              return _data['Version'] || begin
+                throw :error, "No version for product #{_product.inspect}"
+              end
+            end
 
-    raise 'Invalid product info' unless Hash === _info
+            throw :error, "Invalid info block for product #{_product.inspect}"
+          end
+        end
+      }
+      throw :error, "Product info not found for #{product.inspect}"
+    }
   end
 
-  def product_info
-    yield YAML.parse(launch(info).join).tap do |_data|
+  def current_product_info
+    yield YAML.parse(launch(info).join("\n")).tap { |_data|
       break {} unless _data
       break _data.transform
-    end
+    }
   end
 
   def info
@@ -119,6 +126,7 @@ class Application < TSC::Application
     puts ">>> T: #{tag.inspect}"
     puts ">>> I: #{info.inspect}"
     puts ">>> F: #{folder.inspect}"
+    puts ">>> V: #{current_product_version.inspect}"
   end
 
   in_generator_context do |_content|
