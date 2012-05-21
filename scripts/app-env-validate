@@ -56,8 +56,8 @@ class Application < TSC::Application
         break if _items.empty?
 
         Array(_items.each_slice(2)).transpose.tap do |_components, _separators|
+          @components = _components
           @separator = _separators.last
-          @product = _components.join.downcase
 
           throw :tag, _components.join(separator)
         end
@@ -68,8 +68,9 @@ class Application < TSC::Application
   end
 
   def product
-    @product ||= begin
-      options.product or raise 'Product not specified and not figured'
+    @product ||= options.product || begin
+      raise 'Product not specified and cannot be figured' unless @components
+      @components.join.downcase
     end
   end
 
@@ -127,6 +128,17 @@ class Application < TSC::Application
     puts ">>> I: #{info.inspect}"
     puts ">>> F: #{folder.inspect}"
     puts ">>> V: #{current_product_version.inspect}"
+
+    ENV.each do |_name, _value|
+      _name.split('_').tap do |_items|
+        _items.pop.tap do |_facility|
+          validate_facility_version(_facility.downcase) if _items == env_components
+        end
+      end
+    end
+  end
+
+  def validate_facility_version(facility)
   end
 
   in_generator_context do |_content|
