@@ -41,6 +41,12 @@ class Application < TSC::Application
       require 'yaml'
 
       raise TSC::UsageError unless ARGV.empty?
+
+      puts ">>> T: #{tag.inspect}"
+      puts ">>> I: #{info.inspect}"
+      puts ">>> F: #{folder.inspect}"
+      puts ">>> V: #{current_product_version.inspect}"
+
       perform_validation
     }
   end
@@ -71,6 +77,13 @@ class Application < TSC::Application
     @product ||= options.product || begin
       raise 'Product not specified and cannot be figured' unless @components
       @components.join.downcase
+    end
+  end
+
+  def product_env_components
+    @product_env_components ||= begin
+      raise 'Product env components cannot be figured' unless @components
+      (@components + [ 'v' ]).map(&:upcase)
     end
   end
 
@@ -124,21 +137,32 @@ class Application < TSC::Application
   end
 
   def perform_validation
-    puts ">>> T: #{tag.inspect}"
-    puts ">>> I: #{info.inspect}"
-    puts ">>> F: #{folder.inspect}"
-    puts ">>> V: #{current_product_version.inspect}"
+    ENV[product_env_components.join('_')].tap do |_main|
+      break unless _main
+      return if _main.empty? or _main == 'off'
+
+      ensure_version_match tag, current_product_version, _main
+    end
 
     ENV.each do |_name, _value|
       _name.split('_').tap do |_items|
         _items.pop.tap do |_facility|
-          validate_facility_version(_facility.downcase) if _items == env_components
+          break unless _items == product_env_components
+          validate_facility_version _facility.downcase, _value
         end
       end
     end
   end
 
-  def validate_facility_version(facility)
+  def ensure_version_match(facility, actual_version, required_version)
+    unless actual_version == required_version
+      raise "#{facility}: Version mismatch: need #{required_version}, found #{actual_version}"
+    end
+
+    puts "#{facility}: Version validated: #{actual_version}" unless options.quiet
+  end
+
+  def validate_facility_version(facility, version)
   end
 
   in_generator_context do |_content|
