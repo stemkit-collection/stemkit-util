@@ -20,6 +20,7 @@ class Application < TSC::Application
     _content << '#!/usr/bin/env ' + figure_ruby_path
     _content << '$LOAD_PATH.unshift ' + File.dirname(figure_ruby_path).inspect
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
+    _content << 'TOOL_LABEL = ' + self.class.installation_parameters[:tool_label].inspect
     _content << 'TOP = ' + File.join(self.class.installation_top, 'bin').inspect
 
     _content << IO.readlines(__FILE__).slice(1..-1)
@@ -36,6 +37,10 @@ class Application < TSC::Application
 
   private
   #######
+
+  def tool_label
+    @tool_label ||= defined?(TOOL_LABEL) ? TOOL_LABEL : 'app-env'
+  end
 
   def launch(command, *args)
     app_env_path.front(top(@folder, 'bin')).install if @folder
