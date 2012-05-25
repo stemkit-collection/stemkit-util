@@ -20,7 +20,7 @@ class Application < TSC::Application
     _content << '#!/usr/bin/env ' + figure_ruby_path
     _content << '$LOAD_PATH.unshift ' + File.dirname(figure_ruby_path).inspect
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
-    _content << 'TOOL_LABEL = ' + self.class.installation_parameters[:tool_label].inspect
+    _content << 'APP_NAME = ' + self.class.installation_parameters[:app_name].inspect
     _content << 'TOP = ' + File.join(self.class.installation_top, 'bin').inspect
 
     _content << IO.readlines(__FILE__).slice(1..-1)
@@ -31,35 +31,64 @@ class Application < TSC::Application
       require 'pathname'
 
       TSC::LD_LIBRARY_PATH.current.back(top('lib64'), top('lib')).install
-      launch *facility(script_name, *ARGV)
+      launch *figure_command_line(script_name, ARGV)
     end
   end
 
   private
   #######
 
-  def tool_label
-    @tool_label ||= defined?(TOOL_LABEL) ? TOOL_LABEL : 'app-env'
+  def app_names
+    @app_names ||= [ (APP_NAME if defined?(APP_NAME)), 'app-env' ].compact
   end
 
-  def launch(command, *args)
-    app_env_path.front(top(@folder, 'bin')).install if @folder
+  def env_name_components
+    @env_name_components ||= app_names.first.split('-').tap { |_components|
+      _components.pop if _components.first == 'env'
+      break _components.push('v').map(&:upcase)
+    }
+  end
+
+  def env_name_main
+    @env_name_main ||= env_name_components.join('-')
+  end
+
+  def env_name_prefix
+    @env_name_prefix ||= env_name_main + '_'
+  end
+
+  def folders
+    @folders ||= []
+  end
+
+  def launch(*args)
+    raise 'No command specified' if args.empty?
+
+    folders.each do |_item|
+      platform_top.join(_item).tap do |_folder|
+        raise "No #{_folder}" unless _folder.exist?
+        app_env_path.front(_folder.join('bin')).install
+      end
+    end
+
     system_path.front(top('bin')) unless system_path.entries.include?(top('bin'))
 
     system_path.front app_env_path.entries.reverse
     system_path.front TOP if defined? TOP
 
-    system_path.entries.each do |_location|
-      Dir[ File.join(_location, command) ].each do |_item|
-        next if _item == $0
-        next if defined?(TOP) and _item == File.join(TOP, script_name)
+    args.shift.tap do |_command|
+      system_path.entries.each do |_location|
+        Dir[ File.join(_location, _command) ].each do |_item|
+          next if _item == $0
+          next if defined?(TOP) and _item == File.join(TOP, script_name)
 
-        system_path.install
-        exec _item, *args
+          system_path.install
+          exec _item, *args
+        end
       end
-    end
 
-    raise "Launching target not found: #{command}"
+      raise "Launching target not found: #{_command}"
+    end
   end
 
   def exec(*args)
@@ -75,36 +104,35 @@ class Application < TSC::Application
     @system_path ||= TSC::PATH.new.load
   end
 
-  def facility(*args)
-    until args.empty?
-      break nil unless args.shift.tap do |_item|
-        case _item
-          when %r{^([^-]+)-([^-]+)$}
-            lastenv = ($2 == 'env' ? true : false)
-            @env = true if lastenv
+  def figure_command_line(name, args)
+    case name
+      when *app_names
+        scan_for_folders(args)
 
-            next if $1 == 'app' and lastenv
-            @facility = $1
+      when %r{^(.+)-env$}
+        scan_for_version($1, args)
 
-            unless lastenv
-              if @env
-                @folder = _item
-              else
-                args.unshift $2, @facility
-              end
-            end
+      else
+        [ name, *args ]
+    end
+  end
 
-          when %r{^\d+([.]\d+)+$}
-            break nil unless @facility
-            @folder = @facility + '-' + _item
-
-          else
-            return _item, *args
-        end
-      end
+  def scan_for_folders(items)
+    until items.empty?
+      break unless items.first =~ %r{^(.+)-\d+([.]\d+)+$}
+      folders << items.shift
     end
 
-    raise 'No facility specified'
+    items
+  end
+
+  def scan_for_version(facility, items)
+    until items.empty?
+      break unless items.first =~ %r{^\d+([.]\d+)+$}
+      folders << facility + '-' + items.shift
+    end
+
+    scan_for_folders(items)
   end
 
   def top(*args)
