@@ -146,14 +146,17 @@ class Application < TSC::Application
   def figure_platform_top
     return Pathname.new(PLATFORM_TOP) if defined? PLATFORM_TOP
 
-    raise 'Platform top cannot be determined: ' + begin
-      find_in_path('ruby').first.tap { |_path|
-        break 'no ruby in PATH' unless _path
-        break Pathname.new(_path).parent.parent.tap { |_top|
-          return _top if _top.parent.basename.to_s == 'platform'
-          break 'not platform bound ruby'
-        }
-      }
+    TSC::Error.wrap_with 'Platform top cannot be determined' do
+      case find_in_path('ruby').first
+        when nil
+          raise 'No ruby'
+
+        when %r{^(.+/platform/.+?)(/ruby-\d+([.]\d+)+)?/bin/ruby$}
+          return Pathname.new($1)
+
+        else
+          raise 'No platform bound ruby'
+      end
     end
   end
 end
