@@ -42,19 +42,25 @@ class Application < TSC::Application
     @app_names ||= [ (APP_NAME if defined?(APP_NAME)), 'app-env' ].compact
   end
 
-  def env_name_components
-    @env_name_components ||= app_names.first.split('-').tap { |_components|
-      _components.pop if _components.first == 'env'
-      break _components.push('v').map(&:upcase)
+  def env_name_components_list
+    @env_name_components_list ||= app_names.map { |_name|
+      _name.split('-').tap { |_components|
+        _components.pop if _components.last == 'env'
+        break _components.push('v').map(&:upcase)
+      }
     }
   end
 
-  def env_name_main
-    @env_name_main ||= env_name_components.join('-')
+  def env_name_main_list
+    @env_name_main_list ||= env_name_components_list.map { |_components|
+      _components.join('_')
+    }
   end
 
-  def env_name_prefix
-    @env_name_prefix ||= env_name_main + '_'
+  def env_name_prefix_list
+    @env_name_prefix_list ||= env_name_main_list.map { |_main|
+      _main + '_'
+    }
   end
 
   def facilities
@@ -63,6 +69,8 @@ class Application < TSC::Application
 
   def launch(*args)
     raise 'No command specified' if args.empty?
+
+    scan_env_for_versioned_facilities
 
     facilities.each do |_item|
       platform_top.join(_item).tap do |_folder|
@@ -88,6 +96,30 @@ class Application < TSC::Application
       end
 
       raise "Command not found: #{_command}"
+    end
+  end
+
+  def normalize_array(*array)
+    array.flatten.compact
+  end
+
+  def env_main_values
+    @env_main_values ||= normalize_array env_name_main_list.map { |_name|
+      ENV[_name]
+    }
+  end
+
+  def scan_env_for_versioned_facilities
+    return if env_main_values.empty?
+    return if env_main_values.any? { |_value|
+      _value == 'off'
+    }
+    ENV.to_hash.each do |_name, _value|
+      env_name_prefix_list.each do |_prefix|
+        next unless _name.index(_prefix) == 0
+        ENV.delete(_name)
+        facilities << _name.slice(_prefix.size .. -1).split('_').map(&:downcase).push(_value).join('-')
+      end
     end
   end
 
