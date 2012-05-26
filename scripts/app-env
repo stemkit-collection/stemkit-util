@@ -20,7 +20,8 @@ class Application < TSC::Application
     _content << '#!/usr/bin/env ' + figure_ruby_path
     _content << '$LOAD_PATH.unshift ' + File.dirname(figure_ruby_path).inspect
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
-    _content << 'APP_NAME = ' + self.class.installation_parameters[:app_name].inspect
+    _content << 'APP_NAME = ' + self.class.installation_parameters[:app_env_name].inspect
+    _content << 'APP_VERSION = ' + self.class.installation_parameters[:app_version].inspect
     _content << 'TOP = ' + File.join(self.class.installation_top, 'bin').inspect
 
     _content << IO.readlines(__FILE__).slice(1..-1)
@@ -31,12 +32,20 @@ class Application < TSC::Application
       require 'pathname'
 
       TSC::LD_LIBRARY_PATH.current.back(top('lib64'), top('lib')).install
-      launch *figure_command_line(script_name, ARGV)
+
+      scan_env_for_versioned_facilities
+      launch figure_command_line(script_name, ARGV)
     end
   end
 
   private
   #######
+
+  def app_version
+    @app_version ||= defined?(APP_NAME) ? APP_VERSION : begin
+      raise 'Version info not available'
+    end
+  end
 
   def app_names
     @app_names ||= [ (APP_NAME if defined?(APP_NAME)), 'app-env' ].compact
@@ -44,7 +53,7 @@ class Application < TSC::Application
 
   def env_name_components_list
     @env_name_components_list ||= app_names.map { |_name|
-      _name.split('-').tap { |_components|
+      _name.split(%r{[-_]}).tap { |_components|
         _components.pop if _components.last == 'env'
         break _components.push('v').map(&:upcase)
       }
@@ -67,20 +76,40 @@ class Application < TSC::Application
     @facilities ||= []
   end
 
-  def launch(*args)
-    raise 'No command specified' if args.empty?
+  def validate_and_setup_facilities
+    TSC::Error.persist do |_actions|
+      facilities.each do |_item|
+        platform_top.join(_item).tap do |_folder|
+          _actions.add {
+            raise "No #{_folder}" unless _folder.exist?
+            app_env_path.front(_folder.join('bin')).install
+          }
+        end
+      end
+    end
+  end
 
-    scan_env_for_versioned_facilities
+  def launch(args)
+    until args.empty? or args.first.index('--') != 0
+      case args.shift
+        when '--validate'
+          env_main_values.each do |_value|
+            next if [ '', 'on', 'off' ].include? _value
+            next if app_version == _value
 
-    facilities.each do |_item|
-      platform_top.join(_item).tap do |_folder|
-        raise "No #{_folder}" unless _folder.exist?
-        app_env_path.front(_folder.join('bin')).install
+            raise "Version mismatch: #{app_version} instead of required #{_value}"
+          end
+
+        when '--report'
+          puts "#{script_name}: Current version: #{app_version}"
       end
     end
 
-    system_path.front(top('bin')) unless system_path.entries.include?(top('bin'))
+    raise 'No command specified' if args.empty?
 
+    validate_and_setup_facilities
+
+    system_path.front top('bin') unless system_path.entries.include? top('bin')
     system_path.front app_env_path.entries.reverse
     system_path.front TOP if defined? TOP
 
@@ -110,9 +139,8 @@ class Application < TSC::Application
   end
 
   def scan_env_for_versioned_facilities
-    return if env_main_values.empty?
-    return if env_main_values.any? { |_value|
-      _value == 'off'
+    return if env_main_values.empty? or env_main_values.any? { |_value|
+      [ '', 'off' ].include? _value
     }
     ENV.to_hash.each do |_name, _value|
       env_name_prefix_list.each do |_prefix|
