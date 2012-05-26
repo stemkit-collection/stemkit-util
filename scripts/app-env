@@ -57,14 +57,14 @@ class Application < TSC::Application
     @env_name_prefix ||= env_name_main + '_'
   end
 
-  def folders
-    @folders ||= []
+  def facilities
+    @facilities ||= []
   end
 
   def launch(*args)
     raise 'No command specified' if args.empty?
 
-    folders.each do |_item|
+    facilities.each do |_item|
       platform_top.join(_item).tap do |_folder|
         raise "No #{_folder}" unless _folder.exist?
         app_env_path.front(_folder.join('bin')).install
@@ -107,7 +107,7 @@ class Application < TSC::Application
   def figure_command_line(name, args)
     case name
       when *app_names
-        scan_for_folders(args)
+        scan_for_versioned_facilities(args)
 
       when %r{^(.+)-env$}
         scan_for_version($1, args)
@@ -117,10 +117,10 @@ class Application < TSC::Application
     end
   end
 
-  def scan_for_folders(items)
+  def scan_for_versioned_facilities(items)
     until items.empty?
       break unless items.first =~ %r{^(.+)-\d+([.]\d+)+$}
-      folders << items.shift
+      facilities << items.shift
     end
 
     items
@@ -129,10 +129,10 @@ class Application < TSC::Application
   def scan_for_version(facility, items)
     until items.empty?
       break unless items.first =~ %r{^\d+([.]\d+)+$}
-      folders << facility + '-' + items.shift
+      facilities << facility + '-' + items.shift
     end
 
-    scan_for_folders(items)
+    scan_for_versioned_facilities(items)
   end
 
   def top(*args)
