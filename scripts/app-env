@@ -22,7 +22,6 @@ class Application < TSC::Application
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
     _content << 'APP_NAME = ' + self.class.installation_parameters[:app_env_name].inspect
     _content << 'APP_VERSION = ' + self.class.installation_parameters[:app_version].inspect
-    _content << 'TOP = ' + File.join(self.class.installation_top, 'bin').inspect
 
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
@@ -31,10 +30,8 @@ class Application < TSC::Application
     handle_errors do
       require 'pathname'
 
-      TSC::LD_LIBRARY_PATH.current.back(top('lib64'), top('lib')).install
-
       scan_env_for_versioned_facilities
-      launch figure_command_line(script_name, ARGV)
+      process_command_line figure_command_line(script_name, ARGV)
     end
   end
 
@@ -79,17 +76,17 @@ class Application < TSC::Application
   def validate_and_setup_facilities
     TSC::Error.persist do |_actions|
       facilities.each do |_item|
-        platform_top.join(_item).tap do |_folder|
+        platform_top(_item).tap do |_folder|
           _actions.add {
             raise "No #{_folder}" unless _folder.exist?
-            app_env_path.front(_folder.join('bin')).install
+            app_env_path.front _folder
           }
         end
       end
     end
   end
 
-  def launch(args)
+  def process_command_line(args)
     until args.empty? or args.first.index('--') != 0
       case args.shift
         when '--validate'
@@ -105,27 +102,37 @@ class Application < TSC::Application
       end
     end
 
-    raise 'No command specified' if args.empty?
-
     validate_and_setup_facilities
 
-    system_path.front top('bin') unless system_path.entries.include? top('bin')
-    system_path.front app_env_path.entries.reverse
-    system_path.front TOP if defined? TOP
+    system_lib_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
+      [ _entry.join('lib'), _entry.join('lib64') ]
+    }
+    system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
+      _entry.join('bin')
+    }
+    system_path.front script_real_location
 
-    args.shift.tap do |_command|
-      system_path.entries.each do |_location|
-        Dir[ File.join(_location, _command) ].each do |_item|
-          next if _item == $0
-          next if defined?(TOP) and _item == File.join(TOP, script_name)
+    launch *args unless args.empty?
+    raise 'No command specified'
+  end
 
-          system_path.install
-          exec _item, *args
-        end
-      end
+  def launch(command, *args)
+    system_path.find_all(command).each do |_item|
+      next if _item == $0
+      next if _item == myself
 
-      raise "Command not found: #{_command}"
+      app_env_path.install
+      system_lib_path.install
+      system_path.install
+
+      exec _item, *args
     end
+
+    raise "Command not found: #{command}"
+  end
+
+  def myself
+    @myself ||= script_real_location.join(script_name).to_s
   end
 
   def normalize_array(*array)
@@ -164,6 +171,10 @@ class Application < TSC::Application
     @system_path ||= TSC::PATH.new.load
   end
 
+  def system_lib_path
+    @system_lib_path ||= TSC::Path['LD_LIBRARY_PATH:SHLIB_PATH:LIBPATH'].load
+  end
+
   def figure_command_line(name, args)
     case name
       when *app_names
@@ -195,12 +206,8 @@ class Application < TSC::Application
     scan_for_versioned_facilities(items)
   end
 
-  def top(*args)
-    platform_top.join(*args.flatten.compact).to_s
-  end
-
-  def platform_top
-    @platform_top ||= figure_platform_top
+  def platform_top(*args)
+    (@platform_top ||= figure_platform_top).join *args
   end
 
   def figure_platform_top
