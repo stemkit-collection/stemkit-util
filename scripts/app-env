@@ -190,7 +190,7 @@ class Application < TSC::Application
 
   def scan_for_versioned_facilities(items)
     until items.empty?
-      break unless items.first =~ %r{^(.+)-\d+([.]\d+)+$}
+      break unless items.first =~ %r{^(.+)-\d+([.]\d+)+[a-zA-Z]?$}
       facilities << items.shift
     end
 
@@ -199,7 +199,7 @@ class Application < TSC::Application
 
   def scan_for_version(facility, items)
     until items.empty?
-      break unless items.first =~ %r{^\d+([.]\d+)+$}
+      break unless items.first =~ %r{^\d+([.]\d+)+[a-zA-Z]?$}
       facilities << facility + '-' + items.shift
     end
 
