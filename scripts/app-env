@@ -149,6 +149,10 @@ class Application < TSC::Application
     return if env_main_values.empty? or env_main_values.any? { |_value|
       [ '', 'off' ].include? _value
     }
+    env_name_main_list.each do |_name|
+      ENV[_name] &&= 'off'
+    end
+
     ENV.to_hash.each do |_name, _value|
       env_name_prefix_list.each do |_prefix|
         next unless _name.index(_prefix) == 0
