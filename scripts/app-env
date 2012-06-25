@@ -98,11 +98,13 @@ class Application < TSC::Application
           end
 
         when '--report'
-          puts "#{script_name}: Current version: #{app_version}"
+          puts "#{script_real_name}: Current version: #{app_version}"
+          @info = true
       end
     end
 
     validate_and_setup_facilities
+    print_info script_real_location.parent, app_env_path.entries
 
     system_lib_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
       [ _entry.join('lib'), _entry.join('lib64') ]
@@ -129,6 +131,13 @@ class Application < TSC::Application
     end
 
     raise "Command not found: #{command}"
+  end
+
+  def print_info(*args)
+    return unless @info
+    args.flatten.compact.each do |_item|
+      puts "INFO: #{_item}"
+    end
   end
 
   def myself
