@@ -6,7 +6,7 @@
 # This is free software. See 'LICENSE' for details.
 # You must read and accept the license prior to use.
 
-$:.concat ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
+$:.concat ENV.to_hash['PATH'].to_s.split(File::PATH_SEPARATOR)
 require 'sk/cli/tuning-launcher.rb'
 
 # This is a Subversion front-end that transforms its arguments as follows:
