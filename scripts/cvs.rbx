@@ -98,9 +98,14 @@ class Application < SK::Cli::TuningLauncher
         configure_neat_update
         'update'
 
+      when '-I'
+        ENV['CVSIGNORE'] = '!'
+        ''
+
       when '-A'
         @optional_top = Dir.pwd
         ''
+
       when '--top'
         @optional_top_detected = true
         ''
