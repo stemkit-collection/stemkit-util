@@ -83,6 +83,8 @@ figure_command_credentials()
       COMMAND=git_command
       MARKER=.git
       INIT=chdir_into
+
+      : ${FOLDERS:=.}
     ;;
     cvs-*)
       COMMAND=cvs_command
