@@ -50,10 +50,14 @@ main()
 
   shift `expr "${OPTIND}" - 1`
 
-  trace_and_run find ${FOLDERS:-.} -type d ${CONSTRAIN} -exec sh ${DEBUG:+'-x'} -c 'test -d $0/.svn' {} \; -prune -print | while read top; do
-    trace_and_run ruby -S svn.rbx "${@:-status}" "${top}"
-  done
+  CONSTRAIN="-type d ${CONSTRAIN}"
+  SH="sh ${DEBUG:+'-x'}"
 
+  trace_and_run find ${FOLDERS:-'.'} ${CONSTRAIN} -exec ${SH} -c 'test -d $0/.svn' {} \; -prune -print | {
+    while read top; do
+      trace_and_run ruby -S svn.rbx "${@:-status}" "${top}" 0<&5
+    done
+  }
   return 0
 }
 
@@ -294,7 +298,7 @@ fi
 progpath=`figure_full_program_path "${0}"`
 progname=`basename "${progpath}"`
 
-exec 3>&1 4>&2
+exec 3>&1 4>&2 5<&0
 
 main "${@}"
 exit "${?}"
