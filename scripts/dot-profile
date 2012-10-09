@@ -155,6 +155,10 @@ act_as_rc()
       cd "${@}" && __dir__
     }
 
+    dirtree() {
+      ls -R "${@}" | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/ /' -e 's/-/|/'
+    }
+
     ptweak() {
       [ "${#}" -eq 2 ] || {
         echo "USAGE: ptweak <product> <new version>"

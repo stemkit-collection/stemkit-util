@@ -60,7 +60,12 @@ main()
 
   trace_and_run find ${FOLDERS:-'.'} ${CONSTRAIN} -exec ${SH} -c 'test -d $0/'"${MARKER}" {} \; -prune -print | {
     while read top; do
-      ( "${INIT}" "${top}" && "${COMMAND}" "${top}" "${@}" 0<&5 ) || break
+      (
+        "${INIT}" "${top}" && {
+          [ "${FOLDERS:+set}" = set ] && echo "### ${top}" 1>&2
+          "${COMMAND}" "${top}" "${@}" 0<&5
+        }
+      ) || break
     done
   }
   return 0
@@ -103,15 +108,7 @@ svn_command()
 
 chdir_into()
 {
-  top="${1}"
-  shift
-
-  trace_and_run cd "${top}" && {
-    # Presenting the folder in [] to prevent accidental removal when the
-    # soutput is passed to 'xargs rm -rf'
-    #
-    [ "${FOLDERS:+set}" != set ] || echo "### [${top}]"
-  }
+  trace_and_run cd "${1}"
 }
 
 git_command()
