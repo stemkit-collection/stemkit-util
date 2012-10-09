@@ -20,6 +20,28 @@ main()
   trap "cleanup_and_exit 5" HUP INT QUIT TERM
   trap "cleanup" EXIT
 
+  case "${progname}" in
+    svn-*)
+      COMMAND=svn_command
+      MARKER=.svn
+      INIT=true
+    ;;
+    git-*)
+      COMMAND=git_command
+      MARKER=.git
+      INIT=chdir_into
+    ;;
+    cvs-*)
+      COMMAND=cvs_command
+      MARKER=CVS
+      INIT=chdir_into
+    ;;
+    *)
+      print_error 'Unsupported invocation'
+      exit 3
+    ;;
+  esac
+
   unset OPTION ARGUMENT FOLDERS
   OPTERR=0
 
@@ -53,12 +75,49 @@ main()
   CONSTRAIN="-type d ${CONSTRAIN}"
   SH="sh ${DEBUG:+'-x'}"
 
-  trace_and_run find ${FOLDERS:-'.'} ${CONSTRAIN} -exec ${SH} -c 'test -d $0/.svn' {} \; -prune -print | {
+  trace_and_run find ${FOLDERS:-'.'} ${CONSTRAIN} -exec ${SH} -c 'test -d $0/'"${MARKER}" {} \; -prune -print | {
     while read top; do
-      trace_and_run ruby -S svn.rbx "${@:-status}" "${top}" 0<&5
+      ( "${INIT}" "${top}" && "${COMMAND}" "${top}" "${@}" 0<&5 ) || break
     done
   }
   return 0
+}
+
+svn_command()
+{
+  top="${1}"
+  shift
+
+  trace_and_run ruby -S svn.rbx "${@:-status}" "${top}"
+}
+
+chdir_into()
+{
+  top="${1}"
+  shift
+
+  trace_and_run cd "${top}" && {
+    # Presenting the folder in [] to prevent accidental removal when the
+    # soutput is passed to 'xargs rm -rf'
+    #
+    echo "### [${top}]"
+  }
+}
+
+git_command()
+{
+  top="${1}"
+  shift
+
+  trace_and_run git ${@:-status -s}
+}
+
+cvs_command()
+{
+  top="${1}"
+  shift
+
+  trace_and_run ruby -S cvs.rbx --top "${top}" "${@:-status}"
 }
 
 :<<:
