@@ -20,12 +20,12 @@ main()
   trap "cleanup_and_exit 5" HUP INT QUIT TERM
   trap "cleanup" EXIT
 
-  unset OPTION ARGUMENT FOLDERS
+  unset OPTION ARGUMENT FOLDERS FORCE
   OPTERR=0
 
   CONSTRAIN='-name src -prune'
 
-  while getopts ":hvsad:" option; do
+  while getopts ":hvsafd:" option; do
     case "${option}" in
       v)
         [ "${TRACE}" = yes ] && {
@@ -41,6 +41,9 @@ main()
       ;;
       a)
         unset CONSTRAIN
+      ;;
+      f)
+        FORCE=yes
       ;;
       d)
         FOLDERS="${FOLDERS:+${FOLDERS} }${OPTARG}"
@@ -65,10 +68,11 @@ main()
           [ "${FOLDERS:+set}" = set ] && echo "### ${top}" 1>&2
           "${COMMAND}" "${top}" "${@}" 0<&5
         }
-      ) || break
+      ) || {
+        [ "${FORCE}" = 'yes' ] || exit 3
+      }
     done
   }
-  return 0
 }
 
 figure_command_credentials()
