@@ -8,7 +8,7 @@
 #
 # Author: Gennady Bystritsky
 
-TRACE=no
+unset TRACE DEBUG
 
 print_usage()
 {
@@ -23,13 +23,21 @@ main()
   unset OPTION ARGUMENT FOLDERS
   OPTERR=0
 
-  while getopts ":hvd:" option; do
+  CONSTRAIN='-name src -prune'
+
+  while getopts ":hvad:" option; do
     case "${option}" in
       v)
+        [ "${TRACE}" = yes ] && {
+          DEBUG=yes
+        }
         TRACE=yes
       ;;
       h)
         print_usage_and_exit 0
+      ;;
+      a)
+        unset CONSTRAIN
       ;;
       d)
         FOLDERS="${FOLDERS:+${FOLDERS} }${OPTARG}"
@@ -42,8 +50,8 @@ main()
 
   shift `expr "${OPTIND}" - 1`
 
-  for top in `find ${FOLDERS:-.} -name src -prune -exec sh -c 'test -d $0/.svn' {} \; -print`; do
-   trace_and_run ruby -S svn.rbx "${@:-status}" "${top}"
+  trace_and_run find ${FOLDERS:-.} -type d ${CONSTRAIN} -exec sh ${DEBUG:+'-x'} -c 'test -d $0/.svn' {} \; -prune -print | while read top; do
+    trace_and_run ruby -S svn.rbx "${@:-status}" "${top}"
   done
 
   return 0
