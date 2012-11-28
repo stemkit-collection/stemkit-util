@@ -71,6 +71,7 @@ command -nargs=* MLocal execute "make -C %:h ITEMS=%:t:r DOALL=true <args> local
 command -nargs=* MUnit execute "make -C %:h/unit-tests ITEMS=%:t:r DOALL=true <args> local-test"
 command -nargs=* MSpecs execute "make -C %:h/unit-tests ITEMS=%:t:r DOALL=true <args> local-spec"
 command -nargs=* MDocs execute "make <args> docs install-docs"
+command -nargs=* MRedocs execute "make <args> redocs install-docs"
 
 "set shellpipe=2>&1\|sed\ \'s/:\ warning:/\ [WARNING]/g\'\|tee
 
