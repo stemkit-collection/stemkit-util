@@ -5,8 +5,8 @@
 Stemkit Ruby API
 ================
 
-This document present the inforamtion on ruby API that is
-part of STEMKIT packate.
+This document presents the inforamtion on ruby API that is
+part of STEMKIT package.
 
 Overview
 --------
