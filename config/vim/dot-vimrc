@@ -9,7 +9,7 @@
 :  set t_Sb=[4%dm
 :endif
 
-set nocompatible autowrite background=dark nowrap nohls
+set nocompatible autowrite background=dark nowrap hls
 set showmode showmatch autoindent nowrapscan
 set nobackup nowritebackup
 
@@ -70,9 +70,8 @@ command -nargs=* RSpec execute "!ruby -rubygems -I${PATH} -S spec --require sk/s
 command -nargs=* MLocal execute "make -C %:h ITEMS=%:t:r DOALL=true <args> local-test"
 command -nargs=* MUnit execute "make -C %:h/unit-tests ITEMS=%:t:r DOALL=true <args> local-test"
 command -nargs=* MSpecs execute "make -C %:h/unit-tests ITEMS=%:t:r DOALL=true <args> local-spec"
-command -nargs=* MDocs execute "make <args> docs install-docs"
-command -nargs=* CDocs execute "make <args> clean-docs"
-command -nargs=* MRedocs execute "make <args> redocs install-docs"
+command -nargs=* MDocs execute "make <args> local-docs local-install-docs"
+command -nargs=* CDocs execute "make <args> local-clean-docs"
 
 "set shellpipe=2>&1\|sed\ \'s/:\ warning:/\ [WARNING]/g\'\|tee
 
