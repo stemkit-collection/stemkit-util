@@ -191,10 +191,10 @@ class Application < TSC::Application
   def figure_command_line(name, args)
     case name
       when *app_names
-        scan_for_versioned_facilities(args)
+        scan_for_versioned_facilities scan_for_version(name, args)
 
       when %r{^(.+)-env$}
-        scan_for_version($1, args)
+        scan_for_versioned_facilities scan_for_version($1, args)
 
       else
         [ name, *args ]
@@ -216,7 +216,7 @@ class Application < TSC::Application
       facilities << facility + '-' + items.shift
     end
 
-    scan_for_versioned_facilities(items)
+    items
   end
 
   def platform_top(*args)
