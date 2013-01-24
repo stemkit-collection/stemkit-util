@@ -20,7 +20,7 @@ class Application < TSC::Application
     _content << '#!/usr/bin/env ' + figure_ruby_path
     _content << '$LOAD_PATH.unshift ' + File.dirname(figure_ruby_path).inspect
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
-    _content << 'APP_NAME = ' + self.class.installation_parameters[:app_env_name].inspect
+    _content << 'APP_BASE = ' + self.class.installation_parameters[:app_env_base].inspect
     _content << 'APP_VERSION = ' + self.class.installation_parameters[:app_version].inspect
 
     _content << IO.readlines(__FILE__).slice(1..-1)
@@ -30,7 +30,6 @@ class Application < TSC::Application
     handle_errors do
       require 'pathname'
 
-      scan_env_for_versioned_facilities
       process_command_line figure_command_line(script_name, ARGV)
     end
   end
@@ -39,34 +38,13 @@ class Application < TSC::Application
   #######
 
   def app_version
-    @app_version ||= defined?(APP_NAME) ? APP_VERSION : begin
+    @app_version ||= defined?(APP_VERSION) ? APP_VERSION : begin
       raise 'Version info not available'
     end
   end
 
-  def app_names
-    @app_names ||= [ (APP_NAME if defined?(APP_NAME)), 'app-env' ].compact
-  end
-
-  def env_name_components_list
-    @env_name_components_list ||= app_names.map { |_name|
-      _name.split(%r{[-_]}).tap { |_components|
-        _components.pop if _components.last == 'env'
-        break _components.push('v').map(&:upcase)
-      }
-    }
-  end
-
-  def env_name_main_list
-    @env_name_main_list ||= env_name_components_list.map { |_components|
-      _components.join('_')
-    }
-  end
-
-  def env_name_prefix_list
-    @env_name_prefix_list ||= env_name_main_list.map { |_main|
-      _main + '_'
-    }
+  def app_base
+    @app_base ||= defined?(APP_BASE) ? APP_BASE : 'app'
   end
 
   def facilities
@@ -75,8 +53,10 @@ class Application < TSC::Application
 
   def validate_and_setup_facilities
     TSC::Error.persist do |_actions|
-      facilities.each do |_item|
-        platform_top(_item).tap do |_folder|
+      facilities.each do |_item, _version|
+        next if _item == app_base
+
+        platform_top([ _item, _version ].join('-')).tap do |_folder|
           _actions.add {
             raise "No #{_folder}" unless _folder.exist?
             app_env_path.front _folder
@@ -86,12 +66,20 @@ class Application < TSC::Application
     end
   end
 
+  def app_env_base
+    @app_env_base ||= app_base.split(%r{[_-]}).push('v').map(&:upcase).join('_')
+  end
+
+  def app_env_name(*items)
+    app_env_base
+  end
+
   def process_command_line(args)
     until args.empty? or args.first.index('--') != 0
       case args.shift
         when '--validate'
-          env_main_values.each do |_value|
-            next if [ '', 'on', 'off' ].include? _value
+          ENV[app_env_base].tap do |_value|
+            next if [ '', 'on', 'off' ].include? _value.to_s
             next if app_version == _value
 
             raise "Version mismatch: #{app_version} instead of required #{_value}"
@@ -148,29 +136,6 @@ class Application < TSC::Application
     array.flatten.compact
   end
 
-  def env_main_values
-    @env_main_values ||= normalize_array env_name_main_list.map { |_name|
-      ENV[_name]
-    }
-  end
-
-  def scan_env_for_versioned_facilities
-    return if env_main_values.empty? or env_main_values.any? { |_value|
-      [ '', 'off' ].include? _value
-    }
-    env_name_main_list.each do |_name|
-      ENV[_name] &&= 'off'
-    end
-
-    ENV.to_hash.each do |_name, _value|
-      env_name_prefix_list.each do |_prefix|
-        next unless _name.index(_prefix) == 0
-        ENV.delete(_name)
-        facilities << _name.slice(_prefix.size .. -1).split('_').map(&:downcase).push(_value).join('-')
-      end
-    end
-  end
-
   def exec(*args)
     puts "### #{args.join(' ')}" if verbose?
     Kernel.exec *args
@@ -190,9 +155,6 @@ class Application < TSC::Application
 
   def figure_command_line(name, args)
     case name
-      when *app_names
-        scan_for_versioned_facilities scan_for_version(name, args)
-
       when %r{^(.+)-env$}
         scan_for_versioned_facilities scan_for_version($1, args)
 
@@ -203,8 +165,10 @@ class Application < TSC::Application
 
   def scan_for_versioned_facilities(items)
     until items.empty?
-      break unless items.first =~ %r{^(.+)-\d+([.]\d+)+.?$}
-      facilities << items.shift
+      break unless items.first =~ %r{^(.+)-(.+)$}
+      break unless scan_for_version($1, [ $2 ]).empty?
+
+      items.shift
     end
 
     items
@@ -213,7 +177,7 @@ class Application < TSC::Application
   def scan_for_version(facility, items)
     until items.empty?
       break unless items.first =~ %r{^\d+([.]\d+)+.?$}
-      facilities << facility + '-' + items.shift
+      facilities << [ facility, items.shift ]
     end
 
     items
