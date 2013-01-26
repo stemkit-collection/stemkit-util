@@ -12,15 +12,15 @@
 
 $:.concat ENV.to_hash['PATH'].to_s.split(File::PATH_SEPARATOR)
 
-require 'tsc/application.rb'
-require 'tsc/path.rb'
+require 'tsc/application'
 
 class Application < TSC::Application
   in_generator_context do |_content|
-    _content << '#!/usr/bin/env ' + figure_ruby_path
+    _content << '#!' + figure_ruby_path
     _content << '$LOAD_PATH.unshift ' + File.dirname(figure_ruby_path).inspect
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
-    _content << 'APP_BASE = ' + self.class.installation_parameters[:app_env_base].inspect
+    _content << 'APP_TOP = ' + self.class.installation_top.inspect
+    _content << 'APP_BASE = ' + self.class.installation_parameters[:app_base].inspect
     _content << 'APP_VERSION = ' + self.class.installation_parameters[:app_version].inspect
 
     _content << IO.readlines(__FILE__).slice(1..-1)
@@ -29,6 +29,7 @@ class Application < TSC::Application
   def start
     handle_errors do
       require 'pathname'
+      require 'tsc/path'
 
       process_command_line figure_command_line(script_name, ARGV)
     end
@@ -37,10 +38,70 @@ class Application < TSC::Application
   private
   #######
 
-  def app_version
-    @app_version ||= defined?(APP_VERSION) ? APP_VERSION : begin
-      raise 'Version info not available'
+  class Env
+    def initialize(base)
+      @base = normalize(base)
+      @names = {}
     end
+
+    def main
+      @main ||= name(nil)
+    end
+
+    def build
+      @build ||= join @base, 'B'
+    end
+
+    def unless_build
+      ENV[build].tap do |_build|
+        next if _build
+        yield
+
+        ENV[build] = 'off'
+      end
+    end
+
+    def name(facility)
+      @names[facility] ||= join @base, 'V', normalize(facility)
+    end
+
+    def with_value_for(facility)
+      name(facility).tap do |_name|
+        ENV[_name].tap do |_value|
+          next if [ nil, 'off', '' ].include? _value
+          yield _value
+
+          ENV[_name] = 'off'
+        end
+      end
+    end
+
+    private
+    #######
+
+    def normalize(item)
+      return [] unless item
+
+      item.to_s.split(%r{_-}).map(&:strip).map { |_item|
+        _item.upcase unless _item.empty?
+      }
+    end
+
+    def join(*args)
+      args.flatten.compact.join('_')
+    end
+  end
+
+  def env
+    @env ||= Env.new app_base
+  end
+
+  def app_top
+    ( @app_top ||= [ defined?(APP_TOP) ? Pathname.new(APP_TOP) : nil ] ).first
+  end
+
+  def app_version
+    @app_version ||= defined?(APP_VERSION) ? APP_VERSION : 'not defined'
   end
 
   def app_base
@@ -48,14 +109,12 @@ class Application < TSC::Application
   end
 
   def facilities
-    @facilities ||= []
+    @facilities ||= {}
   end
 
   def validate_and_setup_facilities
     TSC::Error.persist do |_actions|
       facilities.each do |_item, _version|
-        next if _item == app_base
-
         platform_top([ _item, _version ].join('-')).tap do |_folder|
           _actions.add {
             raise "No #{_folder}" unless _folder.exist?
@@ -66,20 +125,51 @@ class Application < TSC::Application
     end
   end
 
-  def app_env_base
-    @app_env_base ||= app_base.split(%r{[_-]}).push('v').map(&:upcase).join('_')
+  def request_app_version(version)
+    @requested_app_version ||= version
   end
 
-  def app_env_name(*items)
-    app_env_base
+  def request_facility_version(facility, version)
+    if facility == app_base
+      request_app_version version
+    else
+      facilities[facility] ||= version
+    end
+  end
+
+  def update_from_environment(facility)
+    env.with_value_for facility do |_version|
+      request_facility_version facility, _version
+    end
+  end
+
+  def update_from_config
+    config.fetch 'version' do |_version|
+      request_app_version _version
+    end
+
+    env.unless_build do
+      config.properties('apps').each do |_app, _version|
+        request_facility_version _app, _version
+      end
+    end
+  end
+
+  def config
+    @config ||= begin
+      require 'sk/yaml-config'
+      require 'sk/config/uproot-locator'
+
+      SK::YamlConfig[SK::Config::UprootLocator["config/#{app_base}.yaml"]].data
+    end
   end
 
   def process_command_line(args)
     until args.empty? or args.first.index('--') != 0
-      case args.shift
+      case args.first
         when '--validate'
-          ENV[app_env_base].tap do |_value|
-            next if [ '', 'on', 'off' ].include? _value.to_s
+          ENV[env.main].tap do |_value|
+            next if [ nil, '', 'on', 'off' ].include? _value
             next if app_version == _value
 
             raise "Version mismatch: #{app_version} instead of required #{_value}"
@@ -88,25 +178,40 @@ class Application < TSC::Application
         when '--report'
           puts "#{script_real_name}: Current version: #{app_version}"
           @info = true
+
+        else
+          raise "Unsuported option: #{args.first}"
       end
+
+      args.shift
     end
 
-    validate_and_setup_facilities
-    print_info script_real_location.parent, app_env_path.entries
+    raise 'No command specified' if args.empty?
 
-    system_lib_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
-      [ _entry.join('lib'), _entry.join('lib64') ]
-    }
-    system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
-      _entry.join('bin')
-    }
-    system_path.front script_real_location
+    env.with_value_for nil do |_version|
+      request_app_version _version
+    end
 
-    launch *args unless args.empty?
-    raise 'No command specified'
+    launch *args do |_command, _args|
+      update_from_environment _command
+      update_from_config
+
+      validate_and_setup_facilities
+      print_info script_real_location.parent, app_env_path.entries
+
+      system_lib_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
+        [ _entry.join('lib'), _entry.join('lib64') ]
+      }
+      system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
+        _entry.join('bin')
+      }
+      system_path.front script_real_location
+    end
   end
 
   def launch(command, *args)
+    yield command, args
+
     system_path.find_all(command).each do |_item|
       next if _item == $0
       next if _item == myself
@@ -177,7 +282,7 @@ class Application < TSC::Application
   def scan_for_version(facility, items)
     until items.empty?
       break unless items.first =~ %r{^\d+([.]\d+)+.?$}
-      facilities << [ facility, items.shift ]
+      request_facility_version facility, items.shift
     end
 
     items
