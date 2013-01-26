@@ -85,11 +85,15 @@ module SK
       def fetch(path, fallback = self)
         begin
           locate(path, false) { |_key, _data|
-            return _data.to_hash.fetch(_key)
+            return _data.to_hash.fetch(_key).tap { |_value|
+              yield _value if block_given?
+            }
           }
         rescue
-          raise MissingPathError, path if fallback.object_id == self.object_id
-          fallback
+          unless block_given?
+            raise MissingPathError, path if fallback.object_id == self.object_id
+            fallback
+          end
         end
       end
 
