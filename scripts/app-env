@@ -19,7 +19,7 @@ class Application < TSC::Application
     _content << '#!' + figure_ruby_path
     _content << '$LOAD_PATH.unshift ' + File.dirname(figure_ruby_path).inspect
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
-    _content << 'APP_TOP = ' + self.class.installation_top.inspect
+    _content << 'APP_TOP = ' + File.dirname(self.class.installation_top).inspect
     _content << 'APP_BASE = ' + self.class.installation_parameters[:app_base].inspect
     _content << 'APP_VERSION = ' + self.class.installation_parameters[:app_version].inspect
 
