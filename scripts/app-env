@@ -82,7 +82,7 @@ class Application < TSC::Application
     def normalize(item)
       return [] unless item
 
-      item.to_s.split(%r{_-}).map(&:strip).map { |_item|
+      item.to_s.split(%r{[_-]}).map(&:strip).map { |_item|
         _item.upcase unless _item.empty?
       }
     end
