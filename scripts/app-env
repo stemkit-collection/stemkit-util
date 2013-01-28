@@ -96,8 +96,17 @@ class Application < TSC::Application
     @env ||= Env.new app_base
   end
 
-  def app_top
-    ( @app_top ||= [ defined?(APP_TOP) ? Pathname.new(APP_TOP) : nil ] ).first
+  def app_bin
+    @app_bin ||= script_real_location.tap do
+      next unless defined? APP_TOP
+      next unless @requested_app_version
+
+      break ensure_folder_exists(make_folder(APP_TOP, app_base, @requested_app_version).join('bin'))
+    end
+  end
+
+  def make_folder(top, *components)
+    Pathname.new(top).join components.join('-')
   end
 
   def app_version
@@ -112,13 +121,20 @@ class Application < TSC::Application
     @facilities ||= {}
   end
 
+  def ensure_folder_exists(folder)
+    raise "No #{folder}" unless folder.exist?
+    folder
+  end
+
   def validate_and_setup_facilities
     TSC::Error.persist do |_actions|
+      _actions.add {
+        app_bin
+      }
       facilities.each do |_item, _version|
         platform_top([ _item, _version ].join('-')).tap do |_folder|
           _actions.add {
-            raise "No #{_folder}" unless _folder.exist?
-            app_env_path.front _folder
+            app_env_path.front ensure_folder_exists(_folder)
           }
         end
       end
@@ -202,10 +218,11 @@ class Application < TSC::Application
       system_lib_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         [ _entry.join('lib'), _entry.join('lib64') ]
       }
-      system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
+      system_path.front app_bin
+      system_path.front(platform_top, app_env_path.entries) { |_entry|
         _entry.join('bin')
       }
-      system_path.front script_real_location
+      system_path.front app_bin.join('hooks')
     end
   end
 
@@ -214,7 +231,8 @@ class Application < TSC::Application
 
     system_path.find_all(command).each do |_item|
       next if _item == $0
-      next if _item == myself
+      next if _item == script_real_location.join(script_name).to_s
+      next if _item == app_bin.join(script_name).to_s
 
       app_env_path.install
       system_lib_path.install
