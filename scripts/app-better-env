@@ -1,0 +1,353 @@
+#!/usr/bin/env ruby
+=begin
+  vim: sw=2:
+  Copyright (c) 2012, Gennady Bystritsky <bystr@mac.com>
+
+  Distributed under the MIT Licence.
+  This is free software. See 'LICENSE' for details.
+  You must read and accept the license prior to use.
+
+  Author: Gennady Bystritsky
+=end
+
+$:.concat ENV.to_hash['PATH'].to_s.split(File::PATH_SEPARATOR)
+
+require 'tsc/application'
+
+class Application < TSC::Application
+  in_generator_context do |_content|
+    _content << '#!' + figure_ruby_path
+    _content << '$LOAD_PATH.unshift ' + File.dirname(figure_ruby_path).inspect
+    _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
+    _content << 'APP_TOP = ' + self.class.installation_top.inspect
+    _content << 'APP_BASE = ' + self.class.installation_parameters[:app_base].inspect
+    _content << 'APP_VERSION = ' + self.class.installation_parameters[:app_version].inspect
+
+    _content << IO.readlines(__FILE__).slice(1..-1)
+  end
+
+  def start
+    handle_errors do
+      require 'pathname'
+      require 'tsc/path'
+
+      process_command_line figure_command_line(script_name, ARGV)
+    end
+  end
+
+  private
+  #######
+
+  class Env
+    def initialize(base)
+      @base = normalize(base)
+      @names = {}
+    end
+
+    def main
+      @main ||= name(nil)
+    end
+
+    def build
+      @build ||= join @base, 'B'
+    end
+
+    def unless_build
+      ENV[build].tap do |_build|
+        next if _build
+        yield
+
+        ENV[build] = 'off'
+      end
+    end
+
+    def name(facility)
+      @names[facility] ||= join @base, 'V', normalize(facility)
+    end
+
+    def with_value_for(facility)
+      name(facility).tap do |_name|
+        ENV[_name].tap do |_value|
+          next if [ nil, 'off', '' ].include? _value
+          yield _value
+
+          ENV[_name] = 'off'
+        end
+      end
+    end
+
+    private
+    #######
+
+    def normalize(item)
+      return [] unless item
+
+      item.to_s.split(%r{[_-]}).map(&:strip).map { |_item|
+        _item.upcase unless _item.empty?
+      }
+    end
+
+    def join(*args)
+      args.flatten.compact.join('_')
+    end
+  end
+
+  def env
+    @env ||= Env.new app_base
+  end
+
+  def app_top
+    @app_top ||= begin
+      if defined? APP_TOP
+        Pathname.new(APP_TOP)
+      else
+        script_real_location.parent
+      end
+    end
+  end
+
+  def app_bin
+    @app_bin ||= begin
+      if @requested_app_version
+        ensure_folder_exists app_top.join(@requested_app_version, 'bin')
+      else
+        script_real_location
+      end
+    end
+  end
+
+  def make_folder(top, *components)
+    Pathname.new(top).join components.join('-')
+  end
+
+  def app_version
+    @app_version ||= defined?(APP_VERSION) ? APP_VERSION : 'not defined'
+  end
+
+  def app_base
+    @app_base ||= defined?(APP_BASE) ? APP_BASE : 'app'
+  end
+
+  def facilities
+    @facilities ||= {}
+  end
+
+  def ensure_folder_exists(folder)
+    raise "No #{folder}" unless folder.exist?
+    folder
+  end
+
+  def validate_and_setup_facilities
+    TSC::Error.persist do |_actions|
+      _actions.add {
+        app_bin
+      }
+      facilities.each do |_item, _version|
+        platform_top([ _item, _version ].join('-')).tap do |_folder|
+          _actions.add {
+            app_env_path.front ensure_folder_exists(_folder)
+          }
+        end
+      end
+    end
+  end
+
+  def request_app_version(version)
+    @requested_app_version ||= version
+  end
+
+  def request_facility_version(facility, version)
+    if facility == app_base
+      request_app_version version
+    else
+      facilities[facility] ||= version
+    end
+  end
+
+  def update_from_environment(facility)
+    env.with_value_for facility do |_version|
+      request_facility_version facility, _version
+    end
+  end
+
+  def update_from_config
+    config.fetch 'version' do |_version|
+      request_app_version _version
+    end
+
+    env.unless_build do
+      config.properties('apps').each do |_app, _version|
+        request_facility_version _app, _version
+      end
+    end
+  end
+
+  def config
+    @config ||= begin
+      require 'sk/yaml-config'
+
+      SK::YamlConfig[config_locator("config/#{app_base}.yaml")].data
+    end
+  end
+
+  def config_locator(file)
+    require 'sk/config/uproot-locator'
+    require 'sk/config/spot-locator'
+
+    SK::Config::UprootLocator.new :item => file, :spot => '.', :locator => begin
+      if defined?(APP_VERSION)
+        SK::Config::SpotLocator.new :item => file, :spot => app_top.join(APP_VERSION)
+      end
+    end
+  end
+
+  def process_command_line(args)
+    until args.empty? or args.first.index('--') != 0
+      case args.first
+        when '--validate'
+          ENV[env.main].tap do |_value|
+            next if [ nil, '', 'on', 'off' ].include? _value
+            next if app_version == _value
+
+            raise "Version mismatch: #{app_version} instead of required #{_value}"
+          end
+
+        when '--report'
+          puts "#{script_real_name}: Current version: #{app_version}"
+          @info = true
+
+        else
+          raise "Unsuported option: #{args.first}"
+      end
+
+      args.shift
+    end
+
+    raise 'No command specified' if args.empty?
+
+    env.with_value_for nil do |_version|
+      request_app_version _version
+    end
+
+    launch *args do |_command, _args|
+      update_from_environment _command
+      update_from_config
+
+      validate_and_setup_facilities
+      print_info script_real_location.parent, app_env_path.entries
+
+      system_lib_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
+        [ _entry.join('lib'), _entry.join('lib64') ]
+      }
+      system_path.front app_bin
+      system_path.front(platform_top, app_env_path.entries) { |_entry|
+        _entry.join('bin')
+      }
+      system_path.front app_bin.join('hooks')
+    end
+  end
+
+  def launch(command, *args)
+    yield command, args
+
+    system_path.find_all(command).each do |_item|
+      Pathname.new(_item).realpath.tap do |_path|
+        next if _path == script_real_location.join(script_name)
+        next if _path == app_bin.join(script_name)
+
+        app_env_path.install
+        system_lib_path.install
+        system_path.install
+
+        exec _item, *args
+      end
+    end
+
+    raise "Command not found: #{command}"
+  end
+
+  def print_info(*args)
+    return unless @info
+    args.flatten.compact.each do |_item|
+      puts "INFO: #{_item}"
+    end
+  end
+
+  def myself
+    @myself ||= script_real_location.join(script_name).to_s
+  end
+
+  def normalize_array(*array)
+    array.flatten.compact
+  end
+
+  def exec(*args)
+    puts "### #{args.join(' ')}" if verbose?
+    Kernel.exec *args
+  end
+
+  def app_env_path
+    @app_env_path ||= TSC::Path['APP_ENV_PATH'].load
+  end
+
+  def system_path
+    @system_path ||= TSC::PATH.new.load
+  end
+
+  def system_lib_path
+    @system_lib_path ||= TSC::Path['LD_LIBRARY_PATH:SHLIB_PATH:LIBPATH'].load
+  end
+
+  def figure_command_line(name, args)
+    case name
+      when %r{^(.+)-env$}
+        scan_for_versioned_facilities scan_for_version($1, args)
+
+      else
+        [ name, *args ]
+    end
+  end
+
+  def scan_for_versioned_facilities(items)
+    until items.empty?
+      break unless items.first =~ %r{^(.+)-(.+)$}
+      break unless scan_for_version($1, [ $2 ]).empty?
+
+      items.shift
+    end
+
+    items
+  end
+
+  def scan_for_version(facility, items)
+    until items.empty?
+      break unless items.first =~ %r{^\d+([.]\d+)+.?$}
+      request_facility_version facility, items.shift
+    end
+
+    items
+  end
+
+  def platform_top(*args)
+    (@platform_top ||= figure_platform_top).join *args
+  end
+
+  def figure_platform_top
+    return Pathname.new(PLATFORM_TOP) if defined? PLATFORM_TOP
+
+    TSC::Error.wrap_with 'Platform top cannot be determined' do
+      case find_in_path('ruby').first
+        when nil
+          raise 'No ruby'
+
+        when %r{^(.+/platform/.+?)(/ruby-\d+([.]\d+)+)?/bin/ruby$}
+          return Pathname.new($1)
+
+        else
+          raise 'No platform bound ruby'
+      end
+    end
+  end
+end
+
+Application.new.start
