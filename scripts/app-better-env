@@ -116,6 +116,18 @@ class Application < TSC::Application
     end
   end
 
+  def app_hooks
+    @app_hooks ||= begin
+      if defined? APP_TOP
+        app_bin.join('hooks')
+      else
+        system_path.entries.select { |_entry|
+          File.basename(_entry) == 'scripts'
+        }
+      end
+    end
+  end
+
   def make_folder(top, *components)
     Pathname.new(top).join components.join('-')
   end
@@ -243,7 +255,7 @@ class Application < TSC::Application
       system_path.front(platform_top, app_env_path.entries) { |_entry|
         _entry.join('bin')
       }
-      system_path.front app_bin.join('hooks')
+      system_path.front app_hooks
     end
   end
 
