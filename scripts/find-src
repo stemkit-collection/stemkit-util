@@ -3,7 +3,6 @@
 
 OPTERR=0
 unset selector
-selector="-name *.[MmCcHh]*"
 grep_options=""
 
 set -o noglob
@@ -45,6 +44,8 @@ pattern="${2}"
 
 [ "${#}" -ne 0 ] && shift
 [ "${#}" -ne 0 ] && shift
+
+: ${selector:="-name *.[MmCcHh]*"}
 
 if [ "${pattern:+set}" = set ]; then
   exec find ${location:-.} -follow \( -name .svn -o -name CVS \) -prune -o -type f ${selector} -exec grep ${grep_options} -- "${pattern}" "{}" \; "${@:--print}"
