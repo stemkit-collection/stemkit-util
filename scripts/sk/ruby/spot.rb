@@ -61,7 +61,7 @@ module SK
       end
 
       def to_s
-        full_method_name
+        [ full_method_name, line ].join('@')
       end
 
       private
@@ -106,7 +106,7 @@ if $0 == __FILE__
 
             assert_equal 'test_instance_spot', _spot.method_name
             assert_equal 'SK::Ruby::SpotTest#test_instance_spot', _spot.full_method_name
-            assert_equal 'SK::Ruby::SpotTest#test_instance_spot', "#{_spot}"
+            assert_equal "SK::Ruby::SpotTest#test_instance_spot@#{_spot.line}", "#{_spot}"
           end
         end
 
@@ -122,7 +122,7 @@ if $0 == __FILE__
 
             assert_equal 'sample_class_method', _spot.method_name
             assert_equal 'SK::Ruby::SpotTest.sample_class_method', _spot.full_method_name
-            assert_equal 'SK::Ruby::SpotTest.sample_class_method', _spot.to_s
+            assert_equal "SK::Ruby::SpotTest.sample_class_method@#{_spot.line}", _spot.to_s
           end
         end
 
@@ -138,7 +138,7 @@ if $0 == __FILE__
 
             assert_equal 'sample_module_method', _spot.method_name
             assert_equal 'SK::Ruby::sample_module_method', _spot.full_method_name
-            assert_equal 'SK::Ruby::sample_module_method', _spot.to_s
+            assert_equal "SK::Ruby::sample_module_method@#{_spot.line}", _spot.to_s
           end
         end
 
