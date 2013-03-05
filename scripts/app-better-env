@@ -208,7 +208,7 @@ class Application < TSC::Application
 
     SK::Config::UprootLocator.new :item => file, :spot => '.', :locator => begin
       if defined?(APP_VERSION)
-        SK::Config::SpotLocator.new :item => file, :spot => app_top.join(APP_VERSION)
+        SK::Config::SpotLocator.new :item => file, :spot => app_top
       end
     end
   end
