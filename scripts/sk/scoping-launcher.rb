@@ -138,7 +138,7 @@ module SK
 
     def global_scope_top
       @global_scope_top ||= begin
-        figure_scope_top('global', script_location, global_scope_selectors).tap { |_location, _item|
+        figure_scope_top('global', script_real_location, global_scope_selectors).tap { |_location, _item|
           top = Pathname.new _location
           @global_scope_trigger = top.join(_item)
 
