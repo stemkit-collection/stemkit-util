@@ -31,7 +31,7 @@ class Application < SK::Cli::TuningLauncher
   #########
 
   def original_command
-    defined?(ORIGINAL) ? ORIGINAL : super
+    defined?(ORIGINAL) && File.file?(ORIGINAL) ? ORIGINAL : super
   end
 
   def setup
