@@ -328,7 +328,13 @@ module SK
     end
 
     def myself?(path)
-      program_file_realpath == Pathname.new(path).realpath if path
+      if path
+        if program_file_realpath == Pathname.new(path).realpath
+          true
+        else
+          IO.read(path, 2) == '#!'
+        end
+      end
     end
 
     def program_file_realpath

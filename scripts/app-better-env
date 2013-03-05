@@ -266,6 +266,7 @@ class Application < TSC::Application
       Pathname.new(_item).realpath.tap do |_path|
         next if _path == script_real_location.join(script_name)
         next if _path == app_bin.join(script_name)
+        next if IO.read(_path, 2) == '#!'
 
         app_env_path.install
         system_lib_path.install
@@ -283,14 +284,6 @@ class Application < TSC::Application
     args.flatten.compact.each do |_item|
       puts "INFO: #{_item}"
     end
-  end
-
-  def myself
-    @myself ||= script_real_location.join(script_name).to_s
-  end
-
-  def normalize_array(*array)
-    array.flatten.compact
   end
 
   def exec(*args)
