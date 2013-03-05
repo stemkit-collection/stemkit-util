@@ -266,7 +266,6 @@ class Application < TSC::Application
       Pathname.new(_item).realpath.tap do |_path|
         next if _path == script_real_location.join(script_name)
         next if _path == app_bin.join(script_name)
-        next if IO.read(_path, 2) == '#!'
 
         app_env_path.install
         system_lib_path.install
