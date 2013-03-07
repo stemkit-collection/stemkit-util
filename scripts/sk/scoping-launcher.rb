@@ -10,12 +10,8 @@
 =end
 
 require 'tsc/application.rb'
-require 'sk/config/uproot-path-collector.rb'
-require 'sk/config/collector.rb'
 require 'tsc/path.rb'
 require 'tsc/errors.rb'
-
-require 'forwardable'
 
 module SK
   class ScopeError < TSC::Error
@@ -68,6 +64,9 @@ module SK
       handle_errors {
         require 'rubygems'
         require 'pathname'
+
+        require 'sk/config/uproot-path-collector.rb'
+        require 'sk/config/collector.rb'
 
         setup
 
@@ -307,8 +306,18 @@ module SK
     class ConfigAttributes
       attr_reader :location
 
-      extend Forwardable
-      def_delegators :@master, :local_scope_top, :global_scope_top, :srctop, :bintop, :pkgtop, :gentop
+      class << self
+        def delegators(*methods)
+          methods.each do |_method|
+            define_method _method do
+              @master.send _method
+            end
+          end
+        end
+      end
+
+      delegators :local_scope_top, :global_scope_top
+      delegators :srctop, :bintop, :pkgtop, :gentop
 
       def initialize(master, location)
         @master, @location = master, location

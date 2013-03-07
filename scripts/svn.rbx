@@ -18,13 +18,13 @@ require 'sk/cli/tuning-launcher.rb'
 #
 class Application < SK::Cli::TuningLauncher
   in_generator_context do |_content|
-    file = File.basename(target)
-    directory = File.join(self.class.installation_top, 'bin')
-    original = File.join(directory, 'originals', file)
+    directory, file = Pathname.new(target).split
+    original = directory.join('originals', file)
 
     _content << '#!/usr/bin/env ' + figure_ruby_path
-    _content << TSC::PATH.current.front(directory).to_ruby_eval
-    _content << "ORIGINAL = #{original.inspect}"
+    _content << 'ORIGINAL = ' + original.to_s.inspect
+    _content << '$: << ' + directory.to_s.inspect
+
     _content << IO.readlines(__FILE__).slice(1..-1)
   end
 
