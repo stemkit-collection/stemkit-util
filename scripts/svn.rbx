@@ -20,9 +20,11 @@ class Application < SK::Cli::TuningLauncher
   in_generator_context do |_content|
     directory, file = Pathname.new(target).split
     original = directory.join('originals', file)
+    ruby = Pathname.new(figure_ruby_path)
 
-    _content << '#!/usr/bin/env ' + figure_ruby_path
+    _content << '#!' + ruby.to_s
     _content << 'ORIGINAL = ' + original.to_s.inspect
+    _content << '$: << ' + ruby.parent.to_s.inspect
     _content << '$: << ' + directory.to_s.inspect
 
     _content << IO.readlines(__FILE__).slice(1..-1)
