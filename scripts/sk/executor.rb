@@ -97,7 +97,7 @@ module SK
     end
 
     def terminate_threads
-      terminate @group.list.map
+      terminate @group.list.clone
     end
 
     def timeout(seconds, options = {}, &block)
