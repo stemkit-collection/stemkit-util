@@ -50,7 +50,7 @@ pattern="${2}"
 [ "${ALL}" = true ] && unset SELECTOR
 
 if [ "${pattern:+set}" = set ]; then
-  exec find ${location:-.} -follow \( -name .svn -o -name CVS \) -prune -o -type f ${SELECTOR} -exec grep ${grep_options} -- "${pattern}" "{}" \; "${@:--print}"
+  exec find ${location:-.} -follow \( -name .svn -o -name CVS -o -name .git \) -prune -o -type f ${SELECTOR} -exec grep ${grep_options} -- "${pattern}" "{}" \; "${@:--print}"
 else
-  exec find ${location:-.} -follow \( -name .svn -o -name CVS \) -prune -o -type f ${SELECTOR} "${@:--print}"
+  exec find ${location:-.} -follow \( -name .svn -o -name CVS -o -name .git \) -prune -o -type f ${SELECTOR} "${@:--print}"
 fi
