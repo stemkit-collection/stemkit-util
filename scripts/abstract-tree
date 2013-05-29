@@ -12,7 +12,7 @@ unset TRACE DEBUG SOURCE
 
 print_usage()
 {
-  print_error "USAGE ${progname} [-vh] [ [-d<folder>] ... ] [<svn command>]"
+  print_error "USAGE ${progname} [-vh] [ [-d<folder>] ... ] [<sub-command>]"
 }
 
 main()

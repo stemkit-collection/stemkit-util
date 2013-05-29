@@ -252,7 +252,7 @@ class Application < TSC::Application
         [ _entry.join('lib'), _entry.join('lib64') ]
       }
       system_path.front app_bin
-      system_path.front(platform_top, app_env_path.entries) { |_entry|
+      system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         _entry.join('bin')
       }
       system_path.front app_hooks
