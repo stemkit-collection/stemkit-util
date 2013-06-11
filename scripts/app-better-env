@@ -344,7 +344,7 @@ class Application < TSC::Application
         when nil
           raise 'No ruby'
 
-        when %r{^(.+/platform/.+?)(/ruby-\d+([.]\d+)+)?/bin/ruby$}
+        when %r{^(.+/platform/.+?)(/ruby-\d+([.]\d+)+)?(-p\d+)?/bin/ruby$}
           return Pathname.new($1)
 
         else
