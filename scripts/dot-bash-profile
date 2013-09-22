@@ -1,0 +1,6 @@
+# vim: ft=sh: sw=2:
+
+export SHELL=/bin/ksh
+export ENV="/.${HOME}/.kshrc"
+
+exec "${SHELL}" -l
