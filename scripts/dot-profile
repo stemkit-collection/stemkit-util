@@ -63,7 +63,7 @@ profile_eval_ruby()
 
 act_as_profile() 
 {
-  profile_eval_ruby `profile_find_ruby /opt/*/platform/*/bin ${HOME}/local/platform/*/bin /usr/local/bin /usr/bin`
+  profile_eval_ruby `profile_find_ruby /opt/*/platform/*/ruby-*/bin ${HOME}/local/platform/*/bin /usr/local/bin /usr/bin`
 
   INPUTRC=~/.inputrc export INPUTRC
   JINDENT_PROPERTY="$HOME/.jindent" export JINDENT_PROPERTY
