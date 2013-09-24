@@ -19,8 +19,7 @@ class Application < TSC::Application
     _content << '#!' + figure_ruby_path
     _content << '$LOAD_PATH.unshift ' + File.dirname(figure_ruby_path).inspect
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
-    _content << 'APP_CONFIG = ' + self.class.installation_top.inspect
-    _content << 'APP_TOP = ' + File.dirname(self.class.installation_top).inspect
+    _content << 'APP_TOP = ' + self.class.installation_top.inspect
     _content << 'APP_BASE = ' + self.class.installation_parameters[:app_base].inspect
     _content << 'APP_VERSION = ' + self.class.installation_parameters[:app_version].inspect
 
@@ -97,12 +96,35 @@ class Application < TSC::Application
     @env ||= Env.new app_base
   end
 
-  def app_bin
-    @app_bin ||= script_real_location.tap do
-      next unless defined? APP_TOP
-      next unless @requested_app_version
+  def app_top
+    @app_top ||= begin
+      if defined? APP_TOP
+        Pathname.new(APP_TOP)
+      else
+        script_real_location.parent
+      end
+    end
+  end
 
-      break ensure_folder_exists(make_folder(APP_TOP, app_base, @requested_app_version).join('bin'))
+  def app_bin
+    @app_bin ||= begin
+      if @requested_app_version
+        ensure_folder_exists app_top.join(@requested_app_version, 'bin')
+      else
+        script_real_location
+      end
+    end
+  end
+
+  def app_hooks
+    @app_hooks ||= begin
+      if defined? APP_TOP
+        app_bin.join('hooks')
+      else
+        system_path.entries.select { |_entry|
+          File.basename(_entry) == 'scripts'
+        }
+      end
     end
   end
 
@@ -185,8 +207,8 @@ class Application < TSC::Application
     require 'sk/config/spot-locator'
 
     SK::Config::UprootLocator.new :item => file, :spot => '.', :locator => begin
-      if defined?(APP_CONFIG)
-        SK::Config::SpotLocator.new :item => file, :spot => APP_CONFIG
+      if defined?(APP_VERSION)
+        SK::Config::SpotLocator.new :item => file, :spot => app_top
       end
     end
   end
@@ -233,7 +255,7 @@ class Application < TSC::Application
       system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         _entry.join('bin')
       }
-      system_path.front app_bin.join('hooks')
+      system_path.front app_hooks
     end
   end
 
@@ -261,14 +283,6 @@ class Application < TSC::Application
     args.flatten.compact.each do |_item|
       puts "INFO: #{_item}"
     end
-  end
-
-  def myself
-    @myself ||= script_real_location.join(script_name).to_s
-  end
-
-  def normalize_array(*array)
-    array.flatten.compact
   end
 
   def exec(*args)
