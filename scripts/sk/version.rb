@@ -33,23 +33,33 @@ module SK
     class << self
       include Forwardable
 
-      # @param [String] spec
-      #   A version specification string. Currently supported format is
-      #   <major>[.<minor>[.<build>]][-|.b<build>][[-|_]<label>][:<abi>]
+      # @param [String, SK::Version] spec
+      #   Another version instance or a version specification string.
+      #   Currently supported format for a version string is:
+      #     <major>[.<minor>[.<build>]][-|.b<build>][[-|_]<label>][:<abi>]
       #
       # @return [SK::Version]
       #   A version instance corresponding to input specification.
       #
       def make(spec)
-        new components normalize(spec, parse(spec.to_s).flatten)
-      end
+        case spec
+          when String
+            new TSC::Dataset.new components normalize(spec, parse(spec).flatten)
 
-      def components(defaults = [ nil ] * COMPONENTS.size)
-        Hash[ [ COMPONENTS, defaults ].transpose ]
+          when SK::Version
+            spec
+
+          else
+            raise FormatError, spec
+        end
       end
 
       private
       #######
+
+      def components(defaults)
+        Hash[ [ COMPONENTS, defaults ].transpose ]
+      end
 
       def parse(spec)
         spec.scan %r{^((\d+)(?:[.](\d+)(?:[.](\d+)(?:[.](\d+))?)?)?(?:[.-]b(\d+))?(?:[-_]?(\w+))?)(?:[:](\w+))?$}
@@ -70,8 +80,12 @@ module SK
     #
     attr_reader :components
 
-    def initialize(params = {})
-      @components = TSC::Dataset[self.class.components].update params
+    def initialize(components)
+      @components = components
+    end
+
+    def to_s
+      spec
     end
   end
 end
@@ -82,18 +96,7 @@ if $0 == __FILE__
 
   module SK
     class VersionTest < Test::Unit::TestCase
-      def test_partial_instance
-        SK::Version.send(:new, :major => 5, :minor => 3).tap do |_version|
-          assert_equal 5, _version.major
-          assert_equal 3, _version.minor
-          assert_equal nil, _version.patch
-          assert_equal nil, _version.build
-          assert_equal nil, _version.label
-          assert_equal nil, _version.abi
-        end
-      end
-
-      def test_good_make
+      def test_make_with_good_spec_succeeds
         SK::Version.make('5.3').tap do |_version|
           assert_equal 5, _version.major
           assert_equal 3, _version.minor
@@ -104,13 +107,16 @@ if $0 == __FILE__
         end
 
         SK::Version.make('5.3-b78s:64').tap do |_version|
-          assert_equal '5.3-b78s', _version.version
           assert_equal 5, _version.major
           assert_equal 3, _version.minor
           assert_equal 0, _version.patch
           assert_equal 78, _version.build
           assert_equal 's', _version.label
           assert_equal '64', _version.abi
+
+          assert_equal '5.3-b78s', _version.version
+          assert_equal '5.3-b78s:64', _version.spec
+          assert_equal '5.3-b78s:64', _version.to_s
         end
 
         SK::Version.make('5.3.4.5.b78_zzz').tap do |_version|
@@ -123,11 +129,17 @@ if $0 == __FILE__
         end
       end
 
-      def test_bad_make
+      def test_make_with_bad_spec_fails
         error = assert_raises SK::Version::FormatError do
           SK::Version.make('zzz')
         end
         assert_equal 'zzz', error.spec
+      end
+
+      def test_make_with_another_instance_returns_same_object
+        SK::Version.make('1.2.3').tap do |_version|
+          assert_equal _version.object_id, SK::Version.make(_version).object_id
+        end
       end
 
       def setup
