@@ -59,6 +59,8 @@ module SK
         raise FormatError, spec unless c.size == 8
         [ spec, c[0], c[1].to_i, c[2].to_i, c[3].to_i, (c[5] || c[4]).to_i, c[6], c[7] ]
       end
+
+      private :new
     end
 
     def_delegators :components, *COMPONENTS
@@ -81,7 +83,7 @@ if $0 == __FILE__
   module SK
     class VersionTest < Test::Unit::TestCase
       def test_partial_instance
-        SK::Version.new(:major => 5, :minor => 3).tap do |_version|
+        SK::Version.send(:new, :major => 5, :minor => 3).tap do |_version|
           assert_equal 5, _version.major
           assert_equal 3, _version.minor
           assert_equal nil, _version.patch
