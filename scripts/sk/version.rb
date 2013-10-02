@@ -10,6 +10,8 @@
 =end
 
 require 'tsc/errors'
+require 'sk/ruby/spot'
+
 require 'tsc/dataset'
 require 'forwardable'
 
@@ -86,6 +88,27 @@ module SK
 
     def to_s
       spec
+    end
+
+    # @param [Integer] size
+    #   Optional number of components to output, defaulting to 3,
+    #   which will inlude just <major>, <minor> and <patch>.
+    #
+    # @return [String]
+    #   The corresponding version string.
+    #
+    def release(size = 3)
+      raise TSC::NotImplementedError, SK::Ruby::Spot[binding].full_method_name
+    end
+
+    # @param [#to_s, Array<#to_s>] spec
+    #   Format specification(s). Examples: :V1, :V2, :V123, etc.
+    #
+    # @return [String, Array<String>]
+    #   The corresponding version string(s).
+    #
+    def format(spec)
+      raise TSC::NotImplementedError, SK::Ruby::Spot[binding].full_method_name
     end
   end
 end
