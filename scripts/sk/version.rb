@@ -19,7 +19,7 @@ module SK
   # (major, minor, patch, build, etc.) which may be added later.
   #
   class Version
-    COMPONENTS = [ :major, :minor, :patch, :build, :label, :abi ]
+    COMPONENTS = [ :spec, :version, :major, :minor, :patch, :build, :label, :abi ]
 
     class FormatError < TSC::Error
       attr_reader :spec
@@ -52,12 +52,12 @@ module SK
       #######
 
       def parse(spec)
-        spec.scan %r{^\s*(\d+)(?:[.](\d+)(?:[.](\d+)(?:[.](\d+))?)?)?(?:[.-]b(\d+))?(?:[-_]?(\w+))?(?:[:](\w+))?\s*$}
+        spec.scan %r{^((\d+)(?:[.](\d+)(?:[.](\d+)(?:[.](\d+))?)?)?(?:[.-]b(\d+))?(?:[-_]?(\w+))?)(?:[:](\w+))?$}
       end
 
       def normalize(spec, c)
-        raise FormatError, spec unless c.size == 7
-        [ c[0].to_i, c[1].to_i, c[2].to_i, (c[4] || c[3]).to_i, c[5], c[6] ]
+        raise FormatError, spec unless c.size == 8
+        [ spec, c[0], c[1].to_i, c[2].to_i, c[3].to_i, (c[5] || c[4]).to_i, c[6], c[7] ]
       end
     end
 
@@ -102,6 +102,7 @@ if $0 == __FILE__
         end
 
         SK::Version.make('5.3-b78s:64').tap do |_version|
+          assert_equal '5.3-b78s', _version.version
           assert_equal 5, _version.major
           assert_equal 3, _version.minor
           assert_equal 0, _version.patch
