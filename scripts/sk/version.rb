@@ -28,7 +28,7 @@ module SK
 
       def initialize(spec)
         @spec = spec
-        super 'Wrong version', spec.to_s.inspect.slice(1...-1)
+        super 'Wrong version', spec.inspect
       end
     end
 
@@ -75,6 +75,8 @@ module SK
       private :new
     end
 
+    include Comparable
+
     def_delegators :components, *COMPONENTS
 
     # @return [TSC::Dataset]
@@ -109,6 +111,14 @@ module SK
     #
     def format(spec)
       raise TSC::NotImplementedError, SK::Ruby::Spot[binding].full_method_name
+    end
+
+    def <=>(other)
+      numbers <=> other.numbers
+    end
+
+    def numbers
+      [ major, minor, patch, build ]
     end
   end
 end
