@@ -1,0 +1,91 @@
+#!/usr/bin/env ruby
+=begin
+  vim: sw=2:
+  Copyright (c) 2013, Gennady Bystritsky <bystr@mac.com>
+
+  Distributed under the MIT Licence.
+  This is free software. See 'LICENSE' for details.
+  You must read and accept the license prior to use.
+
+  Author: Gennady Bystritsky (bystrg@emc.com)
+=end
+
+$:.concat ENV['PATH'].to_s.split File::PATH_SEPARATOR
+
+require 'tsc/application'
+require 'tsc/launch'
+require 'tsc/path'
+
+class Application < TSC::Application
+  def initialize
+    super { |_config|
+      _config.arguments = ''
+      _config.options = [
+        [ '--depth', 'A depth to go', 'number', '-d' ]
+      ]
+      _config.description = [
+        'Perforce tree locator'
+      ]
+    }
+  end
+
+  def start
+    handle_errors do
+      process_command_line
+      require 'rubygems'
+      require 'pathname'
+
+      locate_and_run
+    end
+  end
+
+  private
+  #######
+
+  def top_folder
+    @top_folder ||= Pathname.pwd
+  end
+
+  def locate_and_run
+    foreach_p4_root depth, top_folder do |_root, _location|
+      puts "### #{_root.relative_path_from(top_folder)}"
+      system 'sh', '-c', 'p4 opened'
+      system 'sh', '-c', 'p4 status -ad'
+    end
+  end
+
+  def args
+    @args ||= ARGV.tap { |_args|
+      break [ 'opened' ] if _args.empty?
+    }
+  end
+
+  def foreach_p4_root(level, folder, &block)
+    return if check_and_invoke folder, &block
+    return unless level > 0
+
+    folder.children.each do |_child|
+      foreach_p4_root level.pred, _child, &block if _child.directory?
+    end
+  end
+
+  def check_and_invoke(folder, &block)
+    Dir.chdir folder do
+      launch [ 'sh', '-c', 'p4 info' ] do |_out, _err|
+        next unless _out =~ %r{Client root:\s*(.*)\s*$}
+        return false unless (folder.to_s + '/').index($1 + '/') == 0
+
+        yield Pathname.new($1), folder
+        return true
+      end
+    end
+
+    false
+  end
+
+  def depth
+    @depth ||= (options.depth or 5).to_i
+  end
+end
+
+Application.new.start
