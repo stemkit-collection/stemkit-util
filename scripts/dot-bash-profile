@@ -1,6 +1,7 @@
 # vim: ft=sh: sw=2:
 
+export HOME="`/bin/pwd`"
 export SHELL=/bin/ksh
 export ENV="/.${HOME}/.kshrc"
 
-exec "${SHELL}" -l
+cd && exec "${SHELL}" -l
