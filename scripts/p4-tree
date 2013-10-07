@@ -35,6 +35,7 @@ class Application < TSC::Application
       require 'rubygems'
       require 'pathname'
 
+      ENV.delete 'PWD'
       locate_and_run
     end
   end
@@ -49,8 +50,8 @@ class Application < TSC::Application
   def locate_and_run
     foreach_p4_root depth, top_folder do |_root, _location|
       puts "### #{_root.relative_path_from(top_folder)}"
-      system 'sh', '-c', 'p4 opened'
-      system 'sh', '-c', 'p4 status -ad'
+      system 'p4',  *args
+      system 'p4', 'status', '-ad'
     end
   end
 
@@ -71,7 +72,7 @@ class Application < TSC::Application
 
   def check_and_invoke(folder, &block)
     Dir.chdir folder do
-      launch [ 'sh', '-c', 'p4 info' ] do |_out, _err|
+      launch [ 'p4', 'info' ] do |_out, _err|
         next unless _out =~ %r{Client root:\s*(.*)\s*$}
         return false unless (folder.to_s + '/').index($1 + '/') == 0
 
