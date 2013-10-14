@@ -31,7 +31,8 @@ class Application < TSC::Application
 
   def start
     handle_errors do
-      process_command_line
+      process_command_line :order => true
+
       require 'rubygems'
       require 'pathname'
 
