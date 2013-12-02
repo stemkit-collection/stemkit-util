@@ -69,7 +69,7 @@ act_as_profile()
   JINDENT_PROPERTY="$HOME/.jindent" export JINDENT_PROPERTY
   EXINIT="so $HOME/.exrc" export EXINIT
   P4PORT=localhost:1 export P4PORT
-  P4CONFIG=.p4rc export P4CONFIG
+  P4CONFIG=.p4config export P4CONFIG
   PAGER=less export PAGER
   LESS=-XMFRe export LESS
   HISTSIZE=1000 export HISTSIZE
