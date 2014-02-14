@@ -61,7 +61,7 @@ profile_eval_ruby()
   eval `${1:-"ruby"} -rubygems "${ENV}" start`
 }
 
-act_as_profile() 
+act_as_profile()
 {
   profile_eval_ruby `profile_find_ruby /opt/*/platform/*/ruby-*/bin ${HOME}/local/platform/*/bin /usr/local/bin /usr/bin`
 
@@ -83,7 +83,7 @@ act_as_profile()
   umask 2
   mesg y
 
-  stty intr ^c susp ^z kill ^u eol ^w erase ^h tostop 
+  stty intr ^c susp ^z kill ^u eol ^w erase ^h tostop
   stty -tabs 2>/dev/null
 
   case "${SHELL}" in
@@ -148,10 +148,10 @@ act_as_rc()
     }
 
     __original_cd__() {
-      cd "${@}" 
+      cd "${@}"
     }
 
-    __cd__() { 
+    __cd__() {
       cd "${@}" && __dir__
     }
 
@@ -212,12 +212,12 @@ act_as_rc()
     PROFILE_LOCAL="${HOME}/.profile-local"
     [ -f "${PROFILE_LOCAL}" ] && . "${PROFILE_LOCAL}"
 
-    PS1="[${SYSID}.${SERVER}:!]${PROMPT:-${USER}}${SHELLDEPTH:+_${SHELLDEPTH}}> "                          
+    PS1="[${SYSID}.${SERVER}:!]${PROMPT:-${USER}}${SHELLDEPTH:+_${SHELLDEPTH}}> "
     [ "${TERM}" = xterm ] && {
       PS1=`printf "\033]0;${PROMPT:-${USER}}@${SYSID}-${SERVER}\07\r"`"${PS1}"
     }
     export SHELLDEPTH=`expr "${SHELLDEPTH:-0}" + 1`
-    PS2="(cont) "                                             
+    PS2="(cont) "
 
     update_columns
 

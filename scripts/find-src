@@ -7,10 +7,13 @@ grep_options=""
 
 set -o noglob
 
-while getopts "viqan:" option; do
+while getopts "viqan:g:" option; do
   case "${option}" in
     v)
       set -xv
+    ;;
+    g)
+      grep_options="${grep_options} -${OPTARG}"
     ;;
     q)
       grep_options="${grep_options} -q"
