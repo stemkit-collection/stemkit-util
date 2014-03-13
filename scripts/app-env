@@ -17,8 +17,10 @@ require 'tsc/application'
 class Application < TSC::Application
   in_generator_context do |_content|
     _content << '#!' + figure_ruby_path
+    _content << ''
 
-    _content << '$:.unshift ' + File.dirname(target).inspect
+    _content << '$:.unshift ' + 'File.dirname(__FILE__)'
+    _content << '$:.unshift ' + File.dirname(figure_ruby_path).inspect
     _content << ''
 
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
