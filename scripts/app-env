@@ -14,6 +14,7 @@ $:.concat ENV.to_hash['PATH'].to_s.split(File::PATH_SEPARATOR)
 
 require 'tsc/application'
 
+
 class Application < TSC::Application
   in_generator_context do |_content|
     _content << '#!' + figure_ruby_path
@@ -58,11 +59,20 @@ class Application < TSC::Application
       @build ||= join @base, 'B'
     end
 
-    def unless_build
-      ENV[build].tap do |_build|
-        next if _build
-        yield
+    def path
+      @path ||= join @base, 'E', 'PATH'
+    end
 
+    def project_path
+      @project_path ||= join @base, 'E', 'PROJECT', 'PATH'
+    end
+
+    def unless_build
+      return if ENV[build]
+
+      begin
+        yield
+      ensure
         ENV[build] = 'off'
       end
     end
@@ -95,6 +105,48 @@ class Application < TSC::Application
 
     def join(*args)
       args.flatten.compact.join('_')
+    end
+  end
+
+  class Interpolator
+    attr_reader :config, :location
+
+    def initialize(config, location)
+      @config, @location = config, location
+    end
+
+    def make(value)
+      value.to_s.gsub(%r{%[{](\w+)[}]}) { |_match|
+        ENV[$1] || defaults.fetch($1, nil) || _match
+      }
+    end
+
+    private
+    #######
+
+    def defaults
+      @defaults ||= @config.properties('defaults')
+    end
+  end
+
+  class ProjectSettings
+    def initialize(interpolator)
+      @interpolator = interpolator
+    end
+
+    def import_root
+      @import_root ||= Pathname.new(@interpolator.make(settings.fetch('import-root'))).expand_path @interpolator.location
+    end
+
+    def path(name, version)
+      import_root.join(name, version, 'scripts')
+    end
+
+    private
+    #######
+
+    def settings
+      @settings ||= @interpolator.config.properties('project-settings')
     end
   end
 
@@ -146,6 +198,10 @@ class Application < TSC::Application
     @app_base ||= defined?(APP_BASE) ? APP_BASE : 'app'
   end
 
+  def projects
+    @projects ||= {}
+  end
+
   def facilities
     @facilities ||= {}
   end
@@ -153,6 +209,22 @@ class Application < TSC::Application
   def ensure_folder_exists(folder)
     raise "No #{folder}" unless folder.exist?
     folder
+  end
+
+  def interpolator
+    @interpolator ||= Interpolator.new(config, config_location)
+  end
+
+  def project_settings
+    @project_settings ||= ProjectSettings.new(interpolator)
+  end
+
+  def validate_and_setup_projects
+    projects.each do |_name, _data|
+      project_settings.path(_name, _data.fetch(:version)).tap do |_path|
+        project_env_path.front _path if _path.exist?
+      end
+    end
   end
 
   def validate_and_setup_facilities
@@ -174,7 +246,11 @@ class Application < TSC::Application
     @requested_app_version ||= version
   end
 
-  def request_facility_version(facility, version)
+  def request_project(name, settings)
+    projects[name] ||= settings
+  end
+
+  def request_facility(facility, version)
     if facility == app_base
       request_app_version version
     else
@@ -184,7 +260,7 @@ class Application < TSC::Application
 
   def update_from_environment(facility)
     env.with_value_for facility do |_version|
-      request_facility_version facility, _version
+      request_facility facility, _version
     end
   end
 
@@ -195,16 +271,28 @@ class Application < TSC::Application
 
     env.unless_build do
       config.properties('apps').each do |_app, _version|
-        request_facility_version _app, _version
+        request_facility _app, _version
+      end
+
+      config.properties('projects').each do |_project, _settings|
+        request_project _project, _settings
       end
     end
   end
 
   def config
-    @config ||= begin
+    @config ||= yaml_config.data
+  end
+
+  def config_location
+    @config_location ||= Pathname.new(yaml_config.locations.first)
+  end
+
+  def yaml_config
+    @yaml_config ||= begin
       require 'sk/yaml-config'
 
-      SK::YamlConfig[config_locator("config/#{app_base}.yaml")].data
+      SK::YamlConfig[config_locator("config/#{app_base}.yaml")]
     end
   end
 
@@ -241,23 +329,25 @@ class Application < TSC::Application
       args.shift
     end
 
-    raise 'No command specified' if args.empty?
-
     env.with_value_for nil do |_version|
       request_app_version _version
     end
 
-    launch *args do |_command, _args|
+    launch *(args.empty? ? 'env' : args) do |_command, _args|
       update_from_environment _command
       update_from_config
 
       validate_and_setup_facilities
+      validate_and_setup_projects
+
       print_info script_real_location.parent, app_env_path.entries
 
       system_lib_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         [ _entry.join('lib'), _entry.join('lib64') ]
       }
       system_path.front app_bin
+      system_path.front project_env_path.entries.reverse
+
       system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         _entry.join('bin')
       }
@@ -274,6 +364,7 @@ class Application < TSC::Application
         next if _path == app_bin.join(script_name)
 
         app_env_path.install
+        project_env_path.install
         system_lib_path.install
         system_path.install
 
@@ -297,7 +388,11 @@ class Application < TSC::Application
   end
 
   def app_env_path
-    @app_env_path ||= TSC::Path['APP_ENV_PATH'].load
+    @app_env_path ||= TSC::Path[env.path].load
+  end
+
+  def project_env_path
+    @project_env_path ||= TSC::Path[env.project_path].load
   end
 
   def system_path
@@ -332,7 +427,7 @@ class Application < TSC::Application
   def scan_for_version(facility, items)
     until items.empty?
       break unless items.first =~ %r{^\d+([.]\d+)+(([a-z])|(-p\d+))?$}
-      request_facility_version facility, items.shift
+      request_facility facility, items.shift
     end
 
     items
