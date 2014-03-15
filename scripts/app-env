@@ -14,7 +14,6 @@ $:.concat ENV.to_hash['PATH'].to_s.split(File::PATH_SEPARATOR)
 
 require 'tsc/application'
 
-
 class Application < TSC::Application
   in_generator_context do |_content|
     _content << '#!' + figure_ruby_path
@@ -90,6 +89,22 @@ class Application < TSC::Application
     @app_base ||= defined?(APP_BASE) ? APP_BASE : 'app'
   end
 
+  def app_env_path
+    @app_env_path ||= TSC::Path[env.path].load
+  end
+
+  def project_env_path
+    @project_env_path ||= TSC::Path[env.project_path].load
+  end
+
+  def system_path
+    @system_path ||= TSC::PATH.new.load
+  end
+
+  def system_lib_path
+    @system_lib_path ||= TSC::Path['LD_LIBRARY_PATH:SHLIB_PATH:LIBPATH'].load
+  end
+
   def env
     @env ||= Env.new app_base
   end
@@ -98,8 +113,12 @@ class Application < TSC::Application
     @interpolator ||= Interpolator.new self
   end
 
+  def defaults
+    @defaults ||= config.properties('defaults')
+  end
+
   def project_settings
-    @project_settings ||= ProjectSettings.new self
+    @project_settings ||= config.properties('project-settings')
   end
 
   private
@@ -183,32 +202,38 @@ class Application < TSC::Application
   class Interpolator < Servant
     def make(value)
       value.to_s.gsub(%r{%[{](\w+)[}]}) { |_match|
-        ENV[$1] || defaults.fetch($1, nil) or raise "#{$1}: Not in environment or default"
+        ENV[$1] || master.defaults.fetch($1, nil) or raise "#{$1}: Not in environment or default"
       }
-    end
-
-    private
-    #######
-
-    def defaults
-      @defaults ||= master.config.properties('defaults')
     end
   end
 
-  class ProjectSettings < Servant
-    def import_root
-      @import_root ||= Pathname.new(master.interpolator.make(settings.fetch('import-root'))).expand_path master.config_location
+  class Project < Servant
+    attr_reader :name, :settings
+
+    def initialize(master, name, settings)
+      super master
+
+      @name = name
+      @settings = settings
     end
 
-    def path(name, version)
-      import_root.join(name, version, 'scripts')
+    def setup
+      master.project_env_path.front scripts if scripts.exist?
+    end
+
+    def import_root
+      @import_root ||= Pathname.new(param('import-root')).expand_path master.config_location
+    end
+
+    def scripts
+      @scripts ||= import_root.join(name, settings.fetch(:version), 'scripts')
     end
 
     private
     #######
 
-    def settings
-      @settings ||= master.config.properties('project-settings')
+    def param(name)
+      master.interpolator.make master.project_settings.fetch(name)
     end
   end
 
@@ -230,10 +255,8 @@ class Application < TSC::Application
   end
 
   def validate_and_setup_projects
-    projects.each do |_name, _data|
-      project_settings.path(_name, _data.fetch(:version)).tap do |_path|
-        project_env_path.front _path if _path.exist?
-      end
+    projects.values.each do |_project|
+      _project.setup
     end
   end
 
@@ -257,7 +280,7 @@ class Application < TSC::Application
   end
 
   def request_project(name, settings)
-    projects[name] ||= settings
+    projects[name] ||= Project.new(self, name, settings)
   end
 
   def request_facility(facility, version)
@@ -389,22 +412,6 @@ class Application < TSC::Application
   def exec(*args)
     puts "### #{args.join(' ')}" if verbose?
     Kernel.exec *args
-  end
-
-  def app_env_path
-    @app_env_path ||= TSC::Path[env.path].load
-  end
-
-  def project_env_path
-    @project_env_path ||= TSC::Path[env.project_path].load
-  end
-
-  def system_path
-    @system_path ||= TSC::PATH.new.load
-  end
-
-  def system_lib_path
-    @system_lib_path ||= TSC::Path['LD_LIBRARY_PATH:SHLIB_PATH:LIBPATH'].load
   end
 
   def figure_command_line(name, args)
