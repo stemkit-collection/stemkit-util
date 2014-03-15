@@ -67,8 +67,12 @@ class Application < TSC::Application
       @project_path ||= join @base, 'E', 'PROJECT', 'PATH'
     end
 
+    def ignore_projects?
+      [ 'yes', 'true' ].include ENV[join(@base, 'B', 'IGNORE', 'PROJECTS')]
+    end
+
     def unless_build
-      return if ENV[build]
+      return if ENV[build] == 'off'
 
       begin
         yield
@@ -274,8 +278,10 @@ class Application < TSC::Application
         request_facility _app, _version
       end
 
-      config.properties('projects').each do |_project, _settings|
-        request_project _project, _settings
+      unless env.ignore_projects?
+        config.properties('projects').each do |_project, _settings|
+          request_project _project, _settings
+        end
       end
     end
   end
