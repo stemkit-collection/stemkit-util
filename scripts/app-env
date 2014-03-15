@@ -42,6 +42,66 @@ class Application < TSC::Application
     end
   end
 
+  def config
+    @config ||= yaml_config.data
+  end
+
+  def config_location
+    @config_location ||= Pathname.new(yaml_config.locations.first)
+  end
+
+  def app_top
+    @app_top ||= begin
+      if defined? APP_TOP
+        Pathname.new(APP_TOP)
+      else
+        script_real_location.parent
+      end
+    end
+  end
+
+  def app_bin
+    @app_bin ||= begin
+      if @requested_app_version
+        ensure_folder_exists app_top.join(@requested_app_version, 'bin')
+      else
+        script_real_location
+      end
+    end
+  end
+
+  def app_hooks
+    @app_hooks ||= begin
+      if defined? APP_TOP
+        app_bin.join('hooks')
+      else
+        system_path.entries.select { |_entry|
+          File.basename(_entry) == 'scripts'
+        }
+      end
+    end
+  end
+
+  def app_version
+    @app_version ||= defined?(APP_VERSION) ? APP_VERSION : 'not defined'
+  end
+
+  def app_base
+    @app_base ||= defined?(APP_BASE) ? APP_BASE : 'app'
+  end
+
+  def env
+    @env ||= Env.new app_base
+  end
+
+  def interpolator
+    @interpolator ||= Interpolator.new self
+  end
+
+  def project_settings
+    @project_settings ||= ProjectSettings.new self
+  end
+
   private
   #######
 
@@ -68,7 +128,7 @@ class Application < TSC::Application
     end
 
     def ignore_projects?
-      [ 'yes', 'true' ].include ENV[join(@base, 'B', 'IGNORE', 'PROJECTS')]
+      [ 'yes', 'true' ].include? ENV[join(@base, 'B', 'IGNORE', 'PROJECTS')]
     end
 
     def unless_build
@@ -112,16 +172,18 @@ class Application < TSC::Application
     end
   end
 
-  class Interpolator
-    attr_reader :config, :location
+  class Servant
+    attr_reader :master
 
-    def initialize(config, location)
-      @config, @location = config, location
+    def initialize(master)
+      @master = master
     end
+  end
 
+  class Interpolator < Servant
     def make(value)
       value.to_s.gsub(%r{%[{](\w+)[}]}) { |_match|
-        ENV[$1] || defaults.fetch($1, nil) || _match
+        ENV[$1] || defaults.fetch($1, nil) or raise "#{$1}: Not in environment or default"
       }
     end
 
@@ -129,17 +191,13 @@ class Application < TSC::Application
     #######
 
     def defaults
-      @defaults ||= @config.properties('defaults')
+      @defaults ||= master.config.properties('defaults')
     end
   end
 
-  class ProjectSettings
-    def initialize(interpolator)
-      @interpolator = interpolator
-    end
-
+  class ProjectSettings < Servant
     def import_root
-      @import_root ||= Pathname.new(@interpolator.make(settings.fetch('import-root'))).expand_path @interpolator.location
+      @import_root ||= Pathname.new(master.interpolator.make(settings.fetch('import-root'))).expand_path master.config_location
     end
 
     def path(name, version)
@@ -150,56 +208,12 @@ class Application < TSC::Application
     #######
 
     def settings
-      @settings ||= @interpolator.config.properties('project-settings')
-    end
-  end
-
-  def env
-    @env ||= Env.new app_base
-  end
-
-  def app_top
-    @app_top ||= begin
-      if defined? APP_TOP
-        Pathname.new(APP_TOP)
-      else
-        script_real_location.parent
-      end
-    end
-  end
-
-  def app_bin
-    @app_bin ||= begin
-      if @requested_app_version
-        ensure_folder_exists app_top.join(@requested_app_version, 'bin')
-      else
-        script_real_location
-      end
-    end
-  end
-
-  def app_hooks
-    @app_hooks ||= begin
-      if defined? APP_TOP
-        app_bin.join('hooks')
-      else
-        system_path.entries.select { |_entry|
-          File.basename(_entry) == 'scripts'
-        }
-      end
+      @settings ||= master.config.properties('project-settings')
     end
   end
 
   def make_folder(top, *components)
     Pathname.new(top).join components.join('-')
-  end
-
-  def app_version
-    @app_version ||= defined?(APP_VERSION) ? APP_VERSION : 'not defined'
-  end
-
-  def app_base
-    @app_base ||= defined?(APP_BASE) ? APP_BASE : 'app'
   end
 
   def projects
@@ -213,14 +227,6 @@ class Application < TSC::Application
   def ensure_folder_exists(folder)
     raise "No #{folder}" unless folder.exist?
     folder
-  end
-
-  def interpolator
-    @interpolator ||= Interpolator.new(config, config_location)
-  end
-
-  def project_settings
-    @project_settings ||= ProjectSettings.new(interpolator)
   end
 
   def validate_and_setup_projects
@@ -284,14 +290,6 @@ class Application < TSC::Application
         end
       end
     end
-  end
-
-  def config
-    @config ||= yaml_config.data
-  end
-
-  def config_location
-    @config_location ||= Pathname.new(yaml_config.locations.first)
   end
 
   def yaml_config
