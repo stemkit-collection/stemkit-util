@@ -106,7 +106,7 @@ class Application < TSC::Application
   end
 
   def env
-    @env ||= Env.new app_base
+    @env ||= Env.new self
   end
 
   def interpolator
@@ -124,30 +124,41 @@ class Application < TSC::Application
   private
   #######
 
-  class Env
-    def initialize(base)
-      @base = normalize(base)
-      @names = {}
+  class Servant
+    attr_reader :master
+
+    def initialize(master)
+      @master = master
+    end
+  end
+
+  class Env < Servant
+    def names
+      @names ||= {}
+    end
+
+    def base
+      @base ||= normalize(master.app_base)
     end
 
     def main
-      @main ||= name(nil)
+      @main ||= name master.app_base
     end
 
     def build
-      @build ||= join @base, 'B'
+      @build ||= join base, 'B'
     end
 
     def path
-      @path ||= join @base, 'E', 'PATH'
+      @path ||= join base, 'E', 'PATH'
     end
 
     def project_path
-      @project_path ||= join @base, 'E', 'PROJECT', 'PATH'
+      @project_path ||= join base, 'E', 'PROJECT', 'PATH'
     end
 
     def ignore_projects?
-      [ 'yes', 'true' ].include? ENV[join(@base, 'B', 'IGNORE', 'PROJECTS')]
+      [ 'yes', 'true' ].include? ENV[join(base, 'B', 'IGNORE', 'PROJECTS')]
     end
 
     def unless_build
@@ -161,7 +172,7 @@ class Application < TSC::Application
     end
 
     def name(facility)
-      @names[facility] ||= join @base, 'V', normalize(facility)
+      names[facility] ||= join base, 'V', (facility == master.app_base ? nil : normalize(facility))
     end
 
     def with_value_for(facility)
@@ -179,23 +190,11 @@ class Application < TSC::Application
     #######
 
     def normalize(item)
-      return [] unless item
-
-      item.to_s.split(%r{[_-]}).map(&:strip).map { |_item|
-        _item.upcase unless _item.empty?
-      }
+      item.to_s.split(%r{[_-]}).map(&:strip).reject(&:empty?).map(&:upcase)
     end
 
     def join(*args)
       args.flatten.compact.join('_')
-    end
-  end
-
-  class Servant
-    attr_reader :master
-
-    def initialize(master)
-      @master = master
     end
   end
 
@@ -226,7 +225,11 @@ class Application < TSC::Application
     end
 
     def scripts
-      @scripts ||= import_root.join(name, settings.fetch(:version), 'scripts')
+      @scripts ||= import_root.join(name, version, 'scripts')
+    end
+
+    def version
+      @version ||= ENV[master.env.name(name)] || settings.fetch(:version)
     end
 
     private
