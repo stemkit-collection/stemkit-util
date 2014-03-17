@@ -24,6 +24,8 @@ class Application < TSC::Application
     _content << ''
 
     _content << 'PLATFORM_TOP = ' + self.class.installation_parameters[:platform_top].inspect
+    _content << 'PROJECTS_TOP = ' + self.class.installation_parameters[:projects_top].inspect
+
     _content << 'APP_TOP = ' + self.class.installation_top.inspect
     _content << 'APP_BASE = ' + self.class.installation_parameters[:app_base].inspect
     _content << 'APP_VERSION = ' + self.class.installation_parameters[:app_version].inspect
@@ -75,7 +77,7 @@ class Application < TSC::Application
         app_bin.join('hooks')
       else
         system_path.entries.select { |_entry|
-          File.basename(_entry) == 'scripts'
+          _entry.include? '/runtime/'
         }
       end
     end
@@ -119,6 +121,10 @@ class Application < TSC::Application
 
   def project_settings
     @project_settings ||= config.properties('project-settings')
+  end
+
+  def with_projects_top
+    yield Pathname.new(PROJECTS_TOP) if defined? PROJECTS_TOP
   end
 
   private
@@ -207,36 +213,79 @@ class Application < TSC::Application
   end
 
   class Project < Servant
-    attr_reader :name, :settings
+    attr_reader :name, :default_version
 
-    def initialize(master, name, settings)
+    def initialize(master, name, default_version)
       super master
 
       @name = name
-      @settings = settings
+      @default_version = default_version.tap { |_version|
+        break _version.to_s if _version
+      }
     end
 
     def setup
-      master.project_env_path.front scripts if scripts.exist?
+      [].tap do |_locations|
+        unless import_script_folders.empty?
+          return master.project_env_path.front import_script_folders
+        end
+
+        _locations.concat import_roots
+
+        master.with_projects_top do |_top|
+          _top.join(name, version, 'bin').tap do |_folder|
+            return master.project_env_path.front _folder if _folder.directory?
+          end
+
+          _locations << _top
+        end
+
+        "Project #{name.inspect} of version #{version.inspect} not available".tap do |_message|
+          raise _message if _locations.empty?
+
+          TSC::Error.persist do |_actions|
+            _locations.each do |_location|
+              _actions.add {
+                raise _message + ' in ' + _location
+              }
+            end
+          end
+        end
+      end
+
     end
 
-    def import_root
-      @import_root ||= Pathname.new(param('import-root')).expand_path master.config_location
+    def import_roots
+      @import_roots ||= [].tap { |_roots|
+        param('import-root').split(':').each do |_item|
+          _item.strip.tap do |_item|
+            _roots << Pathname.new(_item).expand_path(master.config_location) unless _item.empty?
+          end
+        end
+      }
     end
 
-    def scripts
-      @scripts ||= import_root.join(name, version, 'scripts')
+    def import_script_folders
+      @import_script_folders ||= [].tap { |_folders|
+        import_roots.each do |_root|
+          _root.join(name, version, 'scripts').tap do |_folder|
+            _folders << _folder if _folder.directory?
+          end
+        end
+      }
     end
 
     def version
-      @version ||= ENV[master.env.name(name)] || settings.fetch(:version)
+      @version ||= begin
+        ENV[master.env.name(name)] || default_version or raise "No version for project #{name.inspect} provided"
+      end
     end
 
     private
     #######
 
     def param(name)
-      master.interpolator.make master.project_settings.fetch(name)
+      master.interpolator.make master.project_settings.fetch(name, '')
     end
   end
 
@@ -282,8 +331,8 @@ class Application < TSC::Application
     @requested_app_version ||= version
   end
 
-  def request_project(name, settings)
-    projects[name] ||= Project.new(self, name, settings)
+  def request_project(name, version)
+    projects[name] ||= Project.new(self, name, version)
   end
 
   def request_facility(facility, version)
@@ -311,8 +360,8 @@ class Application < TSC::Application
       end
 
       unless env.ignore_projects?
-        config.properties('projects').each do |_project, _settings|
-          request_project _project, _settings
+        config.properties('projects').each do |_project, _version|
+          request_project _project, _version
         end
       end
     end
