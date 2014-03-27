@@ -62,13 +62,7 @@ class Application < TSC::Application
   end
 
   def app_bin
-    @app_bin ||= begin
-      if @requested_app_version
-        ensure_folder_exists app_top.join(@requested_app_version, 'bin')
-      else
-        script_real_location
-      end
-    end
+    @app_bin ||= script_real_location
   end
 
   def app_hooks
@@ -184,7 +178,7 @@ class Application < TSC::Application
     def with_value_for(facility)
       name(facility).tap do |_name|
         ENV[_name].tap do |_value|
-          next if [ nil, 'off', '' ].include? _value
+          next if [ nil, '', 'on', 'off' ].include? _value
           yield _value
 
           ENV[_name] = 'off'
@@ -277,7 +271,13 @@ class Application < TSC::Application
 
     def version
       @version ||= begin
-        ENV[master.env.name(name)] || default_version or raise "No version for project #{name.inspect} provided"
+        catch :version do
+          master.env.with_value_for name do |_value|
+            throw :version, _value
+          end
+
+          default_version or raise "No version for project #{name.inspect} provided"
+        end
       end
     end
 
@@ -307,16 +307,17 @@ class Application < TSC::Application
   end
 
   def validate_and_setup_projects
-    projects.values.each do |_project|
-      _project.setup
+    TSC::Error.persist do |_actions|
+      projects.values.each do |_project|
+        _actions.add {
+          _project.setup
+        }
+      end
     end
   end
 
   def validate_and_setup_facilities
     TSC::Error.persist do |_actions|
-      _actions.add {
-        app_bin
-      }
       facilities.each do |_item, _version|
         platform_top([ _item, _version ].join('-')).tap do |_folder|
           _actions.add {
@@ -328,7 +329,7 @@ class Application < TSC::Application
   end
 
   def request_app_version(version)
-    @requested_app_version ||= version
+    request_project app_base, version
   end
 
   def request_project(name, version)
@@ -350,10 +351,6 @@ class Application < TSC::Application
   end
 
   def update_from_config
-    config.fetch 'version' do |_version|
-      request_app_version _version
-    end
-
     env.unless_build do
       config.properties('apps').each do |_app, _version|
         request_facility _app, _version
@@ -362,6 +359,10 @@ class Application < TSC::Application
       unless env.ignore_projects?
         config.properties('projects').each do |_project, _version|
           request_project _project, _version
+        end
+
+        config.fetch 'version' do |_version|
+          request_app_version _version
         end
       end
     end
@@ -408,7 +409,7 @@ class Application < TSC::Application
       args.shift
     end
 
-    env.with_value_for nil do |_version|
+    env.with_value_for app_base do |_version|
       request_app_version _version
     end
 
