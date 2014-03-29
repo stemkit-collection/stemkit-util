@@ -1,0 +1,112 @@
+#!/usr/bin/env ruby
+=begin
+  vim: sw=2:
+  Copyright (c) 2014, EMC Corporation, http://www.emc.com
+
+  This software is property of the mentioned copyright
+  holder and cannot be used or distributed  other than
+  under a written consent agreement between individual
+  parties.
+
+  Author: Gennady Bystritsky (bystrg@emc.com)
+=end
+
+ORIGINAL_LOAD_PATH = $:.clone
+ORIGINAL_SYSTEM_PATH = ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
+
+$:.concat ORIGINAL_SYSTEM_PATH
+
+require 'tsc/application.rb'
+require 'tsc/path.rb'
+
+class Application < TSC::Application
+  def initialize
+    super { |_config|
+      _config.arguments = '<item> ...'
+      _config.options = [
+        [ '--dump', 'Dump the search path', nil, '-d' ],
+        [ '--original', 'Output original items', nil, '-o' ],
+        [ '--loadpath', 'Use Ruby load path', nil, '-l' ],
+        [ '--path', 'Use environment PATH', nil, '-p' ],
+        [ '--all', 'Output all found items', nil, '-a' ]
+      ]
+      _config.description = [
+        'Prints out real path info for the specified items'
+      ]
+    }
+  end
+
+  def start
+    handle_errors {
+      process_command_line
+
+      require 'rubygems'
+      require 'pathname'
+
+      print_search_path if options.dump?
+
+      ARGV.each do |_item|
+        report quantify *figure(_item)
+      end
+    }
+  end
+
+  private
+  #######
+
+  def search_path
+    @search_path ||= options.loadpath? ? ORIGINAL_LOAD_PATH : ORIGINAL_SYSTEM_PATH
+  end
+
+  def figure(item)
+    case item
+      when %r{^/}
+        return item
+
+      when %r{^~}
+        return File.expand_path item
+
+      when %r{^[.][.]?/?}
+        return item unless options.loadpath? or options.path?
+    end
+
+    find_items(item).tap do |_items|
+      raise TSC::MissingResourceError, item if _items.empty?
+    end
+  end
+
+  def find_items(item)
+    Dir.glob search_path.map { |_path|
+      File.join _path, item
+    }
+  end
+
+  def report(items)
+    puts pathnames(items).join(' ')
+  end
+
+  def pathnames(items)
+    items.map { |_item|
+      Pathname.new(_item).tap { |_pathname|
+        break _pathname.realpath unless options.original?
+      }
+    }
+  end
+
+  def quantify(*items)
+    options.all? ? items : items.take(1)
+  end
+
+  def print_search_path
+    puts [
+      'Search path',
+      '-----------',
+      search_path.map { |_item|
+        '  ' + _item.inspect.slice(1...-1)
+      },
+      '-----------'
+    ]
+  end
+end
+
+Application.new.start
