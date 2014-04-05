@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 =begin
   vim: sw=2:
-  Copyright (c) 2012, Gennady Bystritsky <bystr@mac.com>
+  Copyright (c) 2014, Gennady Bystritsky <bystr@mac.com>
 
   Distributed under the MIT Licence.
   This is free software. See 'LICENSE' for details.
@@ -161,6 +161,10 @@ class Application < TSC::Application
       [ 'yes', 'true' ].include? ENV[join(base, 'B', 'IGNORE', 'PROJECTS')]
     end
 
+    def ignore_facilities?
+      [ 'yes', 'true' ].include? ENV[join(base, 'B', 'IGNORE', 'FACILITIES')]
+    end
+
     def unless_build
       return if ENV[build] == 'off'
 
@@ -240,7 +244,7 @@ class Application < TSC::Application
           TSC::Error.persist do |_actions|
             _locations.each do |_location|
               _actions.add {
-                raise _message + ' in ' + _location
+                raise _message + ' in ' + _location.to_s
               }
             end
           end
@@ -352,8 +356,10 @@ class Application < TSC::Application
 
   def update_from_config
     env.unless_build do
-      config.properties('apps').each do |_app, _version|
-        request_facility _app, _version
+      unless env.ignore_facilities?
+        config.properties('apps').each do |_app, _version|
+          request_facility _app, _version
+        end
       end
 
       unless env.ignore_projects?
