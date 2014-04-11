@@ -9,9 +9,10 @@
   Author: Gennady Bystritsky
 =end
 
-require 'tsc/application.rb'
-require 'tsc/path.rb'
-require 'tsc/errors.rb'
+require 'tsc/application'
+require 'tsc/path'
+require 'tsc/errors'
+require 'sk/env-propagator'
 
 module SK
   class ScopeError < TSC::Error
@@ -60,13 +61,29 @@ module SK
       end
     end
 
+    def env_propagator
+      @env_propagator ||= SK::EnvPropagator.new(script_name)
+    end
+
+    def load_environment
+      env_propagator.load
+    end
+
+    def update_environment(env, options = {})
+      env_propagator.update env, options
+    end
+
+    def populate_environment(&block)
+      env_propagator.populate &block
+    end
+
     def start
       handle_errors {
         require 'rubygems'
         require 'pathname'
 
-        require 'sk/config/uproot-path-collector.rb'
-        require 'sk/config/collector.rb'
+        require 'sk/config/uproot-path-collector'
+        require 'sk/config/collector'
 
         setup
 
@@ -74,17 +91,15 @@ module SK
           (transparent? ? Helper : self).tap { |_invocator|
             with_string_array [ original_command, _invocator.command_line_arguments(_args) ] do |_cmdline|
               trace _cmdline.join(' ')
-              populate_environment
+              populate_environment do |_key, _value|
+                trace "#{_key} => #{_value.inspect}"
+              end
 
               _invocator.launch *_cmdline
             end
           }
         }
       }
-    end
-
-    def update_environment(env, options = {})
-      environments << PropertiesNormalizer.new(script_name, options).normalize(env)
     end
 
     def local_scope_top
@@ -269,40 +284,6 @@ module SK
     private
     #######
 
-    class PropertiesNormalizer
-      DEFAULTS = {
-        :prefix => true,
-        :upcase => true
-      }
-      attr_reader :options, :app
-
-      def initialize(app, options)
-        @app = app
-        @options = TSC::Dataset.new(DEFAULTS).update(options)
-        @properties = {}
-      end
-
-      def normalize(properties)
-        properties.each_pair do |_key, _value|
-          @properties[upcase(prefix(_key.to_s).gsub(%r{[.\-\:/]}, '_'))] = _value.to_s
-        end
-
-        @properties
-      end
-
-      private
-      #######
-
-      def upcase(string)
-        @options.upcase ? string.upcase : string
-      end
-
-      def prefix(string)
-        return string unless options.prefix
-        [ (options.prefix == true ? [ 'sk', app ] : options.prefix), string ].join('_')
-      end
-    end
-
     class ConfigAttributes
       attr_reader :location
 
@@ -373,21 +354,6 @@ module SK
 
     def current_location
       @current_location ||= Pathname.new(Dir.pwd)
-    end
-
-    def environments
-      @environments ||= []
-    end
-
-    def populate_environment
-      return if environments.empty?
-
-      environments.each do |_environment|
-        _environment.each_pair do |_key, _value|
-          trace "#{_key} => #{_value.inspect}"
-          ENV[_key] = _value
-        end
-      end
     end
 
     def with_normalized_array(array)
