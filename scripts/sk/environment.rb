@@ -13,20 +13,34 @@ require 'tsc/dataset'
 require 'tsc/errors'
 require 'sk/ruby/spot'
 
-module SK
-  class EnvPropagator
-    attr_reader :name
+require 'sk/config/provider'
+require 'sk/config/collector'
 
-    def initialize(name)
-      @name = name
+module SK
+  class Environment
+    include SK::Config::Provider
+    attr_reader :label
+
+    # @param [String] label
+    #   A label for paremeter name transformation.
+    #
+    # @param [SK::Config::Provider] provider
+    #   A config provider.
+    #
+    def initialize(label, provider = self)
+      @label, @provider = label, provider
     end
 
-    def load
-      raise TSC::NotImplementedError, SK::Ruby::Spot[binding].full_method_name
+    def load_general_properties
+      update resource.properties(:general), :prefix => false, :upcase => false
+    end
+
+    def load_build_properties
+      update resource.properties(:make, :build), :prefix => false, :upcase => false
     end
 
     def update(env, options = {})
-      environments << PropertiesNormalizer.new(name, options).normalize(env)
+      environments << PropertiesNormalizer.new(label, options).normalize(env)
     end
 
     def populate
@@ -40,8 +54,16 @@ module SK
       end
     end
 
+    def config(name, options = {})
+      SK::Config::Collector.new.collect(name, options)
+    end
+
     private
     #######
+
+    def resource
+      @resource ||= @provider.config('.buildrc', :uproot => true, :home => true)
+    end
 
     def environments
       @environments ||= []
@@ -88,7 +110,7 @@ if $0 == __FILE__
   require 'mocha'
 
   module SK
-    class EnvPropagatorTest < Test::Unit::TestCase
+    class EnvironmentTest < Test::Unit::TestCase
       def setup
       end
     end

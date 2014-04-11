@@ -195,7 +195,7 @@ module SK
       assert_nothing_raised do
         SK::ScopingLauncher.new.tap { |_app|
           _app.verbose = true
-          _app.update_environment :v1 => 333, :v2 => 456
+          _app.environment.update :v1 => 333, :v2 => 456
 
           _app.start
         }

@@ -42,7 +42,7 @@ class Application < SK::Cli::TuningLauncher
     self.transparent = true if ENV.has_key?('SK_MAKE_GLOBAL_MAKEFILE')
 
     config.attribute(:root).tap { |_root|
-      update_environment Hash[ :CVSROOT => _root ], :prefix => false, :upcase => true if _root
+      environment.update Hash[ :CVSROOT => _root ], :prefix => false, :upcase => true if _root
     }
   end
 

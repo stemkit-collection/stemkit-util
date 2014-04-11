@@ -10,9 +10,10 @@
 =end
 
 require 'tsc/application'
-require 'tsc/path'
 require 'tsc/errors'
-require 'sk/env-propagator'
+require 'tsc/path'
+
+require 'sk/config/provider'
 
 module SK
   class ScopeError < TSC::Error
@@ -44,6 +45,8 @@ module SK
   end
 
   class ScopingLauncher < TSC::Application
+    include SK::Config::Provider
+
     class Helper
       class << self
         def command_line_arguments(args)
@@ -61,20 +64,14 @@ module SK
       end
     end
 
-    def env_propagator
-      @env_propagator ||= SK::EnvPropagator.new(script_name)
-    end
-
-    def load_environment
-      env_propagator.load
-    end
-
-    def update_environment(env, options = {})
-      env_propagator.update env, options
+    def environment
+      @environment ||= SK::Environment.new(script_name, self)
     end
 
     def populate_environment(&block)
-      env_propagator.populate &block
+      environment.populate do |_key, _value|
+        trace "#{_key} => #{_value.inspect}"
+      end
     end
 
     def start
@@ -83,6 +80,7 @@ module SK
         require 'pathname'
 
         require 'sk/config/uproot-path-collector'
+        require 'sk/environment'
         require 'sk/config/collector'
 
         setup
@@ -91,9 +89,7 @@ module SK
           (transparent? ? Helper : self).tap { |_invocator|
             with_string_array [ original_command, _invocator.command_line_arguments(_args) ] do |_cmdline|
               trace _cmdline.join(' ')
-              populate_environment do |_key, _value|
-                trace "#{_key} => #{_value.inspect}"
-              end
+              populate_environment
 
               _invocator.launch *_cmdline
             end
