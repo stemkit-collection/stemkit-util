@@ -11,9 +11,11 @@
   Author: Gennady Bystritsky (bystrg@emc.com)
 =end
 
-ORIGINAL_LOAD_PATH = $:.clone
-ORIGINAL_SYSTEM_PATH = ENV['PATH'].to_s.split(File::PATH_SEPARATOR)
+ORIGINAL_SYSTEM_PATH = ENV['PATH'].to_s.split(File::PATH_SEPARATOR).tap { |_items|
+  _items.shift(3) if _items[0] == File.join(_items[2], 'hooks')
+}
 
+ORIGINAL_LOAD_PATH = $:.clone
 $:.concat ORIGINAL_SYSTEM_PATH
 
 require 'tsc/application.rb'

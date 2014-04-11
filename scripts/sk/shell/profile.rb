@@ -246,6 +246,7 @@ module SK
               #{home}/local/platform/#{sysid}/bin
               #{home}/local/#{sysid}/bin
               #{home}/local/bin
+              /opt/*/bin
               /opt/*-third-party/platform/#{sysid}/bin
               /opt/*/platform/#{sysid}/bin
               /sbin
