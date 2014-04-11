@@ -32,11 +32,11 @@ module SK
     end
 
     def load_general_properties
-      update resource.properties(:general), :prefix => false, :upcase => false
+      load_properties :general
     end
 
     def load_build_properties
-      update resource.properties(:make, :build), :prefix => false, :upcase => false
+      load_properties :make, :build
     end
 
     def update(env, options = {})
@@ -60,6 +60,15 @@ module SK
 
     private
     #######
+
+    def load_properties(area, *extras)
+      "SK_ENVRC_#{area.to_s.upcase}".tap do |_trigger|
+        return if ENV[_trigger] == 'off'
+
+        update resource.properties(area, *extras), :prefix => false, :upcase => false
+        ENV[_trigger] = 'off'
+      end
+    end
 
     def resource
       @resource ||= @provider.config('.buildrc', :uproot => true, :home => true)
