@@ -11,11 +11,22 @@
   Author: Gennady Bystritsky (bystrg@emc.com)
 =end
 
-ORIGINAL_SYSTEM_PATH = ENV['PATH'].to_s.split(File::PATH_SEPARATOR).tap { |_items|
-  _items.shift(3) if _items[0] == File.join(_items[2], 'hooks')
-}
+[ [] ].tap do |_items, _cache, _folder|
+  # Removes all the entries in between %{folder}/bin/hooks
+  # and %{folder}/bin inclusively. This is needed to ignore
+  # entries possibly added by app-env facility.
+  #
+  ENV['PATH'].to_s.split(File::PATH_SEPARATOR).each do |_item|
+    next ( _item == _folder ? [].tap { _cache = false } : _cache ) << _item if _cache
 
-ORIGINAL_LOAD_PATH = $:.clone
+    _folder, name = File.split(_item)
+    ( name == 'hooks' && File.basename(_folder) == 'bin' ? _cache = [] : _items ) << _item
+  end
+
+  ORIGINAL_SYSTEM_PATH = _cache ? _items + _cache : _items
+  ORIGINAL_LOAD_PATH = $:.clone
+end
+
 $:.concat ORIGINAL_SYSTEM_PATH
 
 require 'tsc/application.rb'

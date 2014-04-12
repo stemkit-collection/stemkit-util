@@ -40,16 +40,20 @@ module SK
     end
 
     def update(env, options = {})
-      environments << PropertiesNormalizer.new(label, options).normalize(env)
+      self.tap do
+        environments << PropertiesNormalizer.new(label, options).normalize(env)
+      end
     end
 
     def populate
-      return if environments.empty?
+      self.tap do
+        next if environments.empty?
 
-      environments.each do |_environment|
-        _environment.each_pair do |_key, _value|
-          yield _key, _value if block_given?
-          ENV[_key] = _value
+        environments.each do |_environment|
+          _environment.each_pair do |_key, _value|
+            yield _key, _value if block_given?
+            ENV[_key] = _value
+          end
         end
       end
     end
@@ -62,16 +66,18 @@ module SK
     #######
 
     def load_properties(area, *extras)
-      "SK_ENVRC_#{area.to_s.upcase}".tap do |_trigger|
-        return if ENV[_trigger] == 'off'
+      self.tap do
+        "SK_ENVRC_#{area.to_s.upcase}".tap do |_trigger|
+          next if ENV[_trigger] == 'off'
 
-        update resource.properties(area, *extras), :prefix => false, :upcase => false
-        ENV[_trigger] = 'off'
+          update resource.properties(area, *extras), :prefix => false, :upcase => false
+          ENV[_trigger] = 'off'
+        end
       end
     end
 
     def resource
-      @resource ||= @provider.config('.buildrc', :uproot => true, :home => true)
+      @resource ||= @provider.config('.envrc', :uproot => true, :home => true)
     end
 
     def environments

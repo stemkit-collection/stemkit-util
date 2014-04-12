@@ -38,6 +38,11 @@ class Application < TSC::Application
     handle_errors do
       require 'pathname'
       require 'tsc/path'
+      require 'sk/environment'
+
+      SK::Environment.new(app_base).load_general_properties.populate do |_key, _value|
+        puts "### #{_key} => #{_value.inspect}" if verbose?
+      end
 
       process_command_line figure_command_line(script_name, ARGV)
     end
@@ -66,15 +71,13 @@ class Application < TSC::Application
   end
 
   def app_hooks
-    @app_hooks ||= begin
-      if defined? APP_TOP
-        app_bin.join('hooks')
-      else
-        system_path.entries.select { |_entry|
-          _entry.include? '/runtime/'
-        }
-      end
-    end
+    app_bin.join('hooks') if defined? APP_TOP
+  end
+
+  def app_runtime
+    system_path.entries.select { |_entry|
+      _entry.include? '/runtime/'
+    }
   end
 
   def app_version
@@ -432,12 +435,13 @@ class Application < TSC::Application
         [ _entry.join('lib'), _entry.join('lib64') ]
       }
       system_path.front app_bin
-      system_path.front project_env_path.entries.reverse
 
       system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         _entry.join('bin')
       }
       system_path.front app_hooks
+      system_path.front project_env_path.entries.reverse
+      system_path.front app_runtime
     end
   end
 
