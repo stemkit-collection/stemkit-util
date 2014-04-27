@@ -96,6 +96,10 @@ class Application < TSC::Application
     @project_env_path ||= TSC::Path[env.project_path].load
   end
 
+  def installed_project_env_path
+    @installed_project_env_path ||= TSC::Path[env.project_path].load
+  end
+
   def system_path
     @system_path ||= TSC::PATH.new.load
   end
@@ -160,8 +164,16 @@ class Application < TSC::Application
       @project_path ||= join base, 'E', 'PROJECT', 'PATH'
     end
 
+    def installed_project_path
+      @installed_project_path ||= join base, 'E', 'INSTALLED', 'PROJECT', 'PATH'
+    end
+
     def ignore_projects?
       [ 'yes', 'true' ].include? ENV[join(base, 'B', 'IGNORE', 'PROJECTS')]
+    end
+
+    def optional_projects?
+      [ 'yes', 'true' ].include? ENV[join(base, 'B', 'OPTIONAL', 'PROJECTS')]
     end
 
     def ignore_facilities?
@@ -235,11 +247,13 @@ class Application < TSC::Application
 
         master.with_projects_top do |_top|
           _top.join(name, version, 'bin').tap do |_folder|
-            return master.project_env_path.front _folder if _folder.directory?
+            return master.installed_project_env_path.front _folder if _folder.directory?
           end
 
           _locations << _top
         end
+
+        return if master.env.optional_projects?
 
         "Project #{name.inspect} of version #{version.inspect} not available".tap do |_message|
           raise _message if _locations.empty?
@@ -253,7 +267,6 @@ class Application < TSC::Application
           end
         end
       end
-
     end
 
     def import_roots
@@ -434,14 +447,12 @@ class Application < TSC::Application
       system_lib_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         [ _entry.join('lib'), _entry.join('lib64') ]
       }
-      system_path.front app_bin
+      system_path.front app_bin, installed_project_env_path.entries
 
       system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         _entry.join('bin')
       }
-      system_path.front app_hooks
-      system_path.front project_env_path.entries.reverse
-      system_path.front app_runtime
+      system_path.front app_hooks, app_runtime, project_env_path.entries
     end
   end
 
@@ -455,6 +466,7 @@ class Application < TSC::Application
 
         app_env_path.install
         project_env_path.install
+        installed_project_env_path.install
         system_lib_path.install
         system_path.install
 
