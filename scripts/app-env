@@ -460,18 +460,15 @@ class Application < TSC::Application
     yield command, args
 
     system_path.find_all(command).each do |_item|
-      Pathname.new(_item).realpath.tap do |_path|
-        next if _path == script_real_location.join(script_name)
-        next if _path == app_bin.join(script_name)
+      next if script_real_name == Pathname.new(_item).realpath.basename.to_s
 
-        app_env_path.install
-        project_env_path.install
-        installed_project_env_path.install
-        system_lib_path.install
-        system_path.install
+      app_env_path.install
+      project_env_path.install
+      installed_project_env_path.install
+      system_lib_path.install
+      system_path.install
 
-        exec _item, *args
-      end
+      exec _item, *args
     end
 
     raise "Command not found: #{command}"
