@@ -55,12 +55,12 @@ module SK
 
       def lines(content)
         unit = nil
-        content.to_s.lines.map { |_line|
+        normalize_lines(content).map { |_line|
           # Here the line gets re-indented to the value specified
           # either in the config file or on the command line (-i).
           #
-          spaces, line = _line.chomp.scan(%r{^(\s*)(.*)$}).first
-          offset = spaces.count(" ") + spaces.count("\t") * 8
+          spaces, line = _line.scan(%r{^(\s*)(.*?)$}).first
+          offset = spaces.count(' ') + spaces.count("\t") * 8
           unit ||= (offset unless offset.zero?)
 
           (unit ? ' ' * ((offset/unit)*indent) : '') + line
@@ -68,21 +68,22 @@ module SK
       end
 
       def user
-        @user ||= begin
-          entry = Etc.getpwuid
+        @user ||= Etc.getpwuid.tap { |_entry|
+          break AnonymousUser.new unless _entry
 
-          if entry
-            class << entry
-              def description
-                @description ||= (gecos.strip.empty? ? name : gecos).strip
-              end
+          class << _entry
+            def description
+              @description ||= (gecos.strip.empty? ? name : gecos).strip
             end
-          else
-            entry = AnonymousUser.new
           end
+        }
+      end
 
-          entry
-        end
+      protected
+      #########
+
+      def normalize_lines(*items)
+        items.flatten.compact.map(&:to_s).map(&:lines).map(&:to_a).flatten
       end
     end
   end

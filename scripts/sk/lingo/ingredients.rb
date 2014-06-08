@@ -13,17 +13,15 @@ module SK
   module Lingo
     module Ingredients
       def copyright_holders
-        holders = Array(data['copyright_holders'])
-        holders.push user.description if holders.empty?
-
-        lines holders
+        lines normalize_lines(data['copyright_holders']).tap { |_holders|
+          _holders.push user.description if _holders.empty?
+        }
       end
 
       def authors
-        authors = Array(data['authors'])
-        authors.push user.description if authors.empty?
-
-        lines authors
+        lines normalize_lines(data['authors']).tap { |_authors|
+          _authors.push user.description if _authors.empty?
+        }
       end
 
       def license
