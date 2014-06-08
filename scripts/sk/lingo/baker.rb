@@ -166,7 +166,7 @@ module SK
       def make_copyright_notice
         @notice ||= [
           config.copyright_holders.map { |_holder|
-            "Copyright (c) #{Time.now.year}, #{_holder}"
+            "Copyright (c) #{Time.now.year} #{_holder}"
           },
           append_newline_if(prepend_newline_if(config.license)),
           config.authors.map { |_author|
@@ -176,7 +176,11 @@ module SK
       end
 
       def output(item, content, stream)
-        stream.puts Substitutor.new(item, self).process(content.flatten.join("\n"))
+        Substitutor.new(item, self).tap do | _substitutor|
+          stream.puts content.flatten.map { |_line|
+            _substitutor.process _line.sub(%r{\s+$}, '')
+          }
+        end
       end
 
       def make_qualified_name(*args)
