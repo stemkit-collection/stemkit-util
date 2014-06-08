@@ -54,16 +54,15 @@ module SK
       end
 
       def lines(content)
-        unit = nil
         normalize_lines(content).map { |_line|
           # Here the line gets re-indented to the value specified
           # either in the config file or on the command line (-i).
           #
           spaces, line = _line.scan(%r{^(\s*)(.*?)$}).first
           offset = spaces.count(' ') + spaces.count("\t") * 8
-          unit ||= (offset unless offset.zero?)
+          @unit ||= self.source_indent || (offset unless offset.zero?)
 
-          (unit ? ' ' * ((offset/unit)*indent) : '') + line
+          (@unit ? ' ' * ( (offset/@unit) * indent ) : '') + line
         }
       end
 

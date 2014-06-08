@@ -77,6 +77,7 @@ end
 __END__
 
 m:
+  source-indent: 2
   indent: 4
   default:
     header:
