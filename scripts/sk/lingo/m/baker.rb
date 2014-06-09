@@ -10,14 +10,11 @@
 =end
 
 require 'sk/lingo/cpp/baker.rb'
-# require 'sk/lingo/c/recipes.rb'
 
 module SK
   module Lingo
     module M
       class Baker < SK::Lingo::Cpp::Baker
-        # include SK::Lingo::M::Recipes
-
         def tag
           'm'
         end
@@ -85,10 +82,11 @@ m:
       content: |-
         #import <UIKit/UIKit.h>
 
-        @interface #{full_class_name} : NSObject
+        @interface #{full_class_name} : NSObject<NSObject>
           @property (readonly, nonatomic) NSObject* property;
 
-          - (BOOL) method: (NSObject*) parameter;
+          - (instancetype) init;
+          - (BOOL) methodWithBool: (BOOL) boolParameter andObject: (NSObject*) objectParameter;
         @end
 
     body:
@@ -102,7 +100,18 @@ m:
         @end
 
         @implementation #{full_class_name}
-          - (BOOL) method: (NSObject*) parameter {
+          - (instancetype) init {
+            if(self = [super init]) {
+              [self setupInstance];
+            }
+            return self;
+
+          }
+
+          - (void) setupInstance {
+          }
+
+          - (BOOL) methodWithBool: (BOOL) boolParameter andObject: (NSObject*) objectParameter {
             return YES;
           }
         @end
