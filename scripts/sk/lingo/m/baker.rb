@@ -116,6 +116,22 @@ m:
           }
         @end
 
+  proto:
+    header:
+      indent: 0
+      content: |-
+        #import <UIKit/UIKit.h>
+
+        @protocol #{full_class_name} <NSObject>
+          @required
+            @property (readonly, nonatomic) NSObject* requiredProperty;
+            - (BOOL) requiredMethod: (NSObject*) parameter;
+
+          @optional
+            @property (readonly, nonatomic) NSObject* optionalProperty;
+            - (BOOL) optionalMethod: (NSObject*) parameter;
+        @end
+
   main:
     body:
       indent: 0
