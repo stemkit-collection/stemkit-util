@@ -132,6 +132,12 @@ module SK
         content.empty? ? content : [ content, '' ]
       end
 
+      def make_and_save(section, item)
+        config.target[section].tap do |_section|
+          save item, make_content(item, _section) if _section
+        end
+      end
+
       def save(item, *content)
         file = make_filename(item)
         if bakery.options.print?

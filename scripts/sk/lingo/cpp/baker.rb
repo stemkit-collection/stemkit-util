@@ -68,13 +68,11 @@ module SK
         end
 
         def header(item, section, extension = nil)
-          item = cpp_item item, extension, 'include'
-          save item, make_content(item, config.target[section] || {})
+          make_and_save section, cpp_item(item, extension, 'include')
         end
 
         def body(item, section, extension = nil)
-          item = cpp_item item, extension, 'lib'
-          save item, make_content(item, config.target[section] || {})
+          make_and_save section, cpp_item(item, extension, 'lib')
         end
 
         def make_modules(namespace, &block)
