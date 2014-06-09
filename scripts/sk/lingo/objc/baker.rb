@@ -13,10 +13,10 @@ require 'sk/lingo/cpp/baker.rb'
 
 module SK
   module Lingo
-    module M
+    module Objc
       class Baker < SK::Lingo::Cpp::Baker
         def tag
-          'm'
+          'objc'
         end
 
         def accept_by_extension(item)
@@ -58,7 +58,7 @@ if $0 == __FILE__
 
   module SK
     module Lingo
-      module M
+      module Objc
         class BakerTest < Test::Unit::TestCase
           def test_nothing
           end
@@ -73,7 +73,7 @@ end
 
 __END__
 
-m:
+objc:
   source-indent: 2
   indent: 4
   default:
