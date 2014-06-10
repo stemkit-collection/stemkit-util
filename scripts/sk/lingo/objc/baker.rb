@@ -100,15 +100,14 @@ objc:
         @end
 
         @implementation #{full_class_name}
+          - (void) setupInstance {
+          }
+
           - (instancetype) init {
             if(self = [super init]) {
               [self setupInstance];
             }
             return self;
-
-          }
-
-          - (void) setupInstance {
           }
 
           - (BOOL) methodWithBool: (BOOL) boolParameter andObject: (NSObject*) objectParameter {
@@ -145,8 +144,6 @@ objc:
             return UIApplicationMain(argc, argv, nil, NSStringFromClass([app_Delegate class]));
           }
         }
-
-    header:
 
   ain:
     like: main
