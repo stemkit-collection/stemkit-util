@@ -100,12 +100,13 @@ objc:
         @end
 
         @implementation #{full_class_name}
-          - (void) setupInstance {
+          - (void) #{full_class_name} {
+            _instanceVariable = nil;
           }
 
           - (instancetype) init {
             if(self = [super init]) {
-              [self setupInstance];
+              [self #{full_class_name}];
             }
             return self;
           }
