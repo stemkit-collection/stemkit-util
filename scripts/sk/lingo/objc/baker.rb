@@ -132,6 +132,28 @@ objc:
             - (BOOL) optionalMethod: (NSObject*) parameter;
         @end
 
+  test:
+    body:
+      indent: 0
+      content: |-
+        #import <XCTest/XCTest.h>
+
+        @interface #{full_class_name} : XCTestCase
+        @end
+
+        @implementation #{full_class_name}
+          - (void) testBasics {
+            XCTFail(@"Not implemented");
+          }
+
+          - (void) setUp {
+            [super setUp];
+          }
+
+          - (void) tearDown {
+            [super tearDown];
+          }
+        @end
   main:
     body:
       indent: 0
