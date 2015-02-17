@@ -10,8 +10,7 @@
   Author: Gennady Bystritsky
 =end
 
-$:.concat ENV.to_hash['PATH'].to_s.split(File::PATH_SEPARATOR)
-
+$: << File.dirname(__FILE__)
 require 'tsc/application'
 
 class Application < TSC::Application
@@ -92,12 +91,18 @@ class Application < TSC::Application
     @app_env_path ||= TSC::Path[env.path].load
   end
 
-  def project_env_path
-    @project_env_path ||= TSC::Path[env.project_path].load
+  def imports_env_path
+    @imports_env_path ||= TSC::Path[env.imports_path].load
   end
 
-  def installed_project_env_path
-    @installed_project_env_path ||= TSC::Path[env.project_path].load
+  def imports
+    @imports ||= TSC::Path[env.imports].load.entries.tap { |_imports|
+      next unless _imports.empty?
+
+      with_projects_top do |_top|
+        _imports << File.expand_path("~/projects/#{_top.basename}/default")
+      end
+    }
   end
 
   def system_path
@@ -152,41 +157,49 @@ class Application < TSC::Application
       @main ||= name master.app_base
     end
 
-    def build
-      @build ||= join base, 'B'
+    def platform_top
+      @platform_top ||= join env, 'PLATFORM', 'TOP'
     end
 
     def path
-      @path ||= join base, 'E', 'PATH'
+      @path ||= join env, 'PATH'
     end
 
-    def project_path
-      @project_path ||= join base, 'E', 'PROJECT', 'PATH'
+    def imports_path
+      @imports_path ||= join env, 'IMPORTS', 'PATH'
     end
 
     def installed_project_path
-      @installed_project_path ||= join base, 'E', 'INSTALLED', 'PROJECT', 'PATH'
+      @installed_project_path ||= join env, 'INSTALLED', 'PROJECT', 'PATH'
+    end
+
+    def build_in_progress
+      @build_in_progress ||= join build, 'IN', 'PROGRESS'
+    end
+
+    def imports
+      @imports ||= join build, 'IMPORTS'
     end
 
     def ignore_projects?
-      [ 'yes', 'true' ].include? ENV[join(base, 'B', 'IGNORE', 'PROJECTS')]
+      [ 'yes', 'true' ].include? ENV[join(build, 'IGNORE', 'PROJECTS')]
     end
 
-    def optional_projects?
-      [ 'yes', 'true' ].include? ENV[join(base, 'B', 'OPTIONAL', 'PROJECTS')]
+    def projects_optional?
+      [ 'yes', 'true' ].include? ENV[join(build, 'PROJECTS', 'OPTIONAL')]
     end
 
     def ignore_facilities?
-      [ 'yes', 'true' ].include? ENV[join(base, 'B', 'IGNORE', 'FACILITIES')]
+      [ 'yes', 'true' ].include? ENV[join(build, 'IGNORE', 'FACILITIES')]
     end
 
-    def unless_build
-      return if ENV[build] == 'off'
+    def unless_build_in_progress
+      return if ENV[build_in_progress] == 'true'
 
       begin
         yield
       ensure
-        ENV[build] = 'off'
+        ENV[build_in_progress] = 'true'
       end
     end
 
@@ -207,6 +220,14 @@ class Application < TSC::Application
 
     private
     #######
+
+    def build
+      @build ||= join base, 'B'
+    end
+
+    def env
+      @env ||= join base, 'E'
+    end
 
     def normalize(item)
       item.to_s.split(%r{[_-]}).map(&:strip).reject(&:empty?).map(&:upcase)
@@ -239,21 +260,21 @@ class Application < TSC::Application
 
     def setup
       [].tap do |_locations|
-        unless import_script_folders.empty?
-          return master.project_env_path.front import_script_folders
+        with_import_script_folder do |_folder|
+          return master.imports_env_path.front _folder
         end
 
         _locations.concat import_roots
 
         master.with_projects_top do |_top|
           _top.join(name, version, 'bin').tap do |_folder|
-            return master.installed_project_env_path.front _folder if _folder.directory?
+            return master.imports_env_path.front _folder if _folder.directory?
           end
 
           _locations << _top
         end
 
-        return if master.env.optional_projects?
+        return if master.env.projects_optional?
 
         "Project #{name.inspect} of version #{version.inspect} not available".tap do |_message|
           raise _message if _locations.empty?
@@ -271,7 +292,7 @@ class Application < TSC::Application
 
     def import_roots
       @import_roots ||= [].tap { |_roots|
-        param('import-root').split(':').each do |_item|
+        (param('import-root').split(':') + master.imports).each do |_item|
           _item.strip.tap do |_item|
             _roots << Pathname.new(_item).expand_path(master.config_location) unless _item.empty?
           end
@@ -279,14 +300,14 @@ class Application < TSC::Application
       }
     end
 
-    def import_script_folders
-      @import_script_folders ||= [].tap { |_folders|
+    def with_import_script_folder
+      [ '.', '*' ].each do |_area|
         import_roots.each do |_root|
-          _root.join(name, version, 'scripts').tap do |_folder|
-            _folders << _folder if _folder.directory?
-          end
+           Dir.glob _root.join(name, version, _area, 'scripts', '.').to_s do |_folder|
+             return yield _folder
+           end
         end
-      }
+      end
     end
 
     def version
@@ -371,7 +392,7 @@ class Application < TSC::Application
   end
 
   def update_from_config
-    env.unless_build do
+    env.unless_build_in_progress do
       unless env.ignore_facilities?
         config.properties('apps').each do |_app, _version|
           request_facility _app, _version
@@ -447,12 +468,12 @@ class Application < TSC::Application
       system_lib_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         [ _entry.join('lib'), _entry.join('lib64') ]
       }
-      system_path.front app_bin, installed_project_env_path.entries
+      system_path.front app_bin
 
       system_path.front(platform_top, app_env_path.entries.reverse) { |_entry|
         _entry.join('bin')
       }
-      system_path.front app_hooks, app_runtime, project_env_path.entries
+      system_path.front app_hooks, app_runtime, imports_env_path.entries
     end
   end
 
@@ -463,8 +484,7 @@ class Application < TSC::Application
       next if script_real_name == Pathname.new(_item).realpath.basename.to_s
 
       app_env_path.install
-      project_env_path.install
-      installed_project_env_path.install
+      imports_env_path.install
       system_lib_path.install
       system_path.install
 
@@ -517,23 +537,25 @@ class Application < TSC::Application
   end
 
   def platform_top(*args)
-    (@platform_top ||= figure_platform_top).join *args
+    (@platform_top ||= Pathname.new(figure_platform_top)).join *args
   end
 
   def figure_platform_top
-    return Pathname.new(PLATFORM_TOP) if defined? PLATFORM_TOP
+    return PLATFORM_TOP if defined? PLATFORM_TOP
+
+    ENV[env.platform_top].tap do |_top|
+      return _top if _top
+    end
 
     TSC::Error.wrap_with 'Platform top cannot be determined' do
-      case find_in_path('ruby').first
-        when nil
-          raise 'No ruby'
-
-        when %r{^(.+/platform/.+?)(/ruby-\d+([.]\d+)+)?(-p\d+)?/bin/ruby$}
-          return Pathname.new($1)
-
-        else
-          raise 'No platform bound ruby'
+      find_in_path('ruby').each do |_ruby|
+        case _ruby
+          when %r{^(.+/platform/.+?)(/ruby-\d+([.]\d+)+)?(-p\d+)?/bin/ruby$}
+            return ENV[env.platform_top] = $1
+        end
       end
+
+      raise TSC::Error, [ 'No platform bound ruby', __FILE__]
     end
   end
 end
