@@ -11,7 +11,7 @@
 
 if $0 == __FILE__
   require 'sk/sync-master.rb'
-  require 'sk/tests/sync-master/sync-master-fixture.rb'
+  require './sync-master-fixture.rb'
 
   module SK
     module Tests

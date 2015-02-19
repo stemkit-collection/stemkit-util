@@ -11,7 +11,7 @@
 
 if $0 == __FILE__
   require 'sk/sync-master.rb'
-  require 'sk/tests/sync-master/sync-master-fixture.rb'
+  require './sync-master-fixture.rb'
 
   module SK
     module Tests
@@ -25,6 +25,10 @@ if $0 == __FILE__
         def setup
           super
         end
+
+        def test_nothing
+        end
+
         if RUBY_PLATFORM == 'java'
           def test_ruby_error
             par1 = 0

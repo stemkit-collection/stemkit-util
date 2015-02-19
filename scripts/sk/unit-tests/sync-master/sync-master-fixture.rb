@@ -53,7 +53,7 @@ module SK
         executor.join
         assert_equal runs * amount * threads, depot.size
 
-        slices = depot.enum_slice(amount).map
+        slices = depot.each_slice(amount).to_a
         assert_equal runs * threads, slices.size
 
         slices.map { |_slice|
