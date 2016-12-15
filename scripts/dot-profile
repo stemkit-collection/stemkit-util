@@ -110,7 +110,7 @@ act_as_rc()
           export ENV="${env}" USERENV="${userenv}"
           unset env userenv
         }
-        unalias cd CD up jj del h rm p dir ll showdir vi
+        unalias cd chdir CD up jj del h rm p dir ll showdir vi
         [ "${SHELLDEPTH:+set}" != set ] && {
           alias bye=exit
           alias logout=exit
@@ -235,6 +235,7 @@ act_as_rc()
         alias more=less
 
         alias 'cd=__cd__'
+        alias 'chdir=__original_cd__'
         alias 'dir=__dir__'
         alias 'll=__ll__'
 
