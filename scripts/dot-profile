@@ -155,6 +155,14 @@ act_as_rc()
       cd "${@}" && __dir__
     }
 
+    __cdc__ () {
+      __cdc__=`"${@:-pwd}"` && __cd__ "${__cdc__}"
+    }
+
+    __cdp__ () {
+      __cdc__ getdir "${@:-src}"
+    }
+
     dirtree() {
       ls -R "${@}" | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/ /' -e 's/-/|/'
     }
@@ -235,6 +243,9 @@ act_as_rc()
         alias more=less
 
         alias 'cd=__cd__'
+        alias 'cdc=__cdc__'
+        alias 'cdp=__cdp__'
+
         alias 'chdir=__original_cd__'
         alias 'dir=__dir__'
         alias 'll=__ll__'
@@ -244,15 +255,6 @@ act_as_rc()
         alias "__A="
         alias "__B="
         alias "__O="
-
-        alias 'cdbin=__cd__ `getdir bin`'
-        alias 'cdsrc=__cd__ `getdir src`'
-        alias 'cdinc=__cd__ `getdir inc`'
-        alias 'cdlib=__cd__ `getdir lib`'
-
-        # GIT related commands aliases
-        alias cdtop='__cd__ `git top || echo .`'
-        alias cdws='__cd__ `git ws-top || echo .`'
 
         set -o noclobber
         set -o vi

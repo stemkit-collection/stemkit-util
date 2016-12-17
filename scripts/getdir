@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# vim: sw=2:
 
 if defined? Installation::Generator
   class Generator < Installation::Generator
@@ -17,7 +18,7 @@ end
 [ 'tsc/application.rb' ].each do |a|
   $: << ENV.to_hash['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
   require a
-end                                                                                                                      
+end
 
 class Application < TSC::Application
   def initialize
@@ -35,17 +36,19 @@ class Application < TSC::Application
   #######
 
   def process(directory)
-    case directory
-      when 'lib'
-        src_subscope('lib', 'include')
-      when 'include', 'inc'
-        src_subscope('include', 'lib')
-      when *scopedirs
-        [ scope.first, directory, scope.last ]
-      when *topscopedirs
-        [ scope.first, directory[3 .. -1] ]
-      else
-        raise TSC::UsageError, "Wrong scope directory #{directory.inspect}"
+    TSC::Error.wrap_with directory do
+      case directory
+        when 'lib'
+          src_subscope('lib', 'include')
+        when 'include', 'inc'
+          src_subscope('include', 'lib')
+        when *scopedirs
+          [ scope.first, directory, scope.last ]
+        when *topscopedirs
+          [ scope.first, directory[3 .. -1] ]
+        else
+          raise TSC::UsageError, 'Wrong scope'
+      end
     end
   end
 
@@ -66,7 +69,7 @@ class Application < TSC::Application
 
   def scope
     @scope ||= separate_or_call(cwd, scopedirs) {
-      raise 'Not in the project scope'
+      raise 'Not in project scope'
     }
   end
 
