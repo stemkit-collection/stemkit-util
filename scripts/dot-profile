@@ -250,6 +250,10 @@ act_as_rc()
         alias 'cdinc=__cd__ `getdir inc`'
         alias 'cdlib=__cd__ `getdir lib`'
 
+        # GIT related commands aliases
+        alias cdtop='__cd__ `git top || echo .`'
+        alias cdws='__cd__ `git ws-top || echo .`'
+
         set -o noclobber
         set -o vi
       ;;
