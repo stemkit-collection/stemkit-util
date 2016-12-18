@@ -184,7 +184,7 @@ act_as_rc()
       done`
 
       [ "${__cdws_target__:+set}" != set ] && {
-        ( echo "No workspace \"${1}\" in ${__ws__}"
+        ( echo "No workspace \"${1}\" in ${__cdws_ws__}"
           echo "Available workspaces:"
 
           __original_cd__ "${__cdws_ws__}" && {
