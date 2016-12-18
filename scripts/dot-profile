@@ -163,6 +163,47 @@ act_as_rc()
       __cdc__ getdir "${@:-src}"
     }
 
+    __cdws__ () {
+      __cdws_from_top__=`git from-top` || {
+        return "${?}"
+      }
+
+      __cdws_ws__=`git ws`
+
+      [ "${#}" -eq 0 ] && {
+        __cd__ "${__cdws_ws__}"
+        return "${?}"
+      }
+
+      __cdws_target__=`__original_cd__ "${__cdws_ws__}" && git tt top 2>/dev/null | while read line; do
+        case "${line}" in
+          ${__cdws_ws__}/${1}/*)
+            echo ${line}
+          ;;
+        esac
+      done`
+
+      [ "${__cdws_target__:+set}" != set ] && {
+        ( echo "No workspace \"${1}\" in ${__ws__}"
+          echo "Available workspaces:"
+
+          __original_cd__ "${__cdws_ws__}" && {
+            git tt top 2>/dev/null | sed -n 's#^'"${__cdws_ws__}"'/\([^/]*\)/.*$#  \1#p'
+          }
+        ) 1>&2
+
+        return 3
+      }
+
+      __cdws_sibling__="${__cdws_target__}/${__cdws_from_top__}"
+
+      if [ -d "${__cdws_sibling__}" ]; then
+        __cd__ "${__cdws_sibling__}"
+      else
+        __cd__ "${__cdws_target__}"
+      fi
+    }
+
     dirtree() {
       ls -R "${@}" | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/ /' -e 's/-/|/'
     }
@@ -245,6 +286,8 @@ act_as_rc()
         alias 'cd=__cd__'
         alias 'cdc=__cdc__'
         alias 'cdp=__cdp__'
+        alias 'cdws=__cdws__'
+        alias 'cdw=__cdws__'
 
         alias 'chdir=__original_cd__'
         alias 'dir=__dir__'
