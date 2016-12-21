@@ -184,21 +184,18 @@ act_as_rc()
       done`
 
       [ "${__cdws_target__:+set}" != set ] && {
-        ( echo "No workspace \"${1}\" in ${__cdws_ws__}"
+        ( echo "ERROR: No workspace \"${1}\" in ${__cdws_ws__}"
           echo "Available workspaces:"
-
-          __original_cd__ "${__cdws_ws__}" && {
-            git tt top 2>/dev/null | sed -n 's#^'"${__cdws_ws__}"'/\([^/]*\)/.*$#  \1#p'
-          }
+          git -C "${__cdws_ws__}" tt top 2>/dev/null | sed -n 's#^'"${__cdws_ws__}"'/\([^/]*\)/.*$#  \1#p'
         ) 1>&2
 
         return 3
       }
 
-      __cdws_sibling__="${__cdws_target__}/${__cdws_from_top__}"
+      __cdws_sibling_target__="${__cdws_target__}/${__cdws_from_top__}"
 
-      if [ -d "${__cdws_sibling__}" ]; then
-        __cd__ "${__cdws_sibling__}"
+      if [ -d "${__cdws_sibling_target__}" ]; then
+        __cd__ "${__cdws_sibling_target__}"
       else
         __cd__ "${__cdws_target__}"
       fi
