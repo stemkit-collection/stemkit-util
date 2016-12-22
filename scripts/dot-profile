@@ -175,29 +175,41 @@ act_as_rc()
         return "${?}"
       }
 
-      __cdws_target__=`__original_cd__ "${__cdws_ws__}" && git tt top 2>/dev/null | while read line; do
+      __cdws_target__="${1}"
+
+      set -- `__original_cd__ "${__cdws_ws__}" && git tt top 2>/dev/null | while read line; do
         case "${line}" in
-          ${__cdws_ws__}/${1}/*)
+          ${__cdws_ws__}/${__cdws_target__}/*)
             echo ${line}
           ;;
         esac
       done`
 
-      [ "${__cdws_target__:+set}" != set ] && {
-        ( echo "ERROR: No workspace \"${1}\" in ${__cdws_ws__}"
-          echo "Available workspaces:"
-          git -C "${__cdws_ws__}" tt top 2>/dev/null | sed -n 's#^'"${__cdws_ws__}"'/\([^/]*\)/.*$#  \1#p'
+
+      [ "${#}" -gt 1 ] && {
+        ( echo "ERROR: Umbiguous workspace \"${__cdws_target__}\" in ${__cdws_ws__}"
+          echo "Matched workspaces:"
+          ls -1 "${@}" | sed -n 's#^'"${__cdws_ws__}"'/\(.*\)$#  \1#p'
         ) 1>&2
 
         return 3
       }
 
-      __cdws_sibling_target__="${__cdws_target__}/${__cdws_from_top__}"
+      [ "${#}" -eq 0 ] && {
+        ( echo "ERROR: No workspace \"${__cdws_target__}\" in ${__cdws_ws__}"
+          echo "Available workspaces:"
+          git -C "${__cdws_ws__}" tt top 2>/dev/null | sed -n 's#^'"${__cdws_ws__}"'/\(.*\)$#  \1#p'
+        ) 1>&2
+
+        return 3
+      }
+
+      __cdws_sibling_target__="${1}/${__cdws_from_top__}"
 
       if [ -d "${__cdws_sibling_target__}" ]; then
         __cd__ "${__cdws_sibling_target__}"
       else
-        __cd__ "${__cdws_target__}"
+        __cd__ "${1}"
       fi
     }
 
