@@ -163,8 +163,15 @@ act_as_rc()
       __cdc__ getdir "${@:-src}"
     }
 
+    __unset_vars_like__() {
+      for pattern in "${@}"; do
+        unset `set | awk -F= '$1 ~ /^'"${pattern}"'/ {print $1}'`
+      done
+    }
+
     __cdws__ () {
       __cdws_from_top__=`git from-top` || {
+        __unset_vars_like__ __cdws_
         return "${?}"
       }
 
@@ -172,6 +179,8 @@ act_as_rc()
 
       [ "${#}" -eq 0 ] && {
         __cd__ "${__cdws_ws__}"
+
+        __unset_vars_like__ __cdws_
         return "${?}"
       }
 
@@ -185,22 +194,25 @@ act_as_rc()
         esac
       done`
 
+      __cdws_filter__="sed -n 's%^${__cdws_ws__}/\(.*\)$%  \1%p'"
 
       [ "${#}" -gt 1 ] && {
         ( echo "ERROR: Umbiguous workspace \"${__cdws_target__}\" in ${__cdws_ws__}"
-          echo "Matched workspaces:"
-          ls -1 "${@}" | sed -n 's#^'"${__cdws_ws__}"'/\(.*\)$#  \1#p'
+          echo "Matching workspaces:"
+          ls -1 "${@}" | eval "${__cdws_filter__}"
         ) 1>&2
 
+        __unset_vars_like__ __cdws_
         return 3
       }
 
       [ "${#}" -eq 0 ] && {
         ( echo "ERROR: No workspace \"${__cdws_target__}\" in ${__cdws_ws__}"
           echo "Available workspaces:"
-          git -C "${__cdws_ws__}" tt top 2>/dev/null | sed -n 's#^'"${__cdws_ws__}"'/\(.*\)$#  \1#p'
+          git -C "${__cdws_ws__}" tt top 2>/dev/null | eval "${__cdws_filter__}"
         ) 1>&2
 
+        __unset_vars_like__ __cdws_
         return 3
       }
 
@@ -211,6 +223,8 @@ act_as_rc()
       else
         __cd__ "${1}"
       fi
+
+      __unset_vars_like__ __cdws_
     }
 
     dirtree() {
