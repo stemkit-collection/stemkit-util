@@ -188,7 +188,7 @@ act_as_rc()
 
       set -- `__original_cd__ "${__cdws_ws__}" && git tt top 2>/dev/null | while read line; do
         case "${line}" in
-          ${__cdws_ws__}/${__cdws_target__}/*)
+          ${__cdws_ws__}/${__cdws_target__}*)
             echo ${line}
           ;;
         esac
