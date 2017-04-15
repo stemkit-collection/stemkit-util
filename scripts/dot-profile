@@ -170,61 +170,12 @@ act_as_rc()
     }
 
     __cdws__ () {
-      __cdws_from_top__=`git from-top` || {
-        __unset_vars_like__ __cdws_
-        return "${?}"
+      git guess-workspace 2>/dev/null && {
+        __cdws_target__=`git guess-workspace "${@}"` && __cd__ "${__cdws_target__}"
+        return ${?}
       }
 
-      __cdws_ws__=`git ws`
-
-      [ "${#}" -eq 0 ] && {
-        __cd__ "${__cdws_ws__}"
-
-        __unset_vars_like__ __cdws_
-        return "${?}"
-      }
-
-      __cdws_target__="${1}"
-
-      set -- `__original_cd__ "${__cdws_ws__}" && git tt top 2>/dev/null | while read line; do
-        case "${line}" in
-          ${__cdws_ws__}/${__cdws_target__}*)
-            echo ${line}
-          ;;
-        esac
-      done`
-
-      __cdws_filter__="sed -n 's%^${__cdws_ws__}/\(.*\)$%  \1%p'"
-
-      [ "${#}" -gt 1 ] && {
-        ( echo "ERROR: Umbiguous workspace \"${__cdws_target__}\" in ${__cdws_ws__}"
-          echo "Matching workspaces:"
-          ls -1 "${@}" | eval "${__cdws_filter__}"
-        ) 1>&2
-
-        __unset_vars_like__ __cdws_
-        return 3
-      }
-
-      [ "${#}" -eq 0 ] && {
-        ( echo "ERROR: No workspace \"${__cdws_target__}\" in ${__cdws_ws__}"
-          echo "Available workspaces:"
-          git -C "${__cdws_ws__}" tt top 2>/dev/null | eval "${__cdws_filter__}"
-        ) 1>&2
-
-        __unset_vars_like__ __cdws_
-        return 3
-      }
-
-      __cdws_sibling_target__="${1}/${__cdws_from_top__}"
-
-      if [ -d "${__cdws_sibling_target__}" ]; then
-        __cd__ "${__cdws_sibling_target__}"
-      else
-        __cd__ "${1}"
-      fi
-
-      __unset_vars_like__ __cdws_
+      __cdws_target__=`guess-workspace "${@}"` && __cd__ "${__cdws_target__}"
     }
 
     dirtree() {

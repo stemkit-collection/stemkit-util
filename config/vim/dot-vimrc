@@ -110,7 +110,8 @@ set tw=78
 set foldmethod=syntax
 set foldtext=getline(v:foldstart)
 set foldlevel=10
-set fillchars=fold:\ " note the whitespace after   
+let javaScript_fold=1
+set fillchars=fold:\ " note the whitespace after
 " not neccessary but useful (so you can use the TAB key to fold/unfold):
 map <TAB> za
 
@@ -162,7 +163,7 @@ let Tlist_Compact_Format=1
 nnoremap <F8> :set invlist list?<CR>
 
 " when turning on special chars, tabs are '>---'
-execute 'set listchars+=tab:>-' 
+execute 'set listchars+=tab:>-'
 
 if filereadable(expand("~/.vimrc-local"))
     so ~/.vimrc-local
