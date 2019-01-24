@@ -140,6 +140,10 @@ if has("autocmd")
  augroup END
 endif
 
+augroup filetypedetect
+    au BufRead,BufNewFile *.ts set filetype=javascript
+augroup END
+
 set path=.,,*;~/products/*/*/src,/usr/include,/usr/local/include,/usr/local/lib/gcc-lib/*/*/include
 set tags=tags;~/products/*/*/src
 

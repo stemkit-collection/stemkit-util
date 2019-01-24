@@ -170,7 +170,7 @@ act_as_rc()
     }
 
     __cdws__ () {
-      git guess-workspace 2>/dev/null && {
+      git guess-workspace 1>/dev/null 2>&1 && {
         __cdws_target__=`git guess-workspace "${@}"` && __cd__ "${__cdws_target__}"
         return ${?}
       }
