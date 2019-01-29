@@ -1,0 +1,353 @@
+# vim: ft=sh
+
+eval <<'RUBY'
+  require 'etc'
+  require 'ftools'
+
+  $:.concat ENV['PATH'].split(':')
+
+  class Profile
+    PATH = %w{
+      /sbin 
+      #{userinfo.dir}/bin/#{sysid} 
+      #{userinfo.dir}/bin
+      #{userinfo.dir}/local/#{sysid}/bin
+      /usr/local/bin 
+      /bin /usr/bin /usr/sbin 
+      /opt/SUNWspro/bin 
+      /usr/ucb /usr/bsd /usr/ccs/bin 
+      /etc /usr/etc /usr/java1.2/bin /c/jdk1.2.2/bin
+      #{userinfo.dir}/bin 
+      /usr/bin/X11 /usr/X11/bin /usr/openwin/bin
+      /usr/X11/demo /usr/openwin/demo
+      /opt/imake/bin
+    }
+    MANPATH = %w{
+      /usr/man
+      /usr/share/man
+      /usr/openwin/share/man
+      /opt/SUNWspro/man
+      /usr/local/man
+      /usr/local/samba/man
+      /usr/local/fvwm95/man
+    }
+    def start
+      time = Time.now
+      say "\n\nHello, #{userinfo.gecos}. It is #{time.strftime '%X %x'} now."
+      check_my_other_sessions { |_count|
+	"Currently you have other #{_count} session(s) at #{server.inspect}"
+      } or (
+	if File.exists? lastlog_file
+	  say "You haven't been logged on since #{IO.readlines lastlog_file}"
+	else
+	  say "It seems to be your first logging on to the system"
+	end
+      )
+      save_lastlog_time time
+
+      say "\nYour terminal is #{term}, tty line - #{tty}"
+      say "Display is #{display}" if display
+
+      others = logged_users.select { |_user| 
+	_user[0] != userinfo.name 
+      }.map { |_user| _user[0] }.uniq
+
+      if others.size > 0
+	say "There are #{others.size} other users logged on: #{others.join ', '}"
+      else
+	say "You are the only user on the system"
+      end
+      say "\nDon't forget to say \"bye\" when finishing !!!\n\n"
+
+      export :TERM, term
+      export :DISPLAY, display
+      export :SERVER, server
+      export :SYSID, sysid
+      export :USER, userinfo.name
+      export :HISTFILE, histfile
+      export :home, userinfo.dir
+      export :PATH, path
+      export :MANPATH, manpath
+    end
+    def stop
+      h, m, s = divide 3, 60, ARGV.first.to_i
+      say
+      say "[ The End of Session ]".center(40)
+      check_my_other_sessions {
+        "\nWARNING: You still have other sessions"
+      }
+      say
+      say "You've been logged on for as long as #{h}h #{m}m #{s}s"
+      say "See you later, #{userinfo.gecos} !!!"
+      say
+      save_lastlog_time Time.now
+    end
+
+    private
+    #######
+    def build_path(list)
+      list.map { |_dir| 
+	directory = eval '%Q{' + _dir + '}'
+	directory if File.directory? directory
+      }.compact.join ':'
+    end
+    def divide(times,value,*args)
+      unless args.empty?
+	return args if args.size == times
+	divide times, value, args.first/value, args.first%value, *args[1..-1]
+      end
+    end
+    def check_my_other_sessions
+      users = logged_users.select { |_user| _user[0] == userinfo.name }
+      if users.size > 1
+	say yield(users.size - 1)
+	say users.select { |_user| 
+	  _user[1] != tty
+	}.map { |_user|
+	  "> on #{_user[1]}" + ( " from #{_user[2]}" if _user[2] ).to_s + " since #{_user[3]}"
+	}
+	true
+      end
+    end
+    def save_lastlog_time(time)
+      File.makedirs File.dirname(lastlog_file)
+      File.open(lastlog_file,"w") do |_io| 
+	_io.puts time.strftime('%X %x')
+      end
+    end
+    def say(*args)
+      $stderr.puts *args
+    end
+    def run(*args)
+      $stdout.puts *args
+    end
+    def userinfo
+      @userinfo ||= Etc::getpwuid
+    end
+    def tty
+      @tty ||= `tty`.chomp.split('/dev/').last
+    end
+    def logged_users
+      @logged_users ||= `who`.map { |_entry|
+	array = _entry.split
+	user = array[0]
+	pty = array[1]
+	origin = array.last.scan(%r{\((.*)\)}).first
+	if origin
+	  origin = origin.first
+	  time = array[2..-2]
+	else
+	  time = array[2..-1]
+	end
+	[ user, pty, origin, time.join(' ') ]
+      }
+    end
+    def export(symbol,value)
+      run "#{symbol}='#{value}' export #{symbol};" unless value.nil?
+    end
+    def parse_term
+      unless @term
+	@term = ENV['TERM']
+	array = @term.split '%'
+	@term, @display = array if array.size == 2
+      end
+    end
+    def term
+      parse_term
+      @term
+    end
+    def display
+      parse_term
+      unless @display
+	@display = "#{current_session[2]}:0.0" if current_session[2]
+      end
+      @display
+    end
+    def current_session
+      @current_session ||= logged_users.select { |_user|
+	_user[0] == userinfo.name and _user[1] == tty
+      }.first || []
+    end
+    def server
+      @server ||= `uname -n`.chomp.split('.').first.downcase
+    end
+    def sysid
+      @sysid ||= begin
+	require 'sk/platform'
+	SK::Platform.current.name
+      rescue LoadError
+	PLATFORM
+      end
+    end
+    def lastlog_file
+      @lastlog_file ||= "#{userinfo.dir}/.hostspecific/#{server}-lastlog"
+    end
+    def histfile
+      @histfile ||= "#{userinfo.dir}/.hostspecific/#{server}-history"
+    end
+    def path
+      @path ||= build_path(PATH)
+    end
+    def manpath
+      @manpath ||= build_path(MANPATH)
+    end
+  end
+  
+  Profile.new.send ARGV.shift
+  exit 0
+RUBY
+__END__() {
+  true
+}
+__END__
+
+locate_ruby()
+{
+  for directory in "${@}"; do
+    program="${directory}/ruby"
+    [ `"${program}" -e "puts 'HELLO'"` = 'HELLO' ] && {
+      echo ${program}
+      break
+    }
+  done 2>/dev/null
+}
+
+act_as_rc()
+{
+  while true; do
+    case "${SHELL}" in
+      */bash | */ksh)
+        [ "${USERENV:+set}" = set ] && {
+          : ${env:="${ENV}"} ${userenv:="${USERENV}"}
+          . "${USERENV}"
+          export ENV="${env}" USERENV="${userenv}"
+          unset env userenv
+        }
+        [ -o monitor -o -o interactive ] || break
+        unalias cd CD up jj del h rm p dir ll showdir vi
+        [ "${SHELLDEPTH:+set}" != set ] && {
+          set -o ignoreeof
+          alias bye=exit
+          alias logout=exit
+        }
+      ;;
+    esac
+
+    PS1="[${SYSID}.${SERVER}:!]${PROMPT:-${USER}}${SHELLDEPTH:+_${SHELLDEPTH}}> "                          
+    [ "${TERM}" = xterm ] && {
+      PS1=`echo "\033]0;${PROMPT:-${USER}}@${SERVER}\07\r\c"`"${PS1}"
+    }
+    export SHELLDEPTH=`expr "${SHELLDEPTH:-0}" + 1`
+    PS2="(cont) "                                             
+
+    __showdir__() {
+      [ "${#}" -le 1 ] && {
+        echo Current directory is $PWD
+      }
+      columns=`stty -a|sed -n 's/^.*columns[^0-9]* \([0-9][0-9]*\).*$/\1/p'`
+      [ "${columns:+set}" = set ] || {
+        columns=`stty -a|sed -n 's/^.* \([0-9][0-9]*\) columns.*$/\1/p'`
+      }
+      COLUMNS=${columns:-80} ls "${@}"
+    }
+    __dir__() {
+      __showdir__ -axF "${@}" | less
+    }
+    __ll__() {
+      __showdir__ -al "${@}" | less
+    }
+    __cd__() { 
+      cd "${@}" && __dir__
+    }
+
+    P4PORT=localhost:1 export P4PORT
+    EDITOR=vim export EDITOR
+    PAGER=less export PAGER
+    LESS=-XMFe export LESS
+    HISTSIZE=50 export HISTSIZE
+    RI=-fbs export RI
+
+    case "${SHELL}" in
+      */bash | */ksh)
+        set +o noclobber 
+        set -o vi
+
+        alias vi="${EDITOR:-vim}"
+        alias h=history
+        alias rm='rm -i'
+        alias del=/bin/rm
+        alias jj=jobs
+        alias p='echo ${PWD}'
+        alias !!=r
+        alias !=r
+        alias pg=less
+        alias more=less
+
+        alias 'cd=__cd__'
+        alias 'dir=__dir__'
+        alias 'll=__ll__'
+
+        alias "__D="
+        alias "__C="
+        alias "__A="
+        alias "__B="
+        alias "__O="
+
+        alias 'cdbin=__cd__ `getdir bin`'
+        alias 'cdsrc=__cd__ `getdir src`'
+        alias 'cdinc=__cd__ `getdir inc`'
+        alias 'cdlib=__cd__ `getdir lib`'
+      ;;
+    esac
+
+    [ "${home:+set}" = set ] && {
+      export HOME="${home}"
+    }
+    break
+  done
+}
+
+act_as_profile() 
+{
+  ENV="${HOME}/.profile" export ENV
+  trap 'ruby '"${ENV}"' stop ${SECONDS:-0}' EXIT
+
+  PATH="${HOME}/bin:${PATH}" export PATH
+  RUBY=`locate_ruby ${HOME}/local/*/bin /usr/local/bin /usr/bin`
+  eval `"${RUBY:-ruby}" "${ENV}" start`
+  unset RUBY
+
+  INPUTRC=~/.inputrc export INPUTRC
+  JINDENT_PROPERTY="$HOME/.jindent" export JINDENT_PROPERTY
+  EXINIT="so $HOME/.exrc" export EXINIT
+
+  umask 2
+  mesg y
+  stty intr ^c susp ^z kill ^u eol ^w erase ^h -tabs tostop 
+
+  case "${SHELL}" in
+    */bash | */sh)
+      continue
+    ;;
+    */ksh)
+      [ "${HISTFILE:+set}" = set ] && {
+        [ -f "${HISTFILE}" ] || touch "${HISTFILE}"
+      }
+      exec "${SHELL}"
+    ;;
+  esac
+}
+
+while true; do
+  case "${ENV}" in
+    */.profile)
+      act_as_rc
+    ;;
+    *)
+      act_as_profile
+    ;;
+  esac
+  break
+done
+
+true

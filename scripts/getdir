@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+
+[ 'sk/application.rb' ].each do |a|
+  $: << ENV.to_hash['PATH'].split(':').find { |p| Dir[ p + '/' + a ].first }
+  require a
+end                                                                                                                      
+
+class Application < SK::Application
+  def initialize
+    super((scopedirs + topscopedirs + [ 'lib', 'inc' ]).join('|'))
+  end
+
+  def main
+    start do
+      raise SK::UsageError, 'No scope directory specified' unless ARGV.size == 1
+      puts File.join(process(ARGV.first).flatten)
+    end
+  end
+
+  private
+  #######
+
+  def process(directory)
+    case directory
+      when 'lib'
+        src_subscope('lib', 'include')
+      when 'include', 'inc'
+        src_subscope('include', 'lib')
+      when *scopedirs
+        [ scope.first, directory, scope.last ]
+      when *topscopedirs
+        [ scope.first, directory[3 .. -1] ]
+      else
+        raise SK::UsageError, "Wrong scope directory #{directory.inspect}"
+    end
+  end
+
+  def scopedirs
+    %w[ src bin dst pkg doc gen ]
+  end
+
+  def topscopedirs
+    scopedirs.map { |_dir| 'top' + _dir }
+  end
+
+  def src_subscope(*components)
+    result = separate_or_call(scope.last, components) {
+      return [ scope.first, 'src', scope.last ]
+    }
+    [ scope.first, 'src', result.first, components.first, result.last ]
+  end
+
+  def scope
+    @scope ||= separate_or_call(cwd, scopedirs) {
+      raise 'Not in the project scope'
+    }
+  end
+
+  def separate_or_call(source, components, &block)
+    components.each do |_item|
+      index = source.rindex(_item)
+      return [ source[0, index], _item, source[index.next .. -1] ] if index
+    end
+    block && block.call
+  end
+
+  def cwd
+    @cwd ||= Dir.getwd.split(File::SEPARATOR)
+  end
+end
+
+Application.new.main

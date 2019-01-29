@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2005, Gennady Bystritsky <bystr@mac.com>
+# 
+# Distributed under the MIT Licence.
+# This is free software. See 'LICENSE' for details.
+# You must read and accept the license prior to use.
+
+# The script is a front-end for cvs. Before passing controll to cvs, it 
+# looks for a file named '.cvs' in the current dirrectory and in every
+# directory up to the root. The first found is used to read CVS variable
+# assignments (CVSROOT, CVS_RSH, etc.) and exports them all to the
+# environment.
+# 
+class Invoker
+  def initialize
+    @script = File.expand_path($0)
+  end
+
+  def start
+    setup_cvs_environment(Dir.pwd, '.cvs')
+    launch find_cvs, *ARGV
+  end
+
+  def launch(*args)
+    exec *args
+  end
+
+  private
+  #######
+  def find_cvs
+    path = ENV['PATH'].split(':').map { |_directory|
+      path = File.expand_path(File.join(_directory, 'cvs'))
+      next unless File.exists?(path)
+      next if path == @script
+
+      stat = File.stat(path)
+      path if stat.file? and stat.executable?
+    }.compact.first
+    return path if path
+    raise "CVS client not found"
+  end
+
+  def setup_cvs_environment(directory, config)
+    setup_cvs_environment File.dirname(directory), config unless directory == '/'
+
+    root = File.join directory, config
+    return unless File.exists?(root)
+
+    IO.readlines(root).map { |_line|
+      _line.scan(%r{^\s*(\w+)\s*=\s*(.*?)\s*$}).each do |_variable, _value|
+	ENV[_variable] = _value
+      end
+    }
+  end
+end
+
+Invoker.new.start
