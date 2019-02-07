@@ -10,7 +10,7 @@
   Author: Gennady Bystritsky
 =end
 
-$: << File.dirname(__FILE__)
+$:.push File.dirname(__FILE__), *ENV['PATH'].to_s.split(':')
 require 'tsc/application'
 
 class Application < TSC::Application
