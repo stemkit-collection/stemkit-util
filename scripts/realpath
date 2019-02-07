@@ -111,6 +111,8 @@ class Application < TSC::Application
   end
 
   def print_search_path
+    return puts search_path unless options.verbose?
+
     puts [
       'Search path',
       '-----------',
