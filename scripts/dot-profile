@@ -170,12 +170,12 @@ act_as_rc()
     }
 
     __cdws__ () {
-      git guess-workspace 1>/dev/null 2>&1 && {
-        __cdws_target__=`git guess-workspace "${@}"` && __cd__ "${__cdws_target__}"
+      git guess-worktree 1>/dev/null 2>&1 && {
+        __cdws_target__=`git guess-worktree "${@}"` && __cd__ "${__cdws_target__}"
         return ${?}
       }
 
-      __cdws_target__=`guess-workspace "${@}"` && __cd__ "${__cdws_target__}"
+      __cdws_target__=`guess-worktree "${@}"` && __cd__ "${__cdws_target__}"
     }
 
     dirtree() {
