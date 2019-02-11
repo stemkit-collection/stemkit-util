@@ -266,6 +266,7 @@ act_as_rc()
         alias 'chdir=__original_cd__'
         alias 'dir=__dir__'
         alias 'll=__ll__'
+        alias 'rp=realpath'
 
         alias "__D="
         alias "__C="
