@@ -81,14 +81,8 @@ class Application < TSC::Application
 
   def figure(item)
     case item
-      when %r{^/}
-        return item
-
-      when %r{^~}
-        return File.expand_path item
-
-      when %r{^[.][.]?/?}
-        return item unless options.loadpath? or options.path?
+      when %r{^[~/]}, %r{^[.][.]?/?}
+        return File.expand_path(item)
     end
 
     find_items(item).tap do |_items|
@@ -108,7 +102,7 @@ class Application < TSC::Application
 
   def pathnames(items)
     items.map { |_item|
-      Pathname.new(_item).tap { |_pathname|
+      Pathname(_item).tap { |_pathname|
         break _pathname.realpath unless options.original?
       }
     }
