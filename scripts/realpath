@@ -17,10 +17,10 @@
   # entries possibly added by app-env facility.
   #
   ENV['PATH'].to_s.split(File::PATH_SEPARATOR).each do |_item|
-    next ( _item == _folder ? [].tap { _cache = false } : _cache ) << _item if _cache
+    next (_item == _folder ? [].tap { _cache = false } : _cache) << _item if _cache
 
     _folder, name = File.split(_item)
-    ( name == 'hooks' && File.basename(_folder) == 'bin' ? _cache = [] : _items ) << _item
+    (name == 'hooks' && File.basename(_folder) == 'bin' ? _cache = [] : _items) << _item
   end
 
   ORIGINAL_SYSTEM_PATH = _cache ? _items + _cache : _items
@@ -56,10 +56,18 @@ class Application < TSC::Application
       require 'rubygems'
       require 'pathname'
 
-      print_search_path if options.dump?
+      if options.dump?
+        report(search_path)
+        return if ARGV.empty?
+
+        empty_line = true
+      end
 
       ARGV.each do |_item|
+        puts if empty_line
+
         report quantify *figure(_item)
+        empty_line = true
       end
     }
   end
@@ -95,7 +103,7 @@ class Application < TSC::Application
   end
 
   def report(items)
-    puts pathnames(items).join(' ')
+    puts pathnames(items).uniq
   end
 
   def pathnames(items)
@@ -108,19 +116,6 @@ class Application < TSC::Application
 
   def quantify(*items)
     options.all? ? items : items.take(1)
-  end
-
-  def print_search_path
-    return puts search_path unless options.verbose?
-
-    puts [
-      'Search path',
-      '-----------',
-      search_path.map { |_item|
-        '  ' + _item.inspect.slice(1...-1)
-      },
-      '-----------'
-    ]
   end
 end
 
