@@ -25,6 +25,8 @@ __END__
 
 profile_main()
 {
+  check_vscode
+
   case "${ENV}" in
     */.profile)
       act_as_rc
@@ -83,7 +85,7 @@ act_as_profile()
   umask 2
   mesg y
 
-  stty intr ^c susp ^z kill ^u eol ^w erase ^h tostop
+  stty intr ^c susp ^z kill ^u eol ^w erase "${ERASE_CHAR:-^h}" tostop
   stty -tabs 2>/dev/null
 
   case "${SHELL}" in
@@ -284,6 +286,22 @@ act_as_rc()
     }
     break
   done
+}
+
+check_vscode() {
+  [ "${TERM_PROGRAM}" = vscode -a "${ERASE_CHAR:+set}" != set ] && {
+    echo "
+      +----------------------------------------------------------+
+      | ATTENTION: Incomplete VSCode environment detected!!!     |
+      |                                                          |
+      | Please make sure the following properties are set        |
+      |   terminal.integrated.inheritEnv: false                  |
+      |   terminal.integrated.showExitAlert: false,              |
+      |   terminal.integrated.copyOnSelection: true,             |
+      |   terminal.integrated.env.{ osx | linux }.ERASE_CHAR: ^? |
+      +----------------------------------------------------------+
+    " | sed 's/^ *\([|+] \{0,1\}\)/\1/'
+  }
 }
 
 profile_main "${@}"
