@@ -5,7 +5,7 @@ HISTFILE="/tmp/sh.history.${LOGNAME}"
 eval <<'RUBY'
   $VERBOSE = nil
 
-  $:.concat Dir["projects/runtime/*/default/scripts"]
+  $:.concat Dir[File.expand_path("~/projects/runtime/*/default/scripts")]
   require 'sk/shell/profile.rb'
 
   exit SK::Shell::Profile.new.send(*ARGV) { |_config|
