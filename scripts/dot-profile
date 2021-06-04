@@ -1,6 +1,6 @@
 # vim: ft=sh: sw=2:
 
-HISTFILE="/tmp/sh.history.${LOGNAME}"
+HISTFILE="${HOME}/.history.sh.${LOGNAME}"
 
 eval <<'RUBY'
   $VERBOSE = nil
